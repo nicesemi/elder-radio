@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.egg
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# 音频输出（运行时生成）
+backend/audio_output/
+*.m4a
+*.mp3
+*.aiff
+*.wav
+
+# API Key（安全）
+config_local.py
+.env
+*.key
+
+# 日志
+*.log
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Vercel
+.vercel/
