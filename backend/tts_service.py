@@ -1,30 +1,21 @@
 """
-TTS 语音合成服务 - 支持年代感播音员声音
-使用 macOS say 命令作为主力引擎（离线可用）
+TTS 语音合成服务 - Edge-TTS 云端引擎
+支持年代感播音员音色，输出 MP3 格式。
+完全替代 macOS say 命令，适配 Vercel Serverless 环境。
 """
 
 import asyncio
 import os
-import subprocess
 import tempfile
 from config import BROADCASTER_VOICES
 
-
-# 音频输出目录
-AUDIO_DIR = os.path.join(os.path.dirname(__file__), "audio_output")
-os.makedirs(AUDIO_DIR, exist_ok=True)
+# 音频输出目录：Vercel 环境使用 /tmp，本地开发使用项目目录
+TMP_DIR = "/tmp" if os.path.exists("/tmp") else tempfile.gettempdir()
 
 
-# macOS 年代 → say 语音映射
-ERA_VOICE_MAP = {
-    "1950s": "Tingting",   # 普通话女声
-    "1960s": "Tingting",
-    "1970s": "Tingting",
-    "1980s": "Tingting",
-    "1990s": "Tingting",
-    "2000s": "Tingting",
-    "2010s": "Tingting",
-    "2020s": "Tingting",
+# 年代 → Edge-TTS 语音映射（与 config.py BROADCASTER_VOICES 对应）
+ERA_VOICE_ID_MAP = {
+    era: cfg["voice_id"] for era, cfg in BROADCASTER_VOICES.items()
 }
 
 
@@ -49,16 +40,6 @@ def get_voice_for_era(year: int) -> dict:
     return BROADCASTER_VOICES.get(era, BROADCASTER_VOICES["2020s"])
 
 
-def _sanitize_text(text: str) -> str:
-    """清理文本中可能导致 say 命令失败的特殊字符"""
-    # 转义双引号
-    text = text.replace('"', "'")
-    # 移除可能导致问题的控制字符
-    import re
-    text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
-    return text
-
-
 async def text_to_speech(
     text: str,
     year: int = 1980,
@@ -66,7 +47,7 @@ async def text_to_speech(
     output_filename: str = None
 ) -> str:
     """
-    文字转语音 - 使用 macOS say 命令
+    文字转语音 - 使用 Edge-TTS（云端免费 TTS）
 
     Args:
         text: 要合成的文本
@@ -75,73 +56,79 @@ async def text_to_speech(
         output_filename: 输出文件名（可选）
 
     Returns:
-        生成的音频文件路径
+        生成的 MP3 文件绝对路径
     """
+    import edge_tts
+
     voice_config = get_voice_for_era(year)
 
-    # 确定使用的语音
+    # 确定使用的 Edge-TTS 语音名称
     if voice_id:
-        say_voice = voice_id
+        tts_voice = voice_id
     else:
         era = _get_era_key(year)
-        say_voice = ERA_VOICE_MAP.get(era, "Tingting")
+        tts_voice = ERA_VOICE_ID_MAP.get(era, "zh-CN-YunxiNeural")
 
-    # 语速控制：通过 say 命令的 -r 参数（词/分钟，默认约 180）
+    # 语速控制：Edge-TTS rate 用百分比字符串
     speed = voice_config.get("speed", 1.0)
-    rate = int(180 * speed)
+    rate_str = _build_rate_string(speed)
+
+    # 音高控制
+    pitch = voice_config.get("pitch", "+0Hz")
 
     if not output_filename:
-        output_filename = f"broadcast_{year}_{int(asyncio.get_event_loop().time())}"
+        import time
+        output_filename = f"broadcast_{year}_{int(time.time())}.mp3"
 
-    # 去掉调用方可能传入的扩展名
+    # 确保输出为 .mp3
     base_name = os.path.splitext(output_filename)[0]
-    aiff_path = os.path.join(AUDIO_DIR, f"{base_name}.aiff")
+    mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
 
-    clean_text = _sanitize_text(text)
+    # 使用 Edge-TTS 生成 MP3
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=tts_voice,
+        rate=rate_str,
+        pitch=pitch
+    )
+    await communicate.save(mp3_path)
 
-    # macOS say 输出 .aiff 格式 - 通过临时文件避免命令行限制
-    import tempfile as _tmp
-    with _tmp.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tf:
-        tf.write(clean_text)
-        text_file_path = tf.name
+    return mp3_path
 
-    cmd = ["say", "-v", say_voice, "-r", str(rate), "-o", aiff_path, "-f", text_file_path]
 
-    loop = asyncio.get_running_loop()
-    result = await loop.run_in_executor(
-        None,
-        lambda: subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
+    """
+    流式文字转语音 - 使用 Edge-TTS 返回音频字节
+
+    Args:
+        text: 要合成的文本
+        year: 目标年代
+
+    Returns:
+        MP3 音频数据（bytes）
+    """
+    import edge_tts
+
+    voice_config = get_voice_for_era(year)
+    era = _get_era_key(year)
+    tts_voice = ERA_VOICE_ID_MAP.get(era, "zh-CN-YunxiNeural")
+    speed = voice_config.get("speed", 1.0)
+    rate_str = _build_rate_string(speed)
+    pitch = voice_config.get("pitch", "+0Hz")
+
+    communicate = edge_tts.Communicate(
+        text=text,
+        voice=tts_voice,
+        rate=rate_str,
+        pitch=pitch
     )
 
-    # 清理临时文本文件
-    try:
-        os.remove(text_file_path)
-    except OSError:
-        pass
+    chunks = []
+    async for chunk in communicate.stream():
+        if chunk["type"] == "audio":
+            chunks.append(chunk["data"])
 
-    if result.returncode != 0:
-        raise RuntimeError(f"say 命令失败 (exit {result.returncode}): {result.stderr}")
-
-    # 实际输出可能是 aiff_path 或 aiff_path + ".aiff"（say 自动追加的情况）
-    actual_aiff = aiff_path
-    if not os.path.exists(aiff_path) and os.path.exists(aiff_path + ".aiff"):
-        actual_aiff = aiff_path + ".aiff"
-
-    if not os.path.exists(actual_aiff):
-        raise RuntimeError(f"say 命令未能生成音频文件")
-
-    # 转换为 M4A (AAC) - afconvert 原生支持
-    m4a_path = os.path.join(AUDIO_DIR, f"{base_name}.m4a")
-    convert_cmd = ["afconvert", "-f", "m4af", "-d", "aac", "-q", "127", actual_aiff, m4a_path]
-    await loop.run_in_executor(
-        None,
-        lambda: subprocess.run(convert_cmd, capture_output=True, text=True, timeout=60)
-    )
-
-    # 清理 .aiff 中间文件
-    os.remove(actual_aiff)
-
-    return m4a_path
+    return b"".join(chunks)
 
 
 def _get_era_key(year: int) -> str:
@@ -163,43 +150,14 @@ def _get_era_key(year: int) -> str:
     return "2020s"
 
 
-async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
-    """
-    流式文字转语音 - 使用 macOS say 命令输出到 stdout
-    """
-    voice_config = get_voice_for_era(year)
-    era = _get_era_key(year)
-    say_voice = ERA_VOICE_MAP.get(era, "Tingting")
-    speed = voice_config.get("speed", 1.0)
-    rate = int(180 * speed)
-
-    clean_text = _sanitize_text(text)
-
-    # 输出 aiff 到临时文件再读回（say 不支持 stdout 直接输出音频）
-    with tempfile.NamedTemporaryFile(suffix=".aiff", delete=False) as tmp:
-        tmp_path = tmp.name
-
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tf:
-        tf.write(clean_text)
-        text_file_path = tf.name
-
-    cmd = ["say", "-v", say_voice, "-r", str(rate), "-o", tmp_path, "-f", text_file_path]
-    loop = asyncio.get_running_loop()
-    await loop.run_in_executor(
-        None,
-        lambda: subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-    )
-
-    try:
-        os.remove(text_file_path)
-    except OSError:
-        pass
-
-    with open(tmp_path, "rb") as f:
-        audio_data = f.read()
-
-    os.remove(tmp_path)
-    return audio_data
+def _build_rate_string(speed: float) -> str:
+    """将 speed 倍率转为 Edge-TTS rate 字符串"""
+    if speed == 1.0:
+        return "+0%"
+    elif speed > 1.0:
+        return f"+{int((speed - 1.0) * 100)}%"
+    else:
+        return f"-{int((1.0 - speed) * 100)}%"
 
 
 def list_available_voices():

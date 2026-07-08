@@ -16,8 +16,9 @@ backend/audio_output/
 *.mp3
 *.aiff
 *.wav
+/tmp/
 
-# API Key（安全）
+# API Key 与敏感配置
 config_local.py
 .env
 *.key
