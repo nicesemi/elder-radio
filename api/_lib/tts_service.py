@@ -85,13 +85,17 @@ async def text_to_speech(
     mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
 
     # 使用 Edge-TTS 生成 MP3
-    communicate = edge_tts.Communicate(
-        text=text,
-        voice=tts_voice,
-        rate=rate_str,
-        pitch=pitch
-    )
-    await communicate.save(mp3_path)
+    try:
+        communicate = edge_tts.Communicate(
+            text=text,
+            voice=tts_voice,
+            rate=rate_str,
+            pitch=pitch
+        )
+        await communicate.save(mp3_path)
+    except Exception as e:
+        print(f"[TTS] Edge-TTS 失败 ({e}), 降级到 Agnes TTS")
+        await _agnes_tts_fallback(text, mp3_path)
 
     return mp3_path
 
@@ -171,3 +175,28 @@ def list_available_voices():
         }
         for era, cfg in BROADCASTER_VOICES.items()
     ]
+
+
+async def _agnes_tts_fallback(text: str, output_path: str) -> None:
+    """Agnes AI TTS 降级方案"""
+    import httpx
+    from config import AGNES_BASE_URL, AGNES_API_KEY, AGNES_TTS_MODEL
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        resp = await client.post(
+            f"{AGNES_BASE_URL}/audio/speech",
+            headers={
+                "Authorization": f"Bearer {AGNES_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": AGNES_TTS_MODEL,
+                "input": text,
+                "voice": "alloy",
+                "response_format": "mp3",
+                "speed": 1.0
+            }
+        )
+        resp.raise_for_status()
+        with open(output_path, "wb") as f:
+            f.write(resp.content)
