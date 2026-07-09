@@ -548,8 +548,8 @@ function saveConfig() {
 function loadConfig() {
     state.apiKey = localStorage.getItem('elder_radio_api_key') || '';
     state.serverUrl = localStorage.getItem('elder_radio_server_url') || window.location.origin;
-    dom.apiKeyInput.value = state.apiKey;
-    dom.serverUrlInput.value = state.serverUrl;
+    if (dom.apiKeyInput) dom.apiKeyInput.value = state.apiKey;
+    if (dom.serverUrlInput) dom.serverUrlInput.value = state.serverUrl;
 }
 
 // ============ API 调用 ============
