@@ -116,25 +116,26 @@ async def generate_broadcast(req: BroadcastRequest):
     )
 
     output_filename = f"broadcast_{req.channel}_{req.year}.mp3"
-    audio_path = await text_to_speech(
-        text=content,
-        year=req.year,
-        output_filename=output_filename
-    )
-
     audio_url = None
-    if AUDIO_STORAGE == "supabase":
-        try:
-            supabase = get_supabase()
-            from supabase_client import upload_audio_to_supabase, get_public_url
-            filename = os.path.basename(audio_path)
-            upload_audio_to_supabase(supabase, audio_path, filename)
-            audio_url = get_public_url(supabase, filename)
-        except Exception:
+    try:
+        audio_path = await text_to_speech(
+            text=content,
+            year=req.year,
+            output_filename=output_filename
+        )
+        if AUDIO_STORAGE == "supabase":
+            try:
+                supabase = get_supabase()
+                from supabase_client import upload_audio_to_supabase, get_public_url
+                filename = os.path.basename(audio_path)
+                upload_audio_to_supabase(supabase, audio_path, filename)
+                audio_url = get_public_url(supabase, filename)
+            except Exception:
+                audio_url = f"/api/audio/{os.path.basename(audio_path)}"
+        if not audio_url:
             audio_url = f"/api/audio/{os.path.basename(audio_path)}"
-
-    if not audio_url:
-        audio_url = f"/api/audio/{os.path.basename(audio_path)}"
+    except Exception as e:
+        print(f"[Broadcast] TTS 失败，降级文本模式: {e}")
 
     return {
         "success": True,
