@@ -16,7 +16,8 @@ const state = {
     mediaRecorder: null,
     audioChunks: [],
     audioContext: null,
-    currentAudio: null
+    currentAudio: null,
+    ttsVoice: null
 };
 
 // 频道列表
@@ -343,6 +344,20 @@ function initPlayControls() {
         dom.stopBtn.disabled = true;
         setStatus('播放失败', '');
     });
+
+    if (window.speechSynthesis) {
+        speechSynthesis.addEventListener('voiceschanged', () => {
+            if (!state.ttsVoice) state.ttsVoice = getBestZhVoice();
+        });
+    }
+}
+
+function getBestZhVoice() {
+    const voices = speechSynthesis.getVoices();
+    // 优先选中文女声，其次中文，其次任意
+    const zhFemale = voices.find(v => v.lang.startsWith('zh') && v.name.includes('Female'));
+    const zhAny = voices.find(v => v.lang.startsWith('zh'));
+    return zhFemale || zhAny || voices[0] || null;
 }
 
 async function startBroadcast() {
@@ -359,23 +374,32 @@ async function startBroadcast() {
             duration: 5
         });
 
-        if (res.success && res.audio_url) {
+        if (!res.success || !res.content) throw new Error('生成失败');
+
+        // 优先使用服务端 audio_url，否则用浏览器 TTS
+        if (res.audio_url) {
             const audioUrl = `${state.serverUrl}${res.audio_url}`;
             dom.audioPlayer.src = audioUrl;
             dom.audioPlayer.volume = state.volume / 100;
             await dom.audioPlayer.play();
             state.isPlaying = true;
             setStatus('正在播放', 'playing');
-        } else {
-            throw new Error('生成失败');
+            return;
         }
+
+        // 浏览器 TTS
+        if (window.speechSynthesis) {
+            speakWithBrowserTTS(res.content);
+            return;
+        }
+
+        throw new Error('无可用播放方式');
     } catch (err) {
         console.error('广播生成失败:', err);
-        setStatus('生成失败，请检查API配置', '');
         dom.playBtn.disabled = false;
         dom.stopBtn.disabled = true;
 
-        // 回退：仅生成文本展示
+        // 最终兜底：文本展示
         try {
             const textRes = await apiCall('/api/broadcast/content-only', {
                 channel: state.channel,
@@ -385,14 +409,49 @@ async function startBroadcast() {
             if (textRes.success) {
                 addChatBubble('assistant', textRes.content.substring(0, 500) + '...');
                 toggleChatArea();
+                setStatus('已生成文本', '');
+            } else {
+                setStatus('生成失败，请检查网络', '');
             }
         } catch (e) {
-            // 静默失败
+            setStatus('服务连接失败', '');
         }
     }
 }
 
+function speakWithBrowserTTS(text) {
+    if (!state.ttsVoice) state.ttsVoice = getBestZhVoice();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.voice = state.ttsVoice;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = state.volume / 100;
+
+    utterance.onstart = () => {
+        state.isPlaying = true;
+        setStatus('正在播放', 'playing');
+    };
+    utterance.onend = () => {
+        state.isPlaying = false;
+        dom.playBtn.disabled = false;
+        dom.stopBtn.disabled = true;
+        setStatus('播放完毕', '');
+    };
+    utterance.onerror = (e) => {
+        console.error('浏览器TTS失败:', e);
+        state.isPlaying = false;
+        dom.playBtn.disabled = false;
+        dom.stopBtn.disabled = true;
+        setStatus('TTS不可用', '');
+    };
+
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utterance);
+}
+
 function stopBroadcast() {
+    if (window.speechSynthesis) speechSynthesis.cancel();
     dom.audioPlayer.pause();
     dom.audioPlayer.currentTime = 0;
     state.isPlaying = false;
