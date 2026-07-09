@@ -47,72 +47,125 @@ async def text_to_speech(
     output_filename: str = None
 ) -> str:
     """
-    文字转语音 - 使用 Edge-TTS（云端免费 TTS）
+    文字转语音 - 优先 Google Translate TTS（免费稳定），降级 Edge-TTS / Agnes
 
     Args:
         text: 要合成的文本
-        year: 目标年代（用于自动选择音色）
-        voice_id: 指定音色ID（可选，覆盖年代自动选择）
+        year: 目标年代
+        voice_id: 指定音色ID（可选）
         output_filename: 输出文件名（可选）
 
     Returns:
         生成的 MP3 文件绝对路径
     """
+    import time
+    if not output_filename:
+        output_filename = f"broadcast_{year}_{int(time.time())}.mp3"
+
+    base_name = os.path.splitext(output_filename)[0]
+    mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
+
+    # 方案1: Google Translate TTS（零配置，全球稳定）
+    try:
+        await _google_tts(text, mp3_path)
+        return mp3_path
+    except Exception as e:
+        print(f"[TTS] Google TTS 失败 ({e}), 尝试 Edge-TTS...")
+
+    # 方案2: Edge-TTS
+    try:
+        await _edge_tts(text, year, voice_id, mp3_path)
+        return mp3_path
+    except Exception as e:
+        print(f"[TTS] Edge-TTS 失败 ({e}), 尝试 Agnes...")
+
+    # 方案3: Agnes TTS
+    await _agnes_tts_fallback(text, mp3_path)
+    return mp3_path
+
+
+async def _google_tts(text: str, output_path: str) -> None:
+    """Google Translate TTS - 免费、零依赖、全球可用"""
+    import httpx
+    import urllib.parse
+
+    # 文本长度限制：Google TTS 单次最多约 200 字符，长文本分段
+    max_len = 200
+    if len(text) <= max_len:
+        chunks = [text]
+    else:
+        # 按句号分段，避免截断词语
+        chunks = []
+        remaining = text
+        while len(remaining) > max_len:
+            split_at = remaining.rfind('。', 0, max_len)
+            if split_at == -1:
+                split_at = remaining.rfind('，', 0, max_len)
+            if split_at == -1 or split_at < 50:
+                split_at = max_len
+            else:
+                split_at += 1  # 包含标点
+            chunks.append(remaining[:split_at])
+            remaining = remaining[split_at:]
+        if remaining:
+            chunks.append(remaining)
+
+    audio_parts = []
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for chunk in chunks:
+            encoded = urllib.parse.quote(chunk)
+            url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q={encoded}"
+            resp = await client.get(url, headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            })
+            resp.raise_for_status()
+            audio_parts.append(resp.content)
+
+    with open(output_path, "wb") as f:
+        for part in audio_parts:
+            f.write(part)
+
+
+async def _edge_tts(text: str, year: int, voice_id: str, output_path: str) -> None:
+    """Edge-TTS 生成"""
     import edge_tts
 
     voice_config = get_voice_for_era(year)
-
-    # 确定使用的 Edge-TTS 语音名称
     if voice_id:
         tts_voice = voice_id
     else:
         era = _get_era_key(year)
         tts_voice = ERA_VOICE_ID_MAP.get(era, "zh-CN-YunxiNeural")
 
-    # 语速控制：Edge-TTS rate 用百分比字符串
     speed = voice_config.get("speed", 1.0)
     rate_str = _build_rate_string(speed)
-
-    # 音高控制
     pitch = voice_config.get("pitch", "+0Hz")
 
-    if not output_filename:
-        import time
-        output_filename = f"broadcast_{year}_{int(time.time())}.mp3"
-
-    # 确保输出为 .mp3
-    base_name = os.path.splitext(output_filename)[0]
-    mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
-
-    # 使用 Edge-TTS 生成 MP3
-    try:
-        communicate = edge_tts.Communicate(
-            text=text,
-            voice=tts_voice,
-            rate=rate_str,
-            pitch=pitch
-        )
-        await communicate.save(mp3_path)
-    except Exception as e:
-        print(f"[TTS] Edge-TTS 失败 ({e}), 降级到 Agnes TTS")
-        await _agnes_tts_fallback(text, mp3_path)
-
-    return mp3_path
+    communicate = edge_tts.Communicate(
+        text=text, voice=tts_voice, rate=rate_str, pitch=pitch
+    )
+    await communicate.save(output_path)
 
 
 async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
     """
-    流式文字转语音 - 使用 Edge-TTS 返回音频字节
-
-    Args:
-        text: 要合成的文本
-        year: 目标年代
-
-    Returns:
-        MP3 音频数据（bytes）
+    流式文字转语音 - 优先 Google TTS，降级 Edge-TTS
     """
-    import edge_tts
+    # Google TTS 流式
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(
+                f"https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q={text[:200]}",
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            resp.raise_for_status()
+            return resp.content
+    except Exception:
+        pass
 
+    # Edge-TTS 降级
+    import edge_tts
     voice_config = get_voice_for_era(year)
     era = _get_era_key(year)
     tts_voice = ERA_VOICE_ID_MAP.get(era, "zh-CN-YunxiNeural")
@@ -121,17 +174,12 @@ async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
     pitch = voice_config.get("pitch", "+0Hz")
 
     communicate = edge_tts.Communicate(
-        text=text,
-        voice=tts_voice,
-        rate=rate_str,
-        pitch=pitch
+        text=text, voice=tts_voice, rate=rate_str, pitch=pitch
     )
-
     chunks = []
     async for chunk in communicate.stream():
         if chunk["type"] == "audio":
             chunks.append(chunk["data"])
-
     return b"".join(chunks)
 
 
