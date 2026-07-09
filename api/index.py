@@ -178,3 +178,13 @@ async def get_audio(filename: str):
 
     media_type = "audio/mpeg" if filename.endswith(".mp3") else "audio/mp4"
     return FileResponse(file_path, media_type=media_type)
+
+@app.get("/api/test-tts")
+async def test_tts():
+    try:
+        from tts_service import text_to_speech
+        path = await text_to_speech("测试语音合成", year=2020, output_filename="test.mp3")
+        return {"success": True, "path": path, "exists": os.path.exists(path)}
+    except Exception as e:
+        import traceback
+        return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
