@@ -8,7 +8,7 @@ import uuid
 import shutil
 from config import AGNES_BASE_URL, AGNES_API_KEY
 
-UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "voice_samples")
+UPLOAD_DIR = os.path.join("/tmp", "voice_samples")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # 预设声音包（付费）
