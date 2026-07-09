@@ -20,10 +20,10 @@ from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 
-from config import CHANNELS, BROADCASTER_VOICES
-from ai_content import generate_broadcast_content, generate_ai_answer, detect_lead_intent
-from tts_service import text_to_speech, list_available_voices
-from voice_clone import (
+from _lib.config import CHANNELS, BROADCASTER_VOICES
+from _lib.ai_content import generate_broadcast_content, generate_ai_answer, detect_lead_intent
+from _lib.tts_service import text_to_speech, list_available_voices
+from _lib.voice_clone import (
     upload_voice_sample, train_custom_voice,
     list_custom_voices, get_preset_voice_packs, delete_custom_voice
 )
@@ -34,7 +34,7 @@ _supabase_client = None
 def get_supabase():
     global _supabase_client
     if _supabase_client is None:
-        from supabase_client import init_supabase
+        from _lib.supabase_client import init_supabase
         SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://ggzlxzillydjhcgodqbc.supabase.co")
         SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable__OVyHq9MDZOb_U3xwuOjpQ_1YY0809b")
         _supabase_client = init_supabase(url=SUPABASE_URL, key=SUPABASE_KEY)
@@ -182,7 +182,7 @@ async def generate_broadcast(req: BroadcastRequest):
     if AUDIO_STORAGE == "supabase":
         try:
             supabase = get_supabase()
-            from supabase_client import upload_audio_to_supabase, get_public_url
+            from _lib.supabase_client import upload_audio_to_supabase, get_public_url
             filename = os.path.basename(audio_path)
             upload_audio_to_supabase(supabase, audio_path, filename)
             audio_url = get_public_url(supabase, filename)
@@ -223,7 +223,7 @@ async def get_audio(filename: str):
     if AUDIO_STORAGE == "supabase":
         try:
             supabase = get_supabase()
-            from supabase_client import get_public_url
+            from _lib.supabase_client import get_public_url
             url = get_public_url(supabase, filename)
             return RedirectResponse(url=url)
         except Exception:
@@ -297,7 +297,7 @@ async def ai_chat(req: AIChatRequest):
     if AUDIO_STORAGE == "supabase":
         try:
             supabase = get_supabase()
-            from supabase_client import upload_audio_to_supabase, get_public_url
+            from _lib.supabase_client import upload_audio_to_supabase, get_public_url
             filename = os.path.basename(audio_path)
             upload_audio_to_supabase(supabase, audio_path, filename)
             audio_url = get_public_url(supabase, filename)
