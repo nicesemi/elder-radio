@@ -409,35 +409,38 @@ function setStatus(text, className) {
 
 // ============ 底部导航 ============
 function initNav() {
+    if (!dom.navBtns.length) return;
     dom.navBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
             dom.navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            if (tab === 'settings') {
+            if (tab === 'settings' && dom.settingsPanel) {
                 dom.settingsPanel.style.display = 'flex';
                 loadSettings();
-            } else {
+            } else if (dom.settingsPanel) {
                 dom.settingsPanel.style.display = 'none';
             }
         });
     });
 
-    dom.backBtn.addEventListener('click', () => {
-        dom.settingsPanel.style.display = 'none';
-        dom.navBtns.forEach(b => b.classList.remove('active'));
-        dom.navBtns[0].classList.add('active');
-    });
+    if (dom.backBtn) {
+        dom.backBtn.addEventListener('click', () => {
+            dom.settingsPanel.style.display = 'none';
+            dom.navBtns.forEach(b => b.classList.remove('active'));
+            dom.navBtns[0].classList.add('active');
+        });
+    }
 }
 
 // ============ 设置面板 ============
 function initSettings() {
-    dom.saveConfigBtn.addEventListener('click', saveConfig);
-    dom.uploadVoiceBtn.addEventListener('click', () => {
+    if (dom.saveConfigBtn) dom.saveConfigBtn.addEventListener('click', saveConfig);
+    if (dom.uploadVoiceBtn) dom.uploadVoiceBtn.addEventListener('click', () => {
         dom.voiceFileInput.click();
     });
-    dom.voiceFileInput.addEventListener('change', handleVoiceUpload);
+    if (dom.voiceFileInput) dom.voiceFileInput.addEventListener('change', handleVoiceUpload);
 }
 
 async function loadSettings() {
