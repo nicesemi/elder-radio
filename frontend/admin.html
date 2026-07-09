@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI管理后台 - 老年收音机</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text: #e8e8e8;
+            --text-secondary: #a0a0b0;
+            --gold: #c9a84c;
+            --green: #4caf50;
+            --red: #e94560;
+            --blue: #4a90d9;
+            --font-xl: 1.8rem;
+            --font-lg: 1.3rem;
+            --font-md: 1rem;
+            --font-sm: 0.9rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+
+        .header {
+            display: flex; align-items: center; gap: 16px;
+            padding: 16px 0; margin-bottom: 12px;
+        }
+        .back-btn { background: none; border: none; color: var(--blue); font-size: var(--font-lg); cursor: pointer; padding: 8px; text-decoration: none; }
+        .header h1 { font-size: var(--font-xl); color: var(--gold); }
+
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 0; margin-bottom: 20px;
+            background: #0a0a1a; border-radius: 14px; overflow: hidden;
+        }
+        .tab-btn {
+            flex: 1; padding: 14px 8px; border: none; background: transparent;
+            color: var(--text-secondary); font-size: var(--font-md); font-weight: bold; cursor: pointer;
+            border-bottom: 3px solid transparent; transition: all 0.2s; white-space: nowrap;
+        }
+        .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); background: rgba(201,168,76,0.1); }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Filters */
+        .filter-row { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-select {
+            padding: 10px 16px; border-radius: 10px; border: 2px solid #2a2a3e;
+            background: #0a0a1a; color: #fff; font-size: var(--font-md); outline: none;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: var(--font-sm); }
+        th { text-align: left; padding: 12px 10px; border-bottom: 2px solid #2a2a3e; color: var(--gold); font-size: var(--font-md); }
+        td { padding: 10px; border-bottom: 1px solid #1a1a3e; vertical-align: top; }
+
+        .btn {
+            padding: 8px 18px; border-radius: 8px; border: none;
+            font-size: var(--font-sm); font-weight: bold; cursor: pointer; transition: all 0.15s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-sm { padding: 5px 14px; font-size: 0.8rem; }
+        .btn-green { background: var(--green); color: #fff; }
+        .btn-red { background: #a52a2a; color: #fff; }
+        .btn-blue { background: var(--blue); color: #fff; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-outline { background: transparent; color: var(--blue); border: 2px solid var(--blue); }
+
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; font-weight: bold;
+        }
+        .badge-published { background: rgba(76,175,80,0.2); color: var(--green); }
+        .badge-draft { background: rgba(201,168,76,0.2); color: var(--gold); }
+        .badge-rejected { background: rgba(233,69,96,0.2); color: var(--red); }
+
+        .badge-high { background: rgba(233,69,96,0.2); color: var(--red); }
+        .badge-mid { background: rgba(201,168,76,0.2); color: var(--gold); }
+        .badge-low { background: rgba(74,144,217,0.2); color: var(--blue); }
+
+        .badge-new { background: rgba(74,144,217,0.2); color: var(--blue); }
+        .badge-following { background: rgba(201,168,76,0.2); color: var(--gold); }
+        .badge-converted { background: rgba(76,175,80,0.2); color: var(--green); }
+        .badge-closed { background: rgba(160,160,176,0.2); color: var(--text-secondary); }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 50;
+            display: none; align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--bg); border-radius: 20px; padding: 24px;
+            max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto;
+            border: 2px solid #2a2a3e;
+        }
+        .modal h3 { font-size: var(--font-lg); color: var(--gold); margin-bottom: 16px; }
+        .modal label { display: block; font-size: var(--font-sm); color: var(--text-secondary); margin: 10px 0 4px; }
+        .modal input, .modal textarea, .modal select {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 2px solid #2a2a3e; background: #0a0a1a; color: #fff;
+            font-size: var(--font-md); outline: none; font-family: inherit;
+        }
+        .modal textarea { min-height: 100px; resize: vertical; }
+        .modal .btn-row { display: flex; gap: 10px; margin-top: 16px; }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card {
+            background: #0a0a1a; border-radius: 14px; padding: 16px;
+            text-align: center; border: 2px solid #2a2a3e;
+        }
+        .stat-num { font-size: 2rem; font-weight: bold; color: var(--gold); }
+        .stat-label { font-size: var(--font-sm); color: var(--text-secondary); margin-top: 4px; }
+
+        .conversation-detail { max-height: 300px; overflow-y: auto; background: #0a0a1a; padding: 12px; border-radius: 10px; margin-top: 10px; }
+        .conversation-detail .msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 8px; font-size: var(--font-sm); }
+        .conversation-detail .msg.user { background: rgba(74,144,217,0.2); }
+        .conversation-detail .msg.assistant { background: rgba(201,168,76,0.15); }
+        .conversation-detail .msg .role-label { font-weight: bold; font-size: 0.75rem; margin-bottom: 4px; }
+
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .empty { text-align: center; padding: 40px; color: var(--text-secondary); font-size: var(--font-lg); }
+
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+        .pagination button {
+            padding: 8px 16px; border-radius: 8px; border: 2px solid #2a2a3e;
+            background: transparent; color: var(--text); font-size: var(--font-sm); cursor: pointer;
+        }
+        .pagination button:disabled { opacity: 0.3; cursor: default; }
+        .pagination button.active { background: var(--blue); border-color: var(--blue); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn">← 首页</a>
+            <h1>AI 管理后台</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="resources">资源管理</button>
+            <button class="tab-btn" data-tab="conversations">对话分析</button>
+            <button class="tab-btn" data-tab="leads">客户需求</button>
+        </div>
+
+        <!-- ===== 资源管理 ===== -->
+        <div class="section active" id="section-resources">
+            <div class="filter-row">
+                <select class="filter-select" id="resStatusFilter">
+                    <option value="">全部状态</option>
+                    <option value="draft">草稿</option>
+                    <option value="published">已发布</option>
+                    <option value="rejected">已驳回</option>
+                </select>
+                <select class="filter-select" id="resEraFilter">
+                    <option value="">全部年代</option>
+                </select>
+                <button class="btn btn-blue" onclick="openArticleModal()">+ 新建</button>
+            </div>
+            <div id="articleTableContainer"><div class="loading">加载中...</div></div>
+        </div>
+
+        <!-- ===== 对话分析 ===== -->
+        <div class="section" id="section-conversations">
+            <div class="filter-row">
+                <select class="filter-select" id="convChannelFilter">
+                    <option value="">全部频道</option>
+                    <option value="news">新闻</option>
+                    <option value="sports">体育</option>
+                    <option value="music">音乐</option>
+                    <option value="finance">金融</option>
+                    <option value="culture">文化</option>
+                    <option value="technology">科技</option>
+                </select>
+                <select class="filter-select" id="convEraFilter">
+                    <option value="">全部年代</option>
+                </select>
+            </div>
+            <div id="convTableContainer"><div class="loading">加载中...</div></div>
+        </div>
+
+        <!-- ===== 客户需求 ===== -->
+        <div class="section" id="section-leads">
+            <div id="leadStats"></div>
+            <div class="filter-row">
+                <select class="filter-select" id="leadStatusFilter">
+                    <option value="">全部状态</option>
+                    <option value="新建">新建</option>
+                    <option value="跟进中">跟进中</option>
+                    <option value="已转化">已转化</option>
+                    <option value="已关闭">已关闭</option>
+                </select>
+                <select class="filter-select" id="leadPriorityFilter">
+                    <option value="">全部优先级</option>
+                    <option value="高">高</option>
+                    <option value="中">中</option>
+                    <option value="低">低</option>
+                </select>
+            </div>
+            <div id="leadTableContainer"><div class="loading">加载中...</div></div>
+        </div>
+    </div>
+
+    <!-- Article Edit Modal -->
+    <div class="modal-overlay" id="articleModal">
+        <div class="modal">
+            <h3 id="articleModalTitle">新建资源</h3>
+            <label>标题</label><input type="text" id="artTitle">
+            <label>年代</label><select id="artEra"></select>
+            <label>分类</label>
+            <select id="artCategory">
+                <option value="news">新闻</option><option value="sports">体育</option>
+                <option value="music">音乐</option><option value="finance">金融</option>
+                <option value="culture">文化</option><option value="technology">科技</option>
+            </select>
+            <label>摘要</label><input type="text" id="artSummary">
+            <label>内容</label><textarea id="artContent"></textarea>
+            <label>状态</label>
+            <select id="artStatus">
+                <option value="draft">草稿</option><option value="published">已发布</option>
+            </select>
+            <input type="hidden" id="artId">
+            <div class="btn-row">
+                <button class="btn btn-green" onclick="saveArticle()">保存</button>
+                <button class="btn btn-outline" onclick="closeArticleModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conversation Detail Modal -->
+    <div class="modal-overlay" id="convModal">
+        <div class="modal">
+            <h3>对话详情</h3>
+            <div class="conversation-detail" id="convDetail"></div>
+            <div class="btn-row">
+                <button class="btn btn-outline" onclick="document.getElementById('convModal').classList.remove('show')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Edit Modal -->
+    <div class="modal-overlay" id="leadModal">
+        <div class="modal">
+            <h3>编辑需求</h3>
+            <label>状态</label>
+            <select id="leadEditStatus">
+                <option value="新建">新建</option><option value="跟进中">跟进中</option>
+                <option value="已转化">已转化</option><option value="已关闭">已关闭</option>
+            </select>
+            <label>备注</label><textarea id="leadEditNotes"></textarea>
+            <input type="hidden" id="leadEditId">
+            <div class="btn-row">
+                <button class="btn btn-green" onclick="saveLead()">保存</button>
+                <button class="btn btn-outline" onclick="document.getElementById('leadModal').classList.remove('show')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ggzlxzillydjhcgodqbc.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable__OVyHq9MDZOb_U3xwuOjpQ_1YY0809b';
+
+        async function apiCall(endpoint, method='GET', data=null) {
+            const opts = { method, headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY } };
+            if (data) opts.body = JSON.stringify(data);
+            const res = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, opts);
+            if (!res.ok) { const err = await res.text(); throw new Error(`${res.status}: ${err}`); }
+            if (method === 'DELETE') return true;
+            return res.json();
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML;
+        }
+
+        const eras = ['1950s','1960s','1970s','1980s','1990s','2000s','2010s','2020s'];
+        function fillEraSelects() {
+            const eraOptions = '<option value="">全部</option>' + eras.map(e => `<option value="${e}">${e}</option>`).join('');
+            ['resEraFilter','convEraFilter'].forEach(id => {
+                const sel = document.getElementById(id);
+                if (sel) sel.innerHTML = eraOptions;
+            });
+            document.getElementById('artEra').innerHTML = eras.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById('section-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'resources') loadArticles();
+                if (btn.dataset.tab === 'conversations') loadConversations();
+                if (btn.dataset.tab === 'leads') { loadLeads(); loadLeadStats(); }
+            });
+        });
+
+        // Filter listeners
+        document.getElementById('resStatusFilter').addEventListener('change', loadArticles);
+        document.getElementById('resEraFilter').addEventListener('change', loadArticles);
+        document.getElementById('convChannelFilter').addEventListener('change', loadConversations);
+        document.getElementById('convEraFilter').addEventListener('change', loadConversations);
+        document.getElementById('leadStatusFilter').addEventListener('change', loadLeads);
+        document.getElementById('leadPriorityFilter').addEventListener('change', loadLeads);
+
+        // ========== 资源管理 ==========
+        async function loadArticles() {
+            const container = document.getElementById('articleTableContainer');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                let filters = ['order=created_at.desc', 'limit=50'];
+                const s = document.getElementById('resStatusFilter').value;
+                const e = document.getElementById('resEraFilter').value;
+                if (s) filters.push(`status=eq.${s}`);
+                if (e) filters.push(`era=eq.${e}`);
+
+                const articles = await apiCall('/resource_articles?' + filters.join('&'));
+                if (!articles.length) { container.innerHTML = '<div class="empty">暂无资源</div>'; return; }
+                container.innerHTML = renderArticleTable(articles);
+            } catch(e) { container.innerHTML = `<div class="empty">加载失败: ${escapeHtml(e.message)}</div>`; }
+        }
+
+        function renderArticleTable(articles) {
+            const badge = { published:'published', draft:'draft', rejected:'rejected' };
+            const statusName = { published:'已发布', draft:'草稿', rejected:'已驳回' };
+            return `<table>
+                <tr><th>标题</th><th>年代</th><th>分类</th><th>状态</th><th>操作</th></tr>
+                ${articles.map(a => `
+                <tr>
+                    <td><strong>${escapeHtml(a.title)}</strong></td>
+                    <td>${escapeHtml(a.era)}</td>
+                    <td>${escapeHtml(a.category)}</td>
+                    <td><span class="badge badge-${badge[a.status]||'draft'}">${statusName[a.status]||a.status}</span></td>
+                    <td>
+                        ${a.status !== 'published' ? `<button class="btn btn-green btn-sm" onclick="reviewArticle(${a.id},'published')">通过</button> ` : ''}
+                        ${a.status !== 'rejected' ? `<button class="btn btn-red btn-sm" onclick="reviewArticle(${a.id},'rejected')">驳回</button> ` : ''}
+                        <button class="btn btn-blue btn-sm" onclick="editArticle(${a.id})">编辑</button>
+                        <button class="btn btn-red btn-sm" onclick="deleteArticle(${a.id})">删除</button>
+                    </td>
+                </tr>`).join('')}
+            </table>`;
+        }
+
+        async function reviewArticle(id, status) {
+            await apiCall(`/resource_articles?id=eq.${id}`, 'PATCH', { status, updated_at: new Date().toISOString() });
+            loadArticles();
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm('确定删除该资源？')) return;
+            await apiCall(`/resource_articles?id=eq.${id}`, 'DELETE');
+            loadArticles();
+        }
+
+        function openArticleModal(article) {
+            document.getElementById('artId').value = article ? article.id : '';
+            document.getElementById('artTitle').value = article ? article.title : '';
+            document.getElementById('artEra').value = article ? article.era : '1980s';
+            document.getElementById('artCategory').value = article ? article.category : 'news';
+            document.getElementById('artSummary').value = article ? (article.summary||'') : '';
+            document.getElementById('artContent').value = article ? (article.content||'') : '';
+            document.getElementById('artStatus').value = article ? article.status : 'draft';
+            document.getElementById('articleModalTitle').textContent = article ? '编辑资源' : '新建资源';
+            document.getElementById('articleModal').classList.add('show');
+        }
+
+        function closeArticleModal() { document.getElementById('articleModal').classList.remove('show'); }
+
+        function editArticle(id) {
+            apiCall(`/resource_articles?id=eq.${id}`).then(arr => {
+                if (arr.length) openArticleModal(arr[0]);
+            });
+        }
+
+        async function saveArticle() {
+            const id = document.getElementById('artId').value;
+            const data = {
+                title: document.getElementById('artTitle').value,
+                era: document.getElementById('artEra').value,
+                category: document.getElementById('artCategory').value,
+                summary: document.getElementById('artSummary').value,
+                content: document.getElementById('artContent').value,
+                status: document.getElementById('artStatus').value,
+                updated_at: new Date().toISOString()
+            };
+            try {
+                if (id) {
+                    await apiCall(`/resource_articles?id=eq.${id}`, 'PATCH', data);
+                } else {
+                    await apiCall('/resource_articles', 'POST', data);
+                }
+                closeArticleModal();
+                loadArticles();
+            } catch(e) { alert('保存失败: '+e.message); }
+        }
+
+        // ========== 对话分析 ==========
+        async function loadConversations() {
+            const container = document.getElementById('convTableContainer');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                let filters = ['order=created_at.desc', 'limit=50'];
+                const ch = document.getElementById('convChannelFilter').value;
+                const e = document.getElementById('convEraFilter').value;
+                if (ch) filters.push(`channel=eq.${ch}`);
+                if (e) filters.push(`era=eq.${e}`);
+
+                const convs = await apiCall('/customer_conversations?' + filters.join('&'));
+                if (!convs.length) { container.innerHTML = '<div class="empty">暂无对话记录</div>'; return; }
+
+                // Group by session
+                const sessions = {};
+                convs.forEach(c => {
+                    if (!sessions[c.session_id]) sessions[c.session_id] = [];
+                    sessions[c.session_id].push(c);
+                });
+
+                container.innerHTML = `<table>
+                    <tr><th>会话ID</th><th>频道</th><th>年代</th><th>消息数</th><th>时间</th><th>操作</th></tr>
+                    ${Object.entries(sessions).map(([sid, msgs]) => {
+                        const m = msgs[0];
+                        return `<tr>
+                            <td>${sid.substring(0,12)}...</td>
+                            <td>${escapeHtml(m.channel||'-')}</td>
+                            <td>${escapeHtml(m.era||'-')}</td>
+                            <td>${msgs.length}</td>
+                            <td>${new Date(m.created_at).toLocaleString('zh-CN')}</td>
+                            <td><button class="btn btn-blue btn-sm" onclick="viewConversation('${sid}')">查看</button></td>
+                        </tr>`;
+                    }).join('')}
+                </table>`;
+            } catch(e) { container.innerHTML = `<div class="empty">加载失败: ${escapeHtml(e.message)}</div>`; }
+        }
+
+        async function viewConversation(sessionId) {
+            const msgs = await apiCall(`/customer_conversations?session_id=eq.${sessionId}&order=created_at.asc`);
+            document.getElementById('convDetail').innerHTML = msgs.map(m => `
+                <div class="msg ${m.role}">
+                    <div class="role-label">${m.role === 'user' ? '用户' : 'AI助手'} · ${new Date(m.created_at).toLocaleString('zh-CN')}</div>
+                    ${escapeHtml(m.content)}
+                </div>
+            `).join('');
+            document.getElementById('convModal').classList.add('show');
+        }
+
+        // ========== 客户需求 ==========
+        async function loadLeadStats() {
+            try {
+                const leads = await apiCall('/customer_leads?limit=1000');
+                const total = leads.length;
+                const byStatus = {}; const byType = {}; const byPriority = {};
+                leads.forEach(l => {
+                    byStatus[l.status] = (byStatus[l.status]||0) + 1;
+                    byType[l.lead_type] = (byType[l.lead_type]||0) + 1;
+                    byPriority[l.priority] = (byPriority[l.priority]||0) + 1;
+                });
+                document.getElementById('leadStats').innerHTML = `<div class="stats-grid">
+                    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">总需求</div></div>
+                    <div class="stat-card"><div class="stat-num">${byStatus['新建']||0}</div><div class="stat-label">新建</div></div>
+                    <div class="stat-card"><div class="stat-num">${byStatus['跟进中']||0}</div><div class="stat-label">跟进中</div></div>
+                    <div class="stat-card"><div class="stat-num">${byStatus['已转化']||0}</div><div class="stat-label">已转化</div></div>
+                    <div class="stat-card"><div class="stat-num">${byPriority['高']||0}</div><div class="stat-label">高优先级</div></div>
+                </div>`;
+            } catch(e) {}
+        }
+
+        async function loadLeads() {
+            const container = document.getElementById('leadTableContainer');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                let filters = ['order=created_at.desc', 'limit=50'];
+                const s = document.getElementById('leadStatusFilter').value;
+                const p = document.getElementById('leadPriorityFilter').value;
+                if (s) filters.push(`status=eq.${s}`);
+                if (p) filters.push(`priority=eq.${p}`);
+
+                const leads = await apiCall('/customer_leads?' + filters.join('&'));
+                if (!leads.length) { container.innerHTML = '<div class="empty">暂无需求记录</div>'; return; }
+
+                const priBadge = { '高':'high', '中':'mid', '低':'low' };
+                const statusBadge = { '新建':'new', '跟进中':'following', '已转化':'converted', '已关闭':'closed' };
+                container.innerHTML = `<table>
+                    <tr><th>类型</th><th>优先级</th><th>描述</th><th>状态</th><th>时间</th><th>操作</th></tr>
+                    ${leads.map(l => `
+                    <tr>
+                        <td>${escapeHtml(l.lead_type)}</td>
+                        <td><span class="badge badge-${priBadge[l.priority]||'mid'}">${escapeHtml(l.priority)}</span></td>
+                        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(l.description)}</td>
+                        <td><span class="badge badge-${statusBadge[l.status]||'new'}">${escapeHtml(l.status)}</span></td>
+                        <td>${new Date(l.created_at).toLocaleString('zh-CN')}</td>
+                        <td><button class="btn btn-blue btn-sm" onclick="editLead(${l.id})">编辑</button></td>
+                    </tr>`).join('')}
+                </table>`;
+            } catch(e) { container.innerHTML = `<div class="empty">加载失败: ${escapeHtml(e.message)}</div>`; }
+        }
+
+        async function editLead(id) {
+            const leads = await apiCall(`/customer_leads?id=eq.${id}`);
+            if (leads.length) {
+                const l = leads[0];
+                document.getElementById('leadEditId').value = l.id;
+                document.getElementById('leadEditStatus').value = l.status;
+                document.getElementById('leadEditNotes').value = l.notes || '';
+                document.getElementById('leadModal').classList.add('show');
+            }
+        }
+
+        async function saveLead() {
+            const id = document.getElementById('leadEditId').value;
+            const data = {
+                status: document.getElementById('leadEditStatus').value,
+                notes: document.getElementById('leadEditNotes').value,
+                updated_at: new Date().toISOString()
+            };
+            await apiCall(`/customer_leads?id=eq.${id}`, 'PATCH', data);
+            document.getElementById('leadModal').classList.remove('show');
+            loadLeads(); loadLeadStats();
+        }
+
+        // Init
+        fillEraSelects();
+        loadArticles();
+    </script>
+</body>
+</html>

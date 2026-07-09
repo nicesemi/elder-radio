@@ -15,6 +15,11 @@
       "src": "/api/(.*)",
       "dest": "/api/index.py"
     },
+    { "src": "/device", "dest": "/frontend/device.html" },
+    { "src": "/config", "dest": "/frontend/config.html" },
+    { "src": "/resources", "dest": "/frontend/resources.html" },
+    { "src": "/admin", "dest": "/frontend/admin.html" },
+    { "src": "/", "dest": "/frontend/index.html" },
     {
       "src": "/(.*)",
       "dest": "/frontend/$1"

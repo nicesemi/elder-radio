@@ -8,9 +8,13 @@ import os
 _supabase = None
 
 
-def init_supabase():
+def init_supabase(url: str = "", key: str = ""):
     """
     初始化 Supabase 客户端（单例模式）。
+
+    Args:
+        url: Supabase 项目 URL（可选，优先使用参数，否则从环境变量读取）
+        key: Supabase service key（可选，优先使用参数，否则从环境变量读取）
 
     Returns:
         Supabase client 实例
@@ -21,8 +25,8 @@ def init_supabase():
 
     from supabase import create_client, Client
 
-    url = os.environ.get("SUPABASE_URL", "")
-    key = os.environ.get("SUPABASE_KEY", "")
+    url = url or os.environ.get("SUPABASE_URL", "")
+    key = key or os.environ.get("SUPABASE_KEY", "")
 
     if not url or not key:
         raise RuntimeError("SUPABASE_URL 和 SUPABASE_KEY 环境变量未设置")

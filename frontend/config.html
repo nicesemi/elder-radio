@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语音商城 - 老年收音机</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text: #e8e8e8;
+            --text-secondary: #a0a0b0;
+            --gold: #c9a84c;
+            --green: #4caf50;
+            --blue: #4a90d9;
+            --font-xl: 2rem;
+            --font-lg: 1.4rem;
+            --font-md: 1.1rem;
+            --font-sm: 0.95rem;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            background: none; border: none;
+            color: var(--blue); font-size: var(--font-lg); cursor: pointer; padding: 8px;
+        }
+        .header h1 { font-size: var(--font-xl); color: var(--gold); }
+
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 0; margin-bottom: 20px;
+            background: #0a0a1a; border-radius: 14px; overflow: hidden;
+        }
+        .tab-btn {
+            flex: 1; padding: 16px; border: none; background: transparent;
+            color: var(--text-secondary); font-size: var(--font-md); font-weight: bold; cursor: pointer;
+            border-bottom: 3px solid transparent; transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--gold); border-bottom-color: var(--gold); background: rgba(201,168,76,0.1);
+        }
+
+        /* Section */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Voice Pack Card */
+        .card-list { display: flex; flex-direction: column; gap: 16px; }
+        .card {
+            background: var(--card-bg); border-radius: 16px;
+            padding: 20px; border: 2px solid #2a2a3e;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: var(--gold); }
+        .card-header {
+            display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;
+        }
+        .card-title { font-size: var(--font-lg); font-weight: bold; }
+        .card-era {
+            font-size: var(--font-sm); color: var(--text-secondary);
+            background: #0a0a1a; padding: 4px 12px; border-radius: 20px;
+        }
+        .card-desc {
+            font-size: var(--font-md); color: var(--text-secondary);
+            margin-bottom: 14px; line-height: 1.5;
+        }
+        .card-actions { display: flex; align-items: center; gap: 12px; }
+        .card-price { font-size: var(--font-lg); font-weight: bold; }
+        .card-price.free { color: var(--green); }
+        .card-price.paid { color: var(--gold); }
+
+        .btn {
+            padding: 10px 24px; border-radius: 10px; border: none;
+            font-size: var(--font-md); font-weight: bold; cursor: pointer; transition: all 0.15s;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-blue { background: var(--blue); color: #fff; }
+        .btn-green { background: var(--green); color: #fff; }
+        .btn-outline {
+            background: transparent; color: var(--blue); border: 2px solid var(--blue);
+        }
+        .btn-sm { padding: 8px 16px; font-size: var(--font-sm); }
+
+        .tag { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: var(--font-sm); }
+        .tag-preset { background: rgba(76,175,80,0.2); color: var(--green); }
+        .tag-purchased { background: rgba(74,144,217,0.2); color: var(--blue); }
+
+        .audio-player { width: 100%; margin-top: 8px; height: 36px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--green); color: #fff; padding: 14px 28px;
+            border-radius: 12px; font-size: var(--font-md); font-weight: bold;
+            z-index: 100; display: none; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .toast.show { display: block; animation: fadeInOut 2.5s forwards; }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); font-size: var(--font-md); }
+
+        .feature-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 0; border-bottom: 1px solid #2a2a3e;
+        }
+        .feature-name { font-size: var(--font-lg); font-weight: bold; }
+        .feature-desc { font-size: var(--font-sm); color: var(--text-secondary); margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-btn" style="text-decoration:none;">← 首页</a>
+            <h1>语音商城</h1>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="voice">语音包</button>
+            <button class="tab-btn" data-tab="feature">功能购买</button>
+        </div>
+
+        <div id="toast" class="toast"></div>
+
+        <!-- 语音包 -->
+        <div class="section active" id="section-voice">
+            <div class="card-list" id="voiceList"><div class="loading">加载中...</div></div>
+        </div>
+
+        <!-- 功能购买 -->
+        <div class="section" id="section-feature">
+            <div class="card">
+                <div class="feature-item">
+                    <div>
+                        <div class="feature-name">🔄 实时新闻推送</div>
+                        <div class="feature-desc">每日自动推送当天要闻播报</div>
+                    </div>
+                    <button class="btn btn-gold btn-sm">¥9.9/月</button>
+                </div>
+                <div class="feature-item">
+                    <div>
+                        <div class="feature-name">🎵 音乐点播功能</div>
+                        <div class="feature-desc">支持语音点播经典老歌</div>
+                    </div>
+                    <button class="btn btn-gold btn-sm">¥19.9/月</button>
+                </div>
+                <div class="feature-item" style="border-bottom:none;">
+                    <div>
+                        <div class="feature-name">📞 亲情通话</div>
+                        <div class="feature-desc">一键呼叫家人，视频通话</div>
+                    </div>
+                    <button class="btn btn-gold btn-sm">免费试用</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://ggzlxzillydjhcgodqbc.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable__OVyHq9MDZOb_U3xwuOjpQ_1YY0809b';
+
+        async function apiCall(endpoint, method='GET', data=null) {
+            const opts = { method, headers: { 'Content-Type':'application/json' } };
+            if (data) opts.body = JSON.stringify(data);
+            const res = await fetch(`${SUPABASE_URL}/rest/v1${endpoint}`, opts);
+            if (!res.ok) throw new Error(`API ${res.status}`);
+            return res.json();
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg; t.className = 'toast show';
+            setTimeout(() => t.className = 'toast', 2500);
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+                document.getElementById('section-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Load voice packs
+        async function loadVoicePacks() {
+            try {
+                const packs = await apiCall('/voice_packs?select=*&order=created_at.desc');
+                const list = document.getElementById('voiceList');
+                if (!packs.length) {
+                    list.innerHTML = '<div class="loading">暂无语音包</div>';
+                    return;
+                }
+                list.innerHTML = packs.map(p => `
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">${escapeHtml(p.name)}</span>
+                            <span>
+                                ${p.is_preset ? '<span class="tag tag-preset">预置</span>' : ''}
+                                ${p.is_purchased ? '<span class="tag tag-purchased">已购</span>' : ''}
+                            </span>
+                        </div>
+                        <span class="card-era">${escapeHtml(p.era)} 年代</span>
+                        <div class="card-desc">${escapeHtml(p.description || '暂无描述')}</div>
+                        ${p.preview_url ? `<audio class="audio-player" controls src="${escapeHtml(p.preview_url)}"></audio>` : ''}
+                        <div class="card-actions">
+                            <span class="card-price ${p.price === 0 ? 'free' : 'paid'}">
+                                ${p.price === 0 ? '免费' : '¥' + p.price}
+                            </span>
+                            ${p.is_purchased
+                                ? '<button class="btn btn-green" disabled>已购买</button>'
+                                : (p.price === 0
+                                    ? '<button class="btn btn-green btn-sm" onclick="purchaseFree('+p.id+')">免费领取</button>'
+                                    : '<button class="btn btn-gold btn-sm" onclick="purchase('+p.id+',\''+escapeHtml(p.name)+'\','+p.price+')">立即购买</button>')
+                            }
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('voiceList').innerHTML = '<div class="loading">加载失败，请确保已执行数据库迁移脚本</div>';
+            }
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+        }
+
+        async function purchaseFree(id) {
+            showToast('已领取！');
+            try {
+                await apiCall('/voice_packs?id=eq.' + id, 'PATCH', { is_purchased: true });
+            } catch (e) {}
+            loadVoicePacks();
+        }
+
+        function purchase(id, name, price) {
+            showToast('模拟支付：' + name + ' ¥' + price + ' —— 支付成功！');
+            try {
+                apiCall('/voice_packs?id=eq.' + id, 'PATCH', { is_purchased: true }).then(() => loadVoicePacks());
+            } catch (e) {}
+        }
+
+        loadVoicePacks();
+    </script>
+</body>
+</html>
