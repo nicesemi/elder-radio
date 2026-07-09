@@ -10,9 +10,9 @@ import json
 import uuid
 from datetime import datetime
 
-# 将 backend 目录加入路径，以便导入项目模块
-BACKEND_DIR = os.path.join(os.path.dirname(__file__), "..", "backend")
-sys.path.insert(0, BACKEND_DIR)
+# 将 _lib 目录加入路径，以便导入项目模块
+LIB_DIR = os.path.join(os.path.dirname(__file__), "_lib")
+sys.path.insert(0, LIB_DIR)
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
