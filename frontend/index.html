@@ -2,141 +2,115 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>老年智慧收音机</title>
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --bg: #1a1a2e;
-            --card-bg: #16213e;
-            --text: #e8e8e8;
-            --gold: #c9a84c;
-            --red: #e94560;
-            --green: #4caf50;
-            --blue: #4a90d9;
-            --font-xl: 2.2rem;
-            --font-lg: 1.6rem;
-            --font-md: 1.2rem;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .header {
-            text-align: center;
-            padding: 40px 20px 20px;
-        }
-        .header h1 {
-            font-size: 2.8rem;
-            color: var(--gold);
-            margin-bottom: 8px;
-        }
-        .header .subtitle {
-            font-size: var(--font-md);
-            color: #888;
-        }
-
-        .nav-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            padding: 20px;
-            max-width: 600px;
-            width: 100%;
-        }
-
-        .nav-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 32px 20px;
-            text-align: center;
-            text-decoration: none;
-            color: var(--text);
-            border: 2px solid transparent;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 14px;
-        }
-        .nav-card:hover, .nav-card:active {
-            border-color: var(--gold);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(201,168,76,0.2);
-        }
-        .nav-card .icon {
-            font-size: 3.5rem;
-        }
-        .nav-card .title {
-            font-size: var(--font-lg);
-            font-weight: bold;
-        }
-        .nav-card .desc {
-            font-size: var(--font-md);
-            color: #888;
-            line-height: 1.5;
-        }
-
-        .nav-card.card-device { border-top: 4px solid var(--red); }
-        .nav-card.card-config { border-top: 4px solid var(--gold); }
-        .nav-card.card-resources { border-top: 4px solid var(--green); }
-        .nav-card.card-admin { border-top: 4px solid var(--blue); }
-
-        .footer {
-            margin-top: auto;
-            padding: 30px 20px;
-            text-align: center;
-            color: #555;
-            font-size: 1rem;
-        }
-
-        @media (max-width: 480px) {
-            .nav-grid { gap: 16px; padding: 16px; }
-            .nav-card { padding: 24px 16px; }
-            .header h1 { font-size: 2.2rem; }
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="老年收音机">
+    <title>老年收音机</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="header">
-        <h1>老年智慧收音机</h1>
-        <p class="subtitle">关怀陪伴 · 智能服务</p>
+    <div id="app" class="app-container">
+        <div class="status-bar">
+            <span class="time-display" id="timeDisplay">--:--</span>
+            <span class="device-name">老年智能收音机</span>
+            <span class="battery-icon">🔋</span>
+        </div>
+
+        <div class="main-panel">
+            <div class="display-area">
+                <div class="channel-display" id="channelDisplay">
+                    <span class="channel-icon" id="channelIcon">📰</span>
+                    <span class="channel-name" id="channelName">新闻</span>
+                </div>
+                <div class="year-display" id="yearDisplay">
+                    <span class="year-label">年代</span>
+                    <span class="year-value" id="yearValue">1980</span>
+                    <span class="year-unit">年</span>
+                </div>
+                <div class="status-indicator" id="statusIndicator">
+                    <span class="status-text">就绪</span>
+                </div>
+            </div>
+
+            <div class="frequency-bar">
+                <div class="freq-fill" id="freqFill"></div>
+                <div class="freq-marker" style="left:12.5%">50s</div>
+                <div class="freq-marker" style="left:25%">60s</div>
+                <div class="freq-marker" style="left:37.5%">70s</div>
+                <div class="freq-marker" style="left:50%">80s</div>
+                <div class="freq-marker" style="left:62.5%">90s</div>
+                <div class="freq-marker" style="left:75%">00s</div>
+                <div class="freq-marker" style="left:87.5%">10s</div>
+            </div>
+
+            <div class="controls-area">
+                <div class="knobs-row">
+                    <div class="knob-wrapper">
+                        <div class="knob-label">调台</div>
+                        <div class="knob" id="channelKnob">
+                            <div class="knob-inner"><div class="knob-dot"></div></div>
+                        </div>
+                        <div class="knob-value" id="channelKnobValue">新闻</div>
+                    </div>
+                    <div class="knob-wrapper">
+                        <div class="knob-label">调年代</div>
+                        <div class="knob" id="yearKnob">
+                            <div class="knob-inner"><div class="knob-dot"></div></div>
+                        </div>
+                        <div class="knob-value" id="yearKnobValue">1980</div>
+                    </div>
+                </div>
+
+                <div class="knobs-row">
+                    <div class="knob-wrapper">
+                        <div class="knob-label">音量</div>
+                        <div class="knob" id="volumeKnob">
+                            <div class="knob-inner"><div class="knob-dot"></div></div>
+                        </div>
+                        <div class="knob-value" id="volumeKnobValue">50%</div>
+                    </div>
+                    <div class="knob-wrapper">
+                        <div class="knob-label">AI 对讲</div>
+                        <button class="ptt-button" id="pttButton">
+                            <span class="ptt-icon">🎙️</span>
+                            <span class="ptt-text">按住说话</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-bar">
+                <button class="action-btn play-btn" id="playBtn">
+                    <span class="btn-icon">▶</span>
+                    <span class="btn-text">收听广播</span>
+                </button>
+                <button class="action-btn stop-btn" id="stopBtn" disabled>
+                    <span class="btn-icon">■</span>
+                    <span class="btn-text">停止</span>
+                </button>
+            </div>
+
+            <div class="chat-area" id="chatArea" style="display:none;">
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input-row">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="输入问题，点发送...">
+                    <button class="chat-send-btn" id="chatSendBtn">发送</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="nav-grid">
-        <a href="/device" class="nav-card card-device">
-            <span class="icon">📻</span>
-            <span class="title">智能收音机</span>
-            <span class="desc">年代广播 · AI对讲</span>
-        </a>
-        <a href="/config" class="nav-card card-config">
-            <span class="icon">🛒</span>
-            <span class="title">语音商城</span>
-            <span class="desc">定制语音包 · 功能选购</span>
-        </a>
-        <a href="/resources" class="nav-card card-resources">
-            <span class="icon">📚</span>
-            <span class="title">年代资源库</span>
-            <span class="desc">怀旧内容 · 分类阅读</span>
-        </a>
-        <a href="/admin" class="nav-card card-admin">
-            <span class="icon">⚙️</span>
-            <span class="title">管理后台</span>
-            <span class="desc">资源审核 · 客户管理</span>
-        </a>
+    <audio id="audioPlayer" preload="none"></audio>
+
+    <div id="recordingOverlay" class="recording-overlay" style="display:none;">
+        <div class="recording-indicator">
+            <div class="recording-pulse"></div>
+            <div class="recording-text">正在聆听...</div>
+            <button class="recording-cancel" id="recordingCancel">松开取消</button>
+        </div>
     </div>
 
-    <div class="footer">
-        &copy; 2024 老年智慧收音机 · 用心陪伴每一位长者
-    </div>
+    <script src="app.js"></script>
 </body>
 </html>

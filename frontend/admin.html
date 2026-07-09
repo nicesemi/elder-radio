@@ -129,6 +129,44 @@
         .conversation-detail .msg.assistant { background: rgba(201,168,76,0.15); }
         .conversation-detail .msg .role-label { font-weight: bold; font-size: 0.75rem; margin-bottom: 4px; }
 
+        /* Browse */
+        .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+        .search-input {
+            flex: 1; padding: 14px 18px; border-radius: 12px;
+            border: 2px solid #2a2a3e; background: #0a0a1a; color: #fff;
+            font-size: var(--font-md); outline: none;
+        }
+        .search-input:focus { border-color: var(--blue); }
+        .search-btn {
+            padding: 14px 24px; border-radius: 12px; border: none;
+            background: var(--blue); color: #fff; font-size: var(--font-md); font-weight: bold; cursor: pointer;
+        }
+        .filter-section { margin-bottom: 12px; }
+        .filter-label { font-size: var(--font-md); color: var(--text-secondary); margin-bottom: 8px; font-weight: bold; }
+        .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip {
+            padding: 8px 18px; border-radius: 20px; border: 2px solid #2a2a3e;
+            background: transparent; color: var(--text-secondary); font-size: var(--font-sm);
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .chip:hover { border-color: var(--blue); }
+        .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+        .article-list { display: flex; flex-direction: column; gap: 16px; }
+        .article-card {
+            background: var(--card-bg); border-radius: 16px;
+            padding: 20px; border: 2px solid #2a2a3e;
+            cursor: pointer; transition: border-color 0.2s;
+        }
+        .article-card:hover { border-color: var(--gold); }
+        .article-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .article-title { font-size: var(--font-lg); font-weight: bold; }
+        .article-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .article-tag {
+            font-size: var(--font-sm); padding: 3px 10px; border-radius: 12px;
+            background: rgba(201,168,76,0.15); color: var(--gold);
+        }
+        .article-summary { font-size: var(--font-md); color: var(--text-secondary); line-height: 1.6; }
+
         .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
         .empty { text-align: center; padding: 40px; color: var(--text-secondary); font-size: var(--font-lg); }
 
@@ -149,13 +187,52 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-btn active" data-tab="resources">资源管理</button>
+            <button class="tab-btn active" data-tab="browse">资源浏览</button>
+            <button class="tab-btn" data-tab="resources">资源管理</button>
             <button class="tab-btn" data-tab="conversations">对话分析</button>
             <button class="tab-btn" data-tab="leads">客户需求</button>
         </div>
 
+        <!-- ===== 资源浏览 ===== -->
+        <div class="section active" id="section-browse">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="browseSearchInput" placeholder="搜索您感兴趣的内容...">
+                <button class="search-btn" id="browseSearchBtn">搜索</button>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-label">年代</div>
+                <div class="chip-row" id="browseEraChips">
+                    <button class="chip active" data-era="">全部</button>
+                    <button class="chip" data-era="1950s">1950s</button>
+                    <button class="chip" data-era="1960s">1960s</button>
+                    <button class="chip" data-era="1970s">1970s</button>
+                    <button class="chip" data-era="1980s">1980s</button>
+                    <button class="chip" data-era="1990s">1990s</button>
+                    <button class="chip" data-era="2000s">2000s</button>
+                    <button class="chip" data-era="2010s">2010s</button>
+                    <button class="chip" data-era="2020s">2020s</button>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-label">分类</div>
+                <div class="chip-row" id="browseCatChips">
+                    <button class="chip active" data-cat="">全部</button>
+                    <button class="chip" data-cat="news">新闻</button>
+                    <button class="chip" data-cat="sports">体育</button>
+                    <button class="chip" data-cat="music">音乐</button>
+                    <button class="chip" data-cat="finance">金融</button>
+                    <button class="chip" data-cat="culture">文化</button>
+                    <button class="chip" data-cat="technology">科技</button>
+                </div>
+            </div>
+
+            <div class="article-list" id="browseArticleList"><div class="loading">加载中...</div></div>
+        </div>
+
         <!-- ===== 资源管理 ===== -->
-        <div class="section active" id="section-resources">
+        <div class="section" id="section-resources">
             <div class="filter-row">
                 <select class="filter-select" id="resStatusFilter">
                     <option value="">全部状态</option>
@@ -267,6 +344,16 @@
         </div>
     </div>
 
+    <!-- Article Detail Modal -->
+    <div class="modal-overlay" id="browseModal">
+        <div class="modal">
+            <h2 class="modal-title" id="browseModalTitle" style="color:var(--gold);font-size:var(--font-xl);font-weight:bold;margin-bottom:16px;"></h2>
+            <div class="modal-content" id="browseModalContent" style="font-size:var(--font-md);line-height:1.8;margin-bottom:16px;white-space:pre-wrap;"></div>
+            <audio id="browseModalAudio" controls style="display:none;width:100%;margin-top:8px;"></audio>
+            <button class="btn btn-blue" onclick="closeBrowseModal()">关闭</button>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://ggzlxzillydjhcgodqbc.supabase.co';
         const SUPABASE_KEY = 'sb_publishable__OVyHq9MDZOb_U3xwuOjpQ_1YY0809b';
@@ -301,6 +388,7 @@
                 btn.classList.add('active');
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
                 document.getElementById('section-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'browse') loadBrowseArticles();
                 if (btn.dataset.tab === 'resources') loadArticles();
                 if (btn.dataset.tab === 'conversations') loadConversations();
                 if (btn.dataset.tab === 'leads') { loadLeads(); loadLeadStats(); }
@@ -529,9 +617,83 @@
             loadLeads(); loadLeadStats();
         }
 
+        // ========== 资源浏览 ==========
+        let browseEra = '', browseCat = '';
+
+        function closeBrowseModal() {
+            document.getElementById('browseModal').classList.remove('show');
+            document.getElementById('browseModalAudio').pause();
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const bm = document.getElementById('browseModal');
+            if (bm) bm.addEventListener('click', function(e) { if (e.target === this) closeBrowseModal(); });
+        });
+
+        function openBrowseDetail(article) {
+            document.getElementById('browseModalTitle').textContent = article.title;
+            document.getElementById('browseModalContent').textContent = article.content || '暂无详细内容';
+            const audio = document.getElementById('browseModalAudio');
+            if (article.audio_url) { audio.src = article.audio_url; audio.style.display = 'block'; }
+            else { audio.style.display = 'none'; }
+            document.getElementById('browseModal').classList.add('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Era chips
+            document.querySelectorAll('#browseEraChips .chip').forEach(c => {
+                c.addEventListener('click', () => {
+                    document.querySelectorAll('#browseEraChips .chip').forEach(x => x.classList.remove('active'));
+                    c.classList.add('active');
+                    browseEra = c.dataset.era;
+                    loadBrowseArticles();
+                });
+            });
+            // Category chips
+            document.querySelectorAll('#browseCatChips .chip').forEach(c => {
+                c.addEventListener('click', () => {
+                    document.querySelectorAll('#browseCatChips .chip').forEach(x => x.classList.remove('active'));
+                    c.classList.add('active');
+                    browseCat = c.dataset.cat;
+                    loadBrowseArticles();
+                });
+            });
+            // Search
+            document.getElementById('browseSearchBtn').addEventListener('click', loadBrowseArticles);
+            document.getElementById('browseSearchInput').addEventListener('keydown', e => {
+                if (e.key === 'Enter') loadBrowseArticles();
+            });
+        });
+
+        async function loadBrowseArticles() {
+            const list = document.getElementById('browseArticleList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            try {
+                let filters = ['status=eq.published'];
+                if (browseEra) filters.push(`era=eq.${browseEra}`);
+                if (browseCat) filters.push(`category=eq.${browseCat}`);
+                const searchText = document.getElementById('browseSearchInput').value.trim();
+                if (searchText) filters.push(`title=ilike.*${searchText}*`);
+                const query = '?' + filters.join('&') + '&order=created_at.desc&limit=50';
+                const articles = await apiCall('/resource_articles' + query);
+                if (!articles.length) { list.innerHTML = '<div class="empty">暂无相关内容</div>'; return; }
+                const catNames = { news:'新闻', sports:'体育', music:'音乐', finance:'金融', culture:'文化', technology:'科技' };
+                list.innerHTML = articles.map(a => `
+                    <div class="article-card" onclick="openBrowseDetail(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+                        <div class="article-header"><span class="article-title">${escapeHtml(a.title)}</span></div>
+                        <div class="article-meta">
+                            <span class="article-tag">${escapeHtml(a.era)}</span>
+                            <span class="article-tag">${catNames[a.category]||a.category}</span>
+                        </div>
+                        <div class="article-summary">${escapeHtml(a.summary||(a.content||'').substring(0,100))}</div>
+                    </div>
+                `).join('');
+            } catch(e) { list.innerHTML = '<div class="empty">加载失败，请确认数据库已迁移</div>'; }
+        }
+
         // Init
         fillEraSelects();
-        loadArticles();
+        loadBrowseArticles();
     </script>
 </body>
 </html>
