@@ -1,6 +1,6 @@
 /* =============================================
    singer.js — 歌手频道逻辑
-   数据源：singer_data.json
+   数据源：singer_data.json（songs_by_year 结构）
    ============================================= */
 
 (function() {
@@ -9,6 +9,24 @@
   let singerData = [];
   let currentSinger = null;
   const audioPlayer = document.getElementById('audioPlayer');
+
+  // ============ 工具函数：将 songs_by_year 扁平化 ============
+  function flattenSongs(songsByYear) {
+    const result = [];
+    if (!songsByYear) return result;
+    Object.keys(songsByYear).forEach(year => {
+      (songsByYear[year] || []).forEach(song => {
+        result.push({
+          title:   song.title,
+          album:   song.album || '',
+          year:    Number(year),
+          has_stream:   song.has_stream || false,
+          stream_url:   song.stream_url || ''
+        });
+      });
+    });
+    return result;
+  }
 
   // ============ 渲染歌手列表 ============
   function renderSingerList() {
@@ -19,23 +37,29 @@
     }
 
     grid.innerHTML = singerData.map(s => {
-      const imgClass = s.name_en ? s.name_en.toLowerCase().replace(/[^a-z]/g, '') : '';
-      const streamCount = s.songs.filter(sg => sg.has_stream).length;
-      const aiCount = s.songs.filter(sg => !sg.has_stream).length;
+      const songs = flattenSongs(s.songs_by_year);
+      const streamCount = songs.filter(sg => sg.has_stream).length;
+      const aiCount = songs.length - streamCount;
+
+      // 计算活跃年份范围
+      const years = songs.map(sg => sg.year).filter(y => y);
+      const minYear = years.length ? Math.min(...years) : '';
+      const maxYear = years.length ? Math.max(...years) : '';
+      const activeStr = minYear && maxYear ? `${minYear}-${maxYear}` : '';
 
       return `<div class="singer-hero-card" onclick="showSingerDetail('${s.name}')">
-        <div class="singer-hero-img ${imgClass}">
+        <div class="singer-hero-img">
           <span style="font-size:4rem;position:relative;z-index:1;">🎸</span>
         </div>
         <div class="singer-hero-body">
           <h3>${s.name}</h3>
-          <div class="singer-ename">${s.name_en} · ${s.active_years}</div>
+          <div class="singer-ename">${activeStr}</div>
           <div class="singer-meta">
-            <span class="badge badge-arts">${s.genre}</span>
+            <span class="badge badge-arts">${s.name_cn || ''}</span>
           </div>
-          <div class="singer-desc">${s.description}</div>
+          <div class="singer-desc">${s.summary || ''}</div>
           <div class="singer-stats">
-            <span>共 <strong>${s.songs.length}</strong> 首</span>
+            <span>共 <strong>${songs.length}</strong> 首</span>
             <span>原版 <strong>${streamCount}</strong></span>
             <span>AI翻唱 <strong>${aiCount}</strong></span>
           </div>
@@ -52,7 +76,7 @@
     document.getElementById('detailPage').classList.add('active');
 
     document.getElementById('detailName').textContent = currentSinger.name;
-    document.getElementById('detailDesc').textContent = currentSinger.description;
+    document.getElementById('detailDesc').textContent = currentSinger.summary || '';
     document.getElementById('detailMembers').textContent =
       '成员：' + (currentSinger.members || []).join(' / ');
 
@@ -69,22 +93,16 @@
 
   // ============ 按年份渲染歌曲 ============
   function renderSongGroups() {
-    if (!currentSinger || !currentSinger.songs) return;
+    if (!currentSinger || !currentSinger.songs_by_year) return;
 
     const container = document.getElementById('songGroups');
-    // 按年份分组
-    const groups = {};
-    currentSinger.songs.forEach(song => {
-      const y = song.year;
-      if (!groups[y]) groups[y] = [];
-      groups[y].push(song);
-    });
-
-    const years = Object.keys(groups).sort((a,b) => Number(a) - Number(b));
+    const years = Object.keys(currentSinger.songs_by_year).sort((a, b) => Number(a) - Number(b));
     let html = '';
 
     years.forEach(year => {
-      const songs = groups[year];
+      const songs = currentSinger.songs_by_year[year] || [];
+      if (songs.length === 0) return;
+
       html += `<div class="song-year-group">
         <div class="song-year-title">
           ${year} 年 <span class="song-count">${songs.length} 首</span>
@@ -93,7 +111,7 @@
 
       songs.forEach((song, idx) => {
         const hasStream = song.has_stream && song.stream_url;
-        html += `<div class="song-item" data-song='${JSON.stringify(song).replace(/'/g, "&#39;")}'>
+        html += `<div class="song-item">
           <div class="song-info">
             <div class="song-index">${idx + 1}</div>
             <div>
@@ -105,7 +123,7 @@
           <div class="song-actions">
             ${hasStream
               ? `<button class="play-btn" onclick="event.stopPropagation(); playSong('${song.stream_url}', '${song.title}')">▶ 播放</button>`
-              : `<button class="ai-btn" id="aiBtn_${year}_${idx}" onclick="event.stopPropagation(); generateCover(${year}, ${idx}, this)">🎙 AI翻唱</button>`
+              : `<button class="ai-btn" id="aiBtn_${year}_${idx}" onclick="event.stopPropagation(); generateCover('${year}', ${idx}, this)">🎙 AI翻唱</button>`
             }
           </div>
         </div>`;
@@ -114,11 +132,15 @@
       html += `</div></div>`;
     });
 
-    container.innerHTML = html;
+    container.innerHTML = html || '<div class="empty-state"><p>暂无歌曲数据</p></div>';
   }
 
   // ============ 播放 ============
   window.playSong = function(url, title) {
+    if (!url) {
+      showToast('暂无播放源');
+      return;
+    }
     audioPlayer.src = url;
     audioPlayer.play().catch(e => {
       console.log('播放失败:', e.message);
@@ -129,8 +151,8 @@
 
   // ============ AI 翻唱生成 ============
   window.generateCover = function(year, idx, btn) {
-    if (!currentSinger) return;
-    const songs = currentSinger.songs.filter(s => s.year === year);
+    if (!currentSinger || !currentSinger.songs_by_year) return;
+    const songs = currentSinger.songs_by_year[year] || [];
     const song = songs[idx];
     if (!song) return;
 
@@ -144,13 +166,12 @@
       body: JSON.stringify({
         singer: currentSinger.name,
         title: song.title,
-        year: song.year,
+        year: Number(year),
         voice: 'Agnes',
-        style: currentSinger.genre || '流行'
+        style: '流行'
       })
     }).then(r => r.json()).then(data => {
       if (data.status === 'generating') {
-        // 轮询状态
         pollGeneration(data.job_id, btn, song);
       } else if (data.status === 'completed' && data.audio_url) {
         btn.textContent = '▶ 播放';
