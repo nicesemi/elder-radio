@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/config", "destination": "/frontend/config.html" },
+    { "source": "/admin", "destination": "/frontend/admin.html" },
+    { "source": "/radio", "destination": "/frontend/radio.html" },
+    { "source": "/", "destination": "/frontend/index.html" },
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/frontend/$1" }
+  ]
+}

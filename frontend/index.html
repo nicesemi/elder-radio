@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyClaw.Tech - 怀旧收音机电台资源</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .filter-section { margin-bottom: 20px; }
+    .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .filter-label { font-size: 0.8rem; color: var(--text-muted); margin-right: 4px; }
+    .province-select { min-width: 160px; }
+    .header-actions { display: flex; gap: 10px; }
+    .result-count { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; }
+    .source-icon { font-size: 0.75rem; color: var(--text-muted); }
+    .loading-spin {
+      text-align: center; padding: 40px; color: var(--text-muted);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .era-badge {
+      font-size: 0.68rem; padding: 2px 8px; border-radius: 10px;
+      background: var(--bg-tertiary); color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1>📻 KeyClaw.Tech</h1>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">怀旧收音机 · 全国电台资源浏览</p>
+    </div>
+    <div class="header-actions">
+      <a href="/admin" class="btn btn-sm">后台管理</a>
+      <a href="/radio" class="btn btn-accent btn-sm">打开收音机</a>
+    </div>
+  </div>
+
+  <!-- Stats Banner -->
+  <div class="stats-banner" id="statsBanner">
+    <div class="stat-item"><div class="stat-value" id="statTotal">163</div><div class="stat-label">总电台数</div></div>
+    <div class="stat-item"><div class="stat-value" id="statLive">153</div><div class="stat-label">直播流</div></div>
+    <div class="stat-item"><div class="stat-value" id="statArchive">10</div><div class="stat-label">存档数</div></div>
+    <div class="stat-item"><div class="stat-value" id="statProvinces">34</div><div class="stat-label">覆盖省份</div></div>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="search-wrapper">
+    <input type="text" class="search-input" id="searchInput" placeholder="输入电台名称搜索...">
+  </div>
+
+  <div class="filter-section">
+    <div class="filter-row">
+      <span class="filter-label">分类：</span>
+      <div class="chip-group" id="categoryChips">
+        <span class="chip active" data-cat="全部">全部</span>
+        <span class="chip" data-cat="综合">综合</span>
+        <span class="chip" data-cat="新闻">新闻</span>
+        <span class="chip" data-cat="音乐">音乐</span>
+        <span class="chip" data-cat="交通">交通</span>
+        <span class="chip" data-cat="文艺">文艺</span>
+        <span class="chip" data-cat="经济">经济</span>
+        <span class="chip" data-cat="生活">生活</span>
+        <span class="chip" data-cat="农村">农村</span>
+        <span class="chip" data-cat="民族">民族</span>
+        <span class="chip" data-cat="国际">国际</span>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">年代：</span>
+      <div class="chip-group" id="eraChips">
+        <span class="chip active" data-era="全部">全部</span>
+        <span class="chip" data-era="1949-1959">1949-1959</span>
+        <span class="chip" data-era="1960-1969">1960-1969</span>
+        <span class="chip" data-era="1970-1979">1970-1979</span>
+        <span class="chip" data-era="1980-1989">1980-1989</span>
+        <span class="chip" data-era="1990-1999">1990-1999</span>
+        <span class="chip" data-era="2000-2009">2000-2009</span>
+        <span class="chip" data-era="2010-2019">2010-2019</span>
+        <span class="chip" data-era="2020-2026">2020-2026</span>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">省份：</span>
+      <select class="province-select" id="provinceSelect">
+        <option value="全部">全部省份</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="result-count" id="resultCount"></div>
+
+  <!-- Station Grid -->
+  <div class="station-grid" id="stationGrid">
+    <div class="loading-spin">加载电台数据中...</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+(function() {
+  let allStations = [];
+  let currentCategory = '全部';
+  let currentEra = '全部';
+  let currentProvince = '全部';
+
+  const categoryMap = {
+    '新闻':'badge-news','音乐':'badge-music','交通':'badge-traffic',
+    '文艺':'badge-arts','经济':'badge-economy','生活':'badge-life',
+    '农村':'badge-rural','民族':'badge-ethnic','国际':'badge-intl','综合':'badge-general'
+  };
+
+  function getCatClass(cat) { return categoryMap[cat] || 'badge-general'; }
+
+  function renderStats(s) {
+    document.getElementById('statTotal').textContent = s.length;
+    document.getElementById('statLive').textContent = s.filter(x => x.type === 'live').length;
+    document.getElementById('statArchive').textContent = s.filter(x => x.type === 'archive').length;
+    const provinces = new Set(s.map(x => x.province));
+    document.getElementById('statProvinces').textContent = provinces.size;
+  }
+
+  function populateProvinceSelect(stations) {
+    const provinces = [...new Set(stations.map(s => s.province))].sort();
+    const sel = document.getElementById('provinceSelect');
+    sel.innerHTML = '<option value="全部">全部省份</option>';
+    provinces.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; sel.appendChild(o); });
+  }
+
+  function renderCards(stations) {
+    const grid = document.getElementById('stationGrid');
+    document.getElementById('resultCount').textContent = `共 ${stations.length} 个电台`;
+    if (stations.length === 0) {
+      grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>没有匹配的电台</p></div>';
+      return;
+    }
+    grid.innerHTML = stations.map(s => {
+      const catClass = getCatClass(s.category);
+      const typeBadge = s.type === 'live'
+        ? '<span class="badge badge-live">直播</span>'
+        : '<span class="badge badge-archive">存档</span>';
+      const formatTag = s.format ? `<span class="tag tag-${s.format}">${s.format}</span>` : '';
+      const actionBtn = s.type === 'live'
+        ? `<button class="listen-btn" onclick="event.stopPropagation(); window.location.href='/radio?station=${encodeURIComponent(s.id)}'">收听</button>`
+        : `<button class="archive-btn" onclick="event.stopPropagation(); window.open('${s.archive_url || '#'}', '_blank')">存档</button>`;
+      return `<div class="card station-card" onclick="window.location.href='${s.type === 'live' ? '/radio?station=' + encodeURIComponent(s.id) : (s.archive_url || '#')}'" style="cursor:pointer;">
+        <div class="card-header">
+          <span class="station-name">${s.name}</span>
+          ${typeBadge}
+        </div>
+        <div class="station-meta">
+          <span class="badge ${catClass}">${s.category}</span>
+          <span class="station-province">${s.province}</span>
+          <span class="era-badge">${s.era || ''}</span>
+        </div>
+        <div class="card-footer">
+          <div class="tags">
+            <span class="source-icon">${s.source}</span>
+            ${formatTag}
+          </div>
+          ${actionBtn}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    let filtered = allStations;
+    if (currentCategory !== '全部') filtered = filtered.filter(s => s.category === currentCategory);
+    if (currentEra !== '全部') filtered = filtered.filter(s => s.era === currentEra);
+    if (currentProvince !== '全部') filtered = filtered.filter(s => s.province === currentProvince);
+    if (search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search));
+    renderCards(filtered);
+  }
+
+  // Event listeners
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+  document.getElementById('categoryChips').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('#categoryChips .chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    currentCategory = e.target.dataset.cat;
+    applyFilters();
+  });
+
+  document.getElementById('eraChips').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('#eraChips .chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    currentEra = e.target.dataset.era;
+    applyFilters();
+  });
+
+  document.getElementById('provinceSelect').addEventListener('change', e => {
+    currentProvince = e.target.value;
+    applyFilters();
+  });
+
+  // Load data
+  fetch('/radio_sources.json')
+    .then(r => r.json())
+    .then(data => {
+      allStations = data.stations;
+      renderStats(allStations);
+      populateProvinceSelect(allStations);
+      renderCards(allStations);
+    })
+    .catch(err => {
+      document.getElementById('stationGrid').innerHTML =
+        `<div class="empty-state"><div class="empty-icon">❌</div><p>加载电台数据失败：${err.message}</p></div>`;
+    });
+})();
+</script>
+</body>
+</html>

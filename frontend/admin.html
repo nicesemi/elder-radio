@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyClaw.Tech - 后台管理</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .tabs { margin-bottom: 24px; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; }
+    .stat-card .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .stat-card .stat-title { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+    .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; color: var(--text-primary); }
+    .table-wrapper { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font-size: 0.82rem; }
+    .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--accent); }
+    .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .color-dot.green { background: var(--success); }
+    .color-dot.gray { background: var(--text-muted); }
+    .action-row { display: flex; gap: 8px; margin-bottom: 16px; }
+    .health-bar { width: 60px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
+    .health-fill { height: 100%; border-radius: 3px; }
+    .health-good { background: var(--success); }
+    .health-warn { background: var(--warning); }
+    .health-bad { background: var(--danger); }
+    .tag-status { padding: 3px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+    .tag-active { background: #2ecc7122; color: #2ecc71; }
+    .tag-expired { background: #e74c3c22; color: #e74c3c; }
+    .tag-revoked { background: #f39c1222; color: #f39c12; }
+    .tag-basic { background: #3498db22; color: #3498db; }
+    .tag-pro { background: #e9456022; color: #e94560; }
+    .tag-premium { background: #ff6b8122; color: #ff6b81; }
+    .ai-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .ai-mini-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="admin-container">
+  <div class="page-header">
+    <div>
+      <h1>⚙️ 后台管理</h1>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">终端设备 · 授权管理 · 付费统计 · 数据分析</p>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn btn-sm">返回首页</a>
+      <a href="/config" class="btn btn-sm">语音商城</a>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="mainTabs">
+    <button class="tab-btn active" data-tab="dashboard">仪表板</button>
+    <button class="tab-btn" data-tab="resources">电台节目源</button>
+    <button class="tab-btn" data-tab="devices">终端设备</button>
+    <button class="tab-btn" data-tab="licenses">授权管理</button>
+    <button class="tab-btn" data-tab="payments">付费统计</button>
+    <button class="tab-btn" data-tab="conversations">对话分析</button>
+  </div>
+
+  <!-- Dashboard Panel -->
+  <div class="tab-panel active" id="panel-dashboard">
+    <div class="stats-grid" id="dashStats">
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总电台数</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总设备数</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">在线设备</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">活跃授权</div></div>
+    </div>
+
+    <div class="section-title">AI 使用统计</div>
+    <div class="ai-mini-grid" id="aiStats">
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">今日调用次数</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">本月调用次数</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">平均时长（秒）</div></div>
+    </div>
+  </div>
+
+  <!-- Resources Panel -->
+  <div class="tab-panel" id="panel-resources">
+    <div class="action-row">
+      <button class="btn btn-accent btn-sm" id="btnExportJSON">导出 JSON</button>
+      <button class="btn btn-sm" id="btnRefreshRes">刷新</button>
+      <span class="text-muted" style="font-size:0.8rem;margin-left:8px;" id="resCount"></span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>ID</th><th>名称</th><th>省份</th><th>分类</th><th>年代</th><th>类型</th><th>来源</th><th>格式</th></tr></thead>
+        <tbody id="resTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Devices Panel -->
+  <div class="tab-panel" id="panel-devices">
+    <div class="filter-bar">
+      <select id="deviceStatusFilter">
+        <option value="all">全部状态</option>
+        <option value="online">在线</option>
+        <option value="offline">离线</option>
+      </select>
+      <input type="text" id="deviceSearch" placeholder="搜索设备名称...">
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>设备ID</th><th>名称</th><th>位置</th><th>在线状态</th><th>健康度</th><th>最后上线</th><th>版本</th></tr></thead>
+        <tbody id="devicesTableBody"><tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/devices 获取数据</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Licenses Panel -->
+  <div class="tab-panel" id="panel-licenses">
+    <div class="filter-bar">
+      <select id="licenseStatusFilter">
+        <option value="all">全部状态</option>
+        <option value="active">活跃</option>
+        <option value="expired">已过期</option>
+        <option value="revoked">已撤销</option>
+      </select>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>设备ID</th><th>授权码</th><th>套餐</th><th>状态</th><th>到期时间</th></tr></thead>
+        <tbody id="licensesTableBody"><tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/licenses 获取数据</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Payments Panel -->
+  <div class="tab-panel" id="panel-payments">
+    <div class="stats-grid" id="payStats">
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总收入</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">本月收入</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总订单</div></div>
+      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">付费用户</div></div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>设备ID</th><th>订单类型</th><th>金额</th><th>支付方式</th><th>状态</th><th>时间</th></tr></thead>
+        <tbody id="ordersTableBody"><tr><td colspan="6" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/orders 获取数据</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Conversations Panel -->
+  <div class="tab-panel" id="panel-conversations">
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>时间</th><th>设备ID</th><th>用户消息</th><th>AI 回复</th><th>时长</th></tr></thead>
+        <tbody id="convTableBody"><tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/conversations 获取数据</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>

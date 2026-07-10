@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KeyClaw.Tech - 收音机配置</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .config-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    .config-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 20px; }
+    .config-section h2 { font-size: 1.2rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .voice-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+    .voice-card { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; transition: all var(--transition); }
+    .voice-card:hover { border-color: var(--accent); }
+    .voice-card.premium { border-color: rgba(255,107,129,0.3); }
+    .voice-card .vc-name { font-weight: 600; margin-bottom: 4px; }
+    .voice-card .vc-desc { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 8px; }
+    .voice-card .vc-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .voice-card .vc-price { font-weight: 700; color: var(--accent); }
+    .voice-card .vc-free { color: var(--success); font-weight: 600; }
+    .voice-card .vc-actions { display: flex; gap: 6px; }
+    .qrcode-area { text-align: center; padding: 20px; }
+    .qrcode-placeholder { width: 160px; height: 160px; background: var(--bg-primary); border: 2px dashed var(--border); border-radius: var(--radius-md); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.85rem; }
+    .custom-controls { display: flex; flex-direction: column; gap: 16px; }
+    .custom-row { display: flex; align-items: center; gap: 16px; }
+    .custom-row label { min-width: 80px; font-size: 0.85rem; color: var(--text-secondary); }
+    .custom-row .slider-value { min-width: 40px; text-align: right; font-size: 0.85rem; color: var(--accent); font-weight: 600; }
+    .preview-area { margin-top: 16px; text-align: center; }
+    .pay-modal-content { text-align: center; }
+    .pay-qrcode { width: 200px; height: 200px; background: #fff; border-radius: var(--radius-md); margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; color: #333; font-size: 0.9rem; }
+    .bind-steps { margin-top: 16px; font-size: 0.85rem; color: var(--text-secondary); }
+    .bind-steps ol { padding-left: 20px; }
+    .bind-steps li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+<div class="config-container">
+  <div class="page-header">
+    <div>
+      <h1>🎙️ 收音机配置</h1>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">语音包定制 · 设备绑定 · 扫码购买</p>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn btn-sm">返回首页</a>
+      <a href="/radio" class="btn btn-sm">打开收音机</a>
+    </div>
+  </div>
+
+  <!-- My Device -->
+  <div class="config-section">
+    <h2>📱 我的设备</h2>
+    <div class="qrcode-area" id="qrcodeArea">
+      <div class="qrcode-placeholder" id="qrcodeDisplay">
+        <span>加载中...</span>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-secondary);">扫描二维码绑定设备</p>
+      <div class="bind-steps">
+        <ol>
+          <li>使用收音机设备扫描上方二维码</li>
+          <li>设备自动完成绑定并获取授权</li>
+          <li>绑定后即可享受语音包、AI 对讲等服务</li>
+        </ol>
+      </div>
+      <button class="btn btn-sm mt-16" id="btnRefreshQR">刷新二维码</button>
+    </div>
+  </div>
+
+  <!-- Voice Packs -->
+  <div class="config-section">
+    <h2>🎤 语音包商城</h2>
+    <div class="voice-grid" id="voiceGrid">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- Voice Customization -->
+  <div class="config-section">
+    <h2>🎛️ 语音包定制</h2>
+    <div class="custom-controls">
+      <div class="custom-row">
+        <label>音色选择</label>
+        <select id="customVoice" style="flex:1;">
+          <option value="">加载中...</option>
+        </select>
+      </div>
+      <div class="custom-row">
+        <label>语速</label>
+        <input type="range" id="customSpeed" min="50" max="200" value="100" style="flex:1;">
+        <span class="slider-value" id="speedValue">1.0x</span>
+      </div>
+      <div class="custom-row">
+        <label>语调</label>
+        <input type="range" id="customPitch" min="-10" max="10" value="0" style="flex:1;">
+        <span class="slider-value" id="pitchValue">0</span>
+      </div>
+    </div>
+    <div class="preview-area">
+      <button class="btn btn-accent" id="btnPreview">试听合成</button>
+      <span style="margin-left:12px;font-size:0.85rem;color:var(--text-muted);">预览效果</span>
+    </div>
+    <div class="preview-area mt-16">
+      <button class="btn btn-accent" id="btnBuyCustom" style="padding:12px 40px;font-size:1rem;">
+        购买此语音包 — ¥<span id="customPrice">9.9</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="config.js"></script>
+</body>
+</html>
