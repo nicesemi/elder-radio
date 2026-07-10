@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五月天收音机 — Mayday Radio</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+    .radio-page {
+      display: flex; justify-content: center; align-items: center;
+      min-height: calc(100vh - 52px);
+      background: radial-gradient(ellipse at 50% 30%, #3E1F0A 0%, #1A0A02 70%);
+      padding: 20px; user-select: none;
+    }
+    .radio-shell {
+      position: relative; width: 860px; height: 480px;
+      background: linear-gradient(180deg, #8B5E3C 0%, #6B3A1F 5%, #4A2512 25%, #6B3A1F 50%, #4A2512 75%, #2D1508 100%);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 2px 8px rgba(255,140,0,0.05), inset 0 -2px 4px rgba(0,0,0,0.4);
+      overflow: hidden; display: flex;
+    }
+    .radio-shell::before {
+      content:''; position:absolute; inset:0; border-radius:18px;
+      background: repeating-linear-gradient(2deg, transparent, transparent 3px, rgba(255,140,0,0.03) 3px, rgba(255,140,0,0.03) 4px);
+      pointer-events:none; z-index:1;
+    }
+    .radio-feet { position:absolute; bottom:-4px; z-index:3; width:100%; pointer-events:none; }
+    .radio-feet .foot {
+      position:absolute; width:14px; height:10px;
+      background: radial-gradient(ellipse at 50% 30%, #FF8C00, #8B4513);
+      border-radius:50%; box-shadow:0 2px 3px rgba(0,0,0,0.5);
+    }
+    .radio-feet .foot:nth-child(1){ left:30px; }
+    .radio-feet .foot:nth-child(2){ right:30px; }
+    .radio-feet .foot:nth-child(3){ left:50%; transform:translateX(-50%); }
+
+    .radio-left {
+      position:relative; z-index:2; width:52%;
+      display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    .speaker-frame {
+      width:100%; height:92%; background:#2D1508; border-radius:10px;
+      border:2px solid #1A0A02; padding:10px;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .speaker-grille {
+      width:100%; height:100%; background-color:#FFF3E0;
+      background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,140,0,0.12) 3px, rgba(255,140,0,0.12) 6px),
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,140,0,0.12) 3px, rgba(255,140,0,0.12) 6px);
+      border-radius:6px; position:relative; overflow:hidden;
+    }
+    .speaker-shadow {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:160px; height:160px; border-radius:50%;
+      background: radial-gradient(circle, rgba(255,140,0,0.15) 0%, rgba(255,140,0,0.08) 35%, rgba(0,0,0,0.02) 60%, transparent 70%);
+      pointer-events:none;
+    }
+    .speaker-info-overlay {
+      position: absolute; bottom: 10px; left: 0; right: 0;
+      text-align: center; z-index: 5; pointer-events: none;
+    }
+    .speaker-info-overlay .now-playing {
+      font-size: 0.75rem; color: #FF8C00;
+      background: rgba(0,0,0,0.5); display: inline-block;
+      padding: 4px 12px; border-radius: 10px;
+    }
+    /* 五月天标志 */
+    .mayday-badge {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      z-index: 6; pointer-events: none;
+      font-size: 28px; font-weight: 900; letter-spacing: 6px;
+      color: #FF8C00; text-shadow: 0 0 20px rgba(255,140,0,0.5);
+      font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+    }
+    /* 胡萝卜装饰 */
+    .carrot-decor {
+      position:absolute; width:30px; height:60px; z-index:4; pointer-events:none;
+      background: linear-gradient(180deg, #4CAF50 0%, #388E3C 15%, transparent 15%),
+                  linear-gradient(180deg, #FF8C00 20%, #E65100 80%, #FF8C00 100%);
+      border-radius: 50% 50% 10% 10%;
+      opacity:0.6;
+    }
+    .carrot-decor.left { left:5px; top:40%; transform:rotate(-15deg); }
+    .carrot-decor.right { right:5px; top:40%; transform:rotate(15deg); }
+
+    .radio-right {
+      position:relative; z-index:2; width:48%;
+      background: linear-gradient(180deg, #1a1a1a 0%, #111 50%, #0a0a0a 100%);
+      display:flex; flex-direction:column; padding:10px 14px 8px; gap:0;
+    }
+
+    .dial-panel {
+      position:relative; background:#0d0d0d; border:1px solid #2a2a2a;
+      border-radius:6px; padding:8px 10px; margin-bottom:4px; height:50px; overflow:hidden;
+    }
+    .dial-fm-label {
+      position:absolute; top:4px; left:10px;
+      font-family:'Courier New',monospace; font-size:10px; font-weight:bold;
+      color:#FF8C00; display:flex; align-items:center; gap:5px; z-index:2;
+    }
+    .led-orange { width:7px; height:7px; border-radius:50%; background:#FF8C00; box-shadow:0 0 6px #FF8C00; }
+    .dial-scale-line {
+      position:absolute; top:18px; left:10px; right:10px; height:1px;
+      background: linear-gradient(90deg, transparent 0%, #555 10%, #FF8C00 50%, #555 90%, transparent 100%);
+    }
+    .dial-ticks {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      height:100%; padding:24px 2px 0; position:relative; z-index:1;
+    }
+    .dial-tick {
+      display:flex; flex-direction:column; align-items:center;
+      min-width:0; flex:1; cursor:pointer; transition:opacity 0.2s;
+    }
+    .dial-tick .tick-line { width:1px; height:8px; background:#444; margin-bottom:2px; }
+    .dial-tick.current .tick-line { height:14px; background:#FF8C00; width:2px; }
+    .dial-tick .tick-name {
+      font-size:7.5px; color:#555; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; max-width:50px; text-align:center;
+    }
+    .dial-tick.current .tick-name { color:#FFB300; font-size:9px; font-weight:bold; }
+    .dial-tick:hover .tick-name { color:#999; }
+
+    .nixie-area { text-align:center; margin-bottom:4px; }
+    .nixie-tube {
+      display:inline-block; background:#0a0a0a; border:2px solid #1a1a1a;
+      border-radius:6px; padding:4px 16px;
+      font-family:'Orbitron','Courier New',monospace; font-size:38px; font-weight:700;
+      color:#FF8C00; text-shadow:0 0 12px #FF8C00, 0 0 25px rgba(255,140,0,0.4);
+      letter-spacing:8px; box-shadow:inset 0 2px 8px rgba(0,0,0,0.8); line-height:1;
+    }
+    .nixie-label { font-size:9px; color:#555; letter-spacing:2px; margin-top:1px; }
+
+    .knob-area {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      flex:1; padding:0 4px; position:relative;
+    }
+    .knob-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .knob-group .knob-label { font-size:9px; color:#777; letter-spacing:1px; }
+    .knob-base {
+      border-radius:50%; cursor:grab; position:relative;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .knob-base:active { cursor:grabbing; }
+    .knob-base .knob-indicator {
+      position:absolute; top:4px; left:50%; transform:translateX(-50%);
+      width:2px; height:25%; background:#FF8C00; border-radius:1px;
+      box-shadow:0 0 3px rgba(255,140,0,0.5);
+    }
+    .knob-tuning {
+      width:64px; height:64px;
+      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 50%, #BF360C 80%, #7F2600);
+      border:3px solid #7F2600;
+      box-shadow:0 4px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
+    }
+    .knob-tuning::after {
+      content:''; position:absolute; inset:8px; border-radius:50%;
+      border:1px solid rgba(0,0,0,0.3); pointer-events:none;
+    }
+    .knob-era {
+      width:52px; height:52px;
+      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 60%, #BF360C);
+      border:2px solid #BF360C; box-shadow:0 3px 8px rgba(0,0,0,0.5);
+    }
+    .knob-volume {
+      width:40px; height:40px;
+      background: radial-gradient(circle at 40% 35%, #6a6a6a, #2a2a2a);
+      border:2px solid #3a3a3a; box-shadow:0 2px 6px rgba(0,0,0,0.5);
+    }
+    /* 对讲按钮 */
+    .walkie-btn {
+      width:48px; height:48px; border-radius:50%;
+      background: radial-gradient(circle at 40% 35%, #4CAF50, #2E7D32 80%);
+      border:3px solid #1B5E20; box-shadow:0 3px 10px rgba(0,0,0,0.5);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:18px; color:#fff; transition:all 0.2s;
+    }
+    .walkie-btn:hover { box-shadow:0 0 16px rgba(76,175,80,0.5); }
+    .walkie-btn.active {
+      background: radial-gradient(circle at 40% 35%, #66BB6A, #388E3C 80%);
+      box-shadow:0 0 24px rgba(76,175,80,0.7);
+    }
+
+    .radio-status {
+      position:absolute; top:6px; right:10px; z-index:3;
+      display:flex; align-items:center; gap:6px; font-size:9px; color:#888;
+    }
+    .era-scroll {
+      position: absolute; bottom: 2px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px; color: #FF8C00; z-index: 3;
+      white-space: nowrap; pointer-events: none;
+      background: rgba(0,0,0,0.4); padding: 2px 10px;
+      border-radius: 8px; max-width: 90%; overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 对讲机弹窗 */
+    .walkie-overlay {
+      display:none; position:fixed; inset:0; z-index:2000;
+      background:rgba(0,0,0,0.75); justify-content:center; align-items:center;
+    }
+    .walkie-overlay.show { display:flex; }
+    .walkie-panel {
+      background:linear-gradient(180deg, #1B3A1B 0%, #0D1F0D 100%);
+      border:2px solid #4CAF50; border-radius:16px; padding:24px;
+      width:360px; max-width:90vw; max-height:80vh; overflow-y:auto;
+      box-shadow:0 8px 40px rgba(76,175,80,0.3);
+    }
+    .walkie-panel h3 {
+      text-align:center; color:#4CAF50; font-size:18px; margin:0 0 16px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .walkie-section {
+      background:rgba(0,0,0,0.3); border-radius:10px; padding:16px; margin-bottom:12px;
+      border:1px solid rgba(76,175,80,0.2);
+    }
+    .walkie-section h4 { color:#66BB6A; font-size:13px; margin:0 0 10px; }
+    .walkie-section p { color:#aaa; font-size:11px; margin:6px 0; line-height:1.5; }
+    .walkie-input {
+      width:100%; padding:8px 12px; border-radius:6px; border:1px solid #4CAF50;
+      background:#0a0a0a; color:#4CAF50; font-size:12px; box-sizing:border-box;
+      font-family:'Courier New',monospace; margin-bottom:8px;
+    }
+    .walkie-input::placeholder { color:#444; }
+    .walkie-btn-green {
+      width:100%; padding:10px; border-radius:8px; border:none;
+      background:linear-gradient(135deg, #4CAF50, #2E7D32);
+      color:#fff; font-size:13px; font-weight:bold; cursor:pointer;
+      margin-top:8px; transition:all 0.2s;
+    }
+    .walkie-btn-green:hover { box-shadow:0 0 12px rgba(76,175,80,0.4); }
+    .walkie-btn-green:disabled { opacity:0.4; cursor:not-allowed; }
+    .walkie-close {
+      display:block; margin:12px auto 0; padding:8px 24px; border-radius:6px;
+      border:1px solid #555; background:transparent; color:#888; cursor:pointer;
+      font-size:12px;
+    }
+    .walkie-close:hover { color:#fff; border-color:#fff; }
+    .qr-placeholder {
+      width:120px; height:120px; margin:10px auto; background:#fff; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:10px; color:#333; text-align:center; line-height:1.4;
+    }
+    .group-list { max-height:150px; overflow-y:auto; }
+    .group-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:8px 10px; margin:4px 0; background:rgba(76,175,80,0.1);
+      border-radius:6px; font-size:11px; color:#ccc;
+    }
+    .group-item .join-btn {
+      padding:3px 10px; border-radius:4px; background:#4CAF50;
+      color:#fff; border:none; cursor:pointer; font-size:10px;
+    }
+
+    .toast {
+      position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+      background:#4CAF50; color:#fff; padding:10px 24px; border-radius:20px;
+      font-size:13px; z-index:3000; opacity:0; transition:opacity 0.3s;
+      pointer-events:none;
+    }
+    .toast.show { opacity:1; }
+
+    #audioPlayer { display:none; }
+
+    @media (max-width:860px) {
+      .radio-shell { width:100%; max-width:860px; height:auto; min-height:400px; flex-direction:column; }
+      .radio-left { width:100%; height:170px; padding:10px; }
+      .radio-right { width:100%; }
+      .knob-tuning { width:52px; height:52px; }
+      .knob-era { width:42px; height:42px; }
+      .knob-volume { width:34px; height:34px; }
+      .walkie-btn { width:40px; height:40px; font-size:16px; }
+      .nixie-tube { font-size:30px; padding:3px 12px; letter-spacing:6px; }
+      .mayday-badge { font-size:22px; letter-spacing:4px; }
+    }
+  </style>
+</head>
+<body class="radio-page has-nav">
+
+<nav class="top-nav">
+  <a href="/" class="top-nav-brand">elder-radio</a>
+  <ul class="top-nav-links">
+    <li><a href="/">首页</a></li>
+    <li><a href="/radio">收音机</a></li>
+    <li><a href="/maydayradio" class="active">五月天</a></li>
+    <li><a href="/singer">歌手频道</a></li>
+    <li><a href="/config">配置</a></li>
+    <li><a href="/admin">管理</a></li>
+  </ul>
+</nav>
+
+<div class="radio-shell">
+  <div class="radio-feet">
+    <div class="foot"></div><div class="foot"></div><div class="foot"></div>
+  </div>
+  <div class="radio-status">
+    <span id="modeIndicator">五月天</span>
+    <span class="led-orange"></span>
+  </div>
+  <div class="era-scroll" id="eraScroll"></div>
+
+  <div class="radio-left">
+    <div class="speaker-frame">
+      <div class="speaker-grille">
+        <div class="speaker-shadow"></div>
+        <div class="mayday-badge">五月天</div>
+      </div>
+      <div class="speaker-info-overlay">
+        <div class="now-playing" id="nowPlaying">🎵 等待信号...</div>
+      </div>
+    </div>
+    <div class="carrot-decor left"></div>
+    <div class="carrot-decor right"></div>
+  </div>
+
+  <div class="radio-right">
+    <div class="dial-panel">
+      <div class="dial-fm-label">
+        <span id="dialModeLabel">MAYDAY</span>
+        <span class="led-orange"></span>
+        <span style="font-size:7px;color:#666;" id="dialRange">年代电台</span>
+      </div>
+      <div class="dial-scale-line"></div>
+      <div class="dial-ticks" id="dialTicks"></div>
+    </div>
+
+    <div class="nixie-area">
+      <div class="nixie-tube" id="nixieYear">2000</div>
+      <div class="nixie-label">YEAR / 年代</div>
+    </div>
+
+    <div class="knob-area">
+      <div class="knob-group">
+        <div class="knob-base knob-era" id="knobEra">
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-label">年代</span>
+      </div>
+      <div class="knob-group">
+        <button class="walkie-btn" id="btnWalkie" title="对讲机">📻</button>
+        <span class="knob-label">对讲</span>
+      </div>
+      <div class="knob-group">
+        <div class="knob-base knob-tuning" id="knobTuning">
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-label">选歌</span>
+      </div>
+      <div class="knob-group">
+        <div class="knob-base knob-volume" id="knobVolume">
+          <div class="knob-indicator" style="height:28%;top:3px;"></div>
+        </div>
+        <span class="knob-label">音量</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 对讲机弹窗 -->
+<div class="walkie-overlay" id="walkieOverlay">
+  <div class="walkie-panel">
+    <h3>📻 五迷对讲机</h3>
+
+    <div class="walkie-section">
+      <h4>📡 连接五迷</h4>
+      <p>加入当前收听年代的聊天室，与同年代的五月天歌迷实时交流。</p>
+      <button class="walkie-btn-green" id="btnConnectFans">连接「<span id="connectYear">2000</span>年代」聊天室</button>
+      <p style="font-size:10px;color:#666;margin-top:6px;" id="connectStatus">未连接</p>
+    </div>
+
+    <div class="walkie-section">
+      <h4>👥 创建群组</h4>
+      <p>创建专属群组，分享给好友用手机加入。</p>
+      <input class="walkie-input" id="groupNameInput" placeholder="输入群组名称，如：2000年代五迷">
+      <button class="walkie-btn-green" id="btnCreateGroup">创建群组</button>
+      <div id="groupCreateResult" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="walkie-section" id="groupListSection">
+      <h4>📋 已有群组</h4>
+      <div class="group-list" id="groupList">
+        <p style="color:#555;font-size:11px;">暂无群组</p>
+      </div>
+    </div>
+
+    <button class="walkie-close" id="btnWalkieClose">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<audio id="audioPlayer"></audio>
+<script src="maydayradio.js"></script>
+</body>
+</html>
