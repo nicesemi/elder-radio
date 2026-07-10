@@ -1,313 +1,555 @@
 /* =============================================
-   radio.js - 收音机模拟器核心逻辑
+   radio.js — 复古收音机模拟器 v3.0
+   新增：URL 年代参数、按天选择器、年代模式电台名显示
    ============================================= */
 
 (function() {
   'use strict';
 
-  // ---- State ----
+  // ============ 状态 ============
+  const AUDIO = document.getElementById('audioPlayer');
+  const ERA_MIN = 1949, ERA_MAX = 2026;
+  const TONE_NAMES = ['Agnes', '温婉女声', '浑厚男声', '粤语播音', '童声'];
+
   let allStations = [];
-  let currentStations = []; // filtered by category/era
-  let currentIndex = 0;
-  let currentEra = '2020-2026';
-  let currentCategory = '全部';
-  let isPlaying = false;
-  let volume = 70;
+  let broadcastData = {};
+  let stations = [];
+  let stationIdx = 0;
+  let year = 1985;
+  let volume = 0.7;
+  let mode = 'AM';
+  let toneIdx = 0;
+  let isRecording = false;
+  let mediaRecorder = null;
+  let recordedChunks = [];
+  let prevStreamUrl = '';
+  let selectedMonth = 7;
+  let selectedDay = 10;
 
-  const audio = document.getElementById('audioPlayer');
-  audio.volume = volume / 100;
+  AUDIO.volume = volume;
 
-  // ---- Categories (matching radio_sources.json) ----
-  const categories = ['全部', '综合', '新闻', '音乐', '交通', '文艺', '经济', '生活', '农村', '民族', '国际'];
-
-  const eras = ['2020-2026', '2010-2019', '2000-2009', '1990-1999', '1980-1989', '1970-1979', '1960-1969', '1949-1959'];
-
-  // ---- Frequency mapping: map index -> FM frequency ----
-  function indexToFreq(idx, total) {
-    if (total <= 1) return '87.5';
-    const min = 87.5, max = 108.0;
-    const step = (max - min) / (total - 1);
-    return (min + idx * step).toFixed(1);
+  // ============ 旋钮拖动系统 ============
+  function angleForValue(val, min, max) {
+    return ((val - min) / (max - min)) * 270;
   }
 
-  // ---- Station Filtering ----
+  function makeKnobDraggable(el, getVal, setVal, opts) {
+    const { min, max, step, onChange } = opts;
+    let dragging = false, startY, startVal;
+
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      startY = e.clientY;
+      startVal = getVal();
+      el.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const dy = startY - e.clientY;
+      const sens = (max - min) / 200;
+      let newVal = startVal + dy * sens;
+      if (step) newVal = Math.round(newVal / step) * step;
+      newVal = Math.max(min, Math.min(max, newVal));
+      setVal(newVal);
+      onChange(newVal);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (dragging) { dragging = false; el.style.cursor = 'grab'; }
+    });
+
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? -1 : 1;
+      let newVal = getVal() + dir * (step || 1);
+      newVal = Math.max(min, Math.min(max, newVal));
+      setVal(newVal);
+      onChange(newVal);
+    }, { passive: false });
+  }
+
+  function setKnobRotation(el, deg) {
+    el.style.transform = 'rotate(' + deg + 'deg)';
+  }
+
+  // ============ 调台旋钮 ============
+  function getStIdx() { return stationIdx; }
+  function setStIdx(idx) {
+    stationIdx = Math.max(0, Math.min(idx, stations.length - 1));
+    const deg = stations.length > 1
+      ? angleForValue(stationIdx, 0, stations.length - 1) : 135;
+    setKnobRotation(document.getElementById('knobTuning'), deg);
+  }
+  function onTuneChange() {
+    renderDial();
+    playCurrent();
+    if (stations[stationIdx]) {
+      saveRecent(stations[stationIdx]);
+      updateNowPlaying();
+    }
+  }
+
+  function bindTuningKnob() {
+    makeKnobDraggable(
+      document.getElementById('knobTuning'),
+      getStIdx, setStIdx,
+      { min: 0, max: Math.max(0, stations.length - 1), onChange: onTuneChange }
+    );
+  }
+
+  // ============ 年代旋钮 ============
+  function getYear() { return year; }
+  function setYear(y) {
+    year = Math.max(ERA_MIN, Math.min(ERA_MAX, y));
+    document.getElementById('nixieYear').textContent = year;
+    setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+
+    if (mode === 'AM' && year === ERA_MAX) {
+      setMode('FM');
+    }
+
+    filterStations();
+    updateEraScroll();
+  }
+
+  makeKnobDraggable(
+    document.getElementById('knobEra'),
+    getYear, setYear,
+    { min: ERA_MIN, max: ERA_MAX, step: 1, onChange: function() {} }
+  );
+
+  // ============ 音量旋钮 ============
+  function getVol() { return volume; }
+  function setVol(v) {
+    volume = Math.max(0, Math.min(1, v));
+    AUDIO.volume = volume;
+    setKnobRotation(document.getElementById('knobVolume'), angleForValue(volume, 0, 1));
+  }
+
+  makeKnobDraggable(
+    document.getElementById('knobVolume'),
+    getVol, setVol,
+    { min: 0, max: 1, step: 0.01, onChange: function() {} }
+  );
+
+  // ============ 模式切换 ============
+  function setMode(m) {
+    mode = m;
+    document.getElementById('btnAM').classList.toggle('active', m === 'AM');
+    document.getElementById('btnFM').classList.toggle('active', m === 'FM');
+    document.getElementById('modeIndicator').textContent = m;
+
+    var isLive = m === 'FM';
+    document.getElementById('liveLed').classList.toggle('off', !isLive);
+    document.getElementById('dialLed').classList.toggle('off', !isLive);
+    document.getElementById('dialModeLabel').textContent = m;
+
+    if (m === 'FM') {
+      document.getElementById('dialRange').textContent = '88-108 MHz';
+    } else {
+      document.getElementById('dialRange').textContent = '年代电台';
+    }
+
+    filterStations();
+    updateEraScroll();
+    onTuneChange();
+  }
+
+  document.getElementById('btnAM').addEventListener('click', function() { setMode('AM'); });
+  document.getElementById('btnFM').addEventListener('click', function() { setMode('FM'); });
+  document.getElementById('btnTONE').addEventListener('click', function() {
+    toneIdx = (toneIdx + 1) % TONE_NAMES.length;
+    var t = TONE_NAMES[toneIdx];
+    document.getElementById('btnTONE').textContent = t[0];
+    document.getElementById('btnTONE').title = '音色: ' + t;
+    if (mode === 'AM' && stations[stationIdx]) ttsGenerate(stations[stationIdx]);
+  });
+
+  // ============ 电台过滤 ============
   function filterStations() {
-    let filtered = allStations;
-    if (currentCategory !== '全部') {
-      filtered = filtered.filter(s => s.category === currentCategory);
-    }
-    if (currentEra !== '2020-2026') {
-      // In non-current era, filter archived or matching era stations
-      filtered = filtered.filter(s => s.era === currentEra || s.type === 'archive');
-    }
-    // Prefer live stations
-    filtered.sort((a, b) => (b.type === 'live' ? 1 : 0) - (a.type === 'live' ? 1 : 0));
-    currentStations = filtered;
-    if (currentIndex >= currentStations.length) currentIndex = 0;
-  }
+    var filtered = allStations.slice();
 
-  // ---- Dial Scale Rendering ----
-  function renderDialScale() {
-    const dial = document.getElementById('dialScale');
-    if (currentStations.length === 0) {
-      dial.innerHTML = '<span style="color:var(--text-muted);font-size:0.75rem;">暂无电台</span>';
+    if (mode === 'FM') {
+      filtered = filtered.filter(function(s) { return s.type === 'live' && s.stream_url; });
+    } else {
+      // AM 模式：过滤年代匹配的电台
+      filtered = filtered.filter(function(s) {
+        var era = s.era || '';
+        var matchDecade = era.match(/^(\d{4})/);
+        if (!matchDecade) return false;
+        var eraYear = parseInt(matchDecade[1]);
+        return eraYear <= year && s.type === 'live' && s.stream_url;
+      });
+    }
+
+    stations = filtered;
+    if (stations.length === 0) {
+      stationIdx = 0;
+      renderDial();
+      updateNowPlaying();
       return;
     }
-    const displayStations = currentStations.slice(0, 10);
-    dial.innerHTML = displayStations.map((s, i) => {
-      const freq = indexToFreq(i, displayStations.length);
-      const active = i === currentIndex ? ' active' : '';
-      return `<div class="dial-tick${active}" data-idx="${i}">
-        <div class="tick-line"></div>
-        <span class="tick-label">${freq}</span>
-      </div>`;
+    if (stationIdx >= stations.length) stationIdx = 0;
+    bindTuningKnob();
+    setStIdx(stationIdx);
+    renderDial();
+    playCurrent();
+    updateNowPlaying();
+  }
+
+  function updateEraScroll() {
+    var el = document.getElementById('eraScroll');
+    if (mode === 'AM') {
+      var events = (broadcastData.years && broadcastData.years[String(year)])
+        ? broadcastData.years[String(year)].events || [] : [];
+      var preview = events.length > 0
+        ? events.slice(0, 2).join(' · ')
+        : year + '年 — ' + stations.length + ' 个电台';
+      el.textContent = preview;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // ============ 刻度盘渲染 ============
+  function renderDial() {
+    var c = document.getElementById('dialTicks');
+    var total = stations.length;
+    if (total === 0) {
+      c.innerHTML = '<span style="color:#555;font-size:9px;align-self:center;">无信号</span>';
+      return;
+    }
+    var range = 3;
+    var start = Math.max(0, stationIdx - range);
+    var end = Math.min(total - 1, stationIdx + range);
+    while (end - start < range * 2 && (start > 0 || end < total - 1)) {
+      if (start > 0) start--;
+      if (end < total - 1) end++;
+    }
+    var visible = stations.slice(start, end + 1);
+    c.innerHTML = visible.map(function(s, i) {
+      var realIdx = start + i;
+      var cls = realIdx === stationIdx ? ' current' : '';
+      var label = mode === 'FM'
+        ? (s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---')
+        : s.name.slice(0, 8);
+      return '<div class="dial-tick' + cls + '" data-idx="' + realIdx + '">' +
+        '<div class="tick-line"></div>' +
+        '<span class="tick-name">' + label + '</span></div>';
     }).join('');
 
-    // Click handler
-    dial.querySelectorAll('.dial-tick').forEach(tick => {
-      tick.addEventListener('click', () => {
-        const idx = parseInt(tick.dataset.idx);
-        tuneTo(idx);
+    var ticks = c.querySelectorAll('.dial-tick');
+    for (var j = 0; j < ticks.length; j++) {
+      ticks[j].addEventListener('click', function() {
+        setStIdx(parseInt(this.dataset.idx));
+        onTuneChange();
       });
+    }
+  }
+
+  // ============ Now Playing ============
+  function updateNowPlaying() {
+    var el = document.getElementById('nowPlaying');
+    if (stations[stationIdx]) {
+      var s = stations[stationIdx];
+      el.textContent = mode === 'FM'
+        ? '直播: ' + s.name
+        : '[' + year + '] ' + s.name;
+    } else {
+      el.textContent = '等待信号...';
+    }
+  }
+
+  // ============ 日期选择器 ============
+  function populateDateSelector() {
+    var mSel = document.getElementById('selMonth');
+    var dSel = document.getElementById('selDay');
+
+    // 月份
+    mSel.innerHTML = '';
+    for (var m = 1; m <= 12; m++) {
+      var opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m + '月';
+      if (m === selectedMonth) opt.selected = true;
+      mSel.appendChild(opt);
+    }
+
+    mSel.addEventListener('change', function() {
+      selectedMonth = parseInt(this.value);
+      populateDayOptions();
+    });
+
+    populateDayOptions();
+  }
+
+  function populateDayOptions() {
+    var dSel = document.getElementById('selDay');
+    var daysInMonth = new Date(year, selectedMonth, 0).getDate();
+
+    dSel.innerHTML = '';
+    for (var d = 1; d <= daysInMonth; d++) {
+      var opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d + '日';
+      if (d === selectedDay) opt.selected = true;
+      dSel.appendChild(opt);
+    }
+
+    dSel.addEventListener('change', function() {
+      selectedDay = parseInt(this.value);
     });
   }
 
-  // ---- Update Display ----
-  function updateDisplay() {
-    const station = currentStations[currentIndex];
-    if (!station) {
-      document.getElementById('freqDisplay').textContent = '---';
-      document.getElementById('freqLabel').textContent = '无信号';
-      document.getElementById('stationInfo').innerHTML = '<div class="si-name">无电台</div><div class="si-detail">请切换分类或年代</div>';
-      return;
-    }
-    const freq = indexToFreq(currentIndex, currentStations.length);
-    document.getElementById('freqDisplay').textContent = freq;
-    document.getElementById('freqLabel').textContent = station.name;
+  document.getElementById('dateGoBtn').addEventListener('click', function() {
+    selectedMonth = parseInt(document.getElementById('selMonth').value);
+    selectedDay = parseInt(document.getElementById('selDay').value);
+    generateDateBroadcast();
+  });
 
-    document.getElementById('stationInfo').innerHTML = `
-      <div class="si-name">${station.name}</div>
-      <div class="si-detail">${station.province} · ${station.category} · ${station.source}</div>
-    `;
+  function generateDateBroadcast() {
+    var dateStr = year + '-' +
+      String(selectedMonth).padStart(2, '0') + '-' +
+      String(selectedDay).padStart(2, '0');
 
-    renderDialScale();
-    saveRecent(station);
-    playStation(station);
-  }
+    document.getElementById('nowPlaying').textContent = '生成中: ' + dateStr;
 
-  // ---- Tune To Station ----
-  function tuneTo(idx) {
-    currentIndex = Math.max(0, Math.min(idx, currentStations.length - 1));
-    updateDisplay();
-  }
-
-  function nextStation() {
-    if (currentStations.length === 0) return;
-    currentIndex = (currentIndex + 1) % currentStations.length;
-    updateDisplay();
-  }
-
-  function prevStation() {
-    if (currentStations.length === 0) return;
-    currentIndex = (currentIndex - 1 + currentStations.length) % currentStations.length;
-    updateDisplay();
-  }
-
-  // ---- Play Station ----
-  function playStation(station) {
-    if (station.type === 'live' && station.stream_url) {
-      audio.src = station.stream_url;
-      audio.play().catch(() => {
-        // Stream unavailable - try TTS fallback
-        console.log('Stream unavailable, trying TTS...');
-        ttsFallback(station);
+    // 优先尝试获取当天历史广播
+    fetch('/api/broadcast/date/' + dateStr)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.audio_url || (data.station_content && data.station_content.length > 0)) {
+          // 有历史数据
+          var firstContent = data.station_content
+            ? data.station_content[0] : null;
+          var firstSeg = firstContent && firstContent.segments
+            ? firstContent.segments[0] : null;
+          if (firstSeg && firstSeg.audio_url) {
+            AUDIO.src = firstSeg.audio_url;
+            AUDIO.play().catch(function() {});
+            document.getElementById('nowPlaying').textContent =
+              dateStr + ' ' + firstSeg.title;
+          } else {
+            document.getElementById('nowPlaying').textContent =
+              dateStr + ' — 文本广播';
+          }
+        } else {
+          // 无历史数据 → AI 生成
+          aiGenerateDate(dateStr);
+        }
+      })
+      .catch(function() {
+        // API 不可用 → AI 生成
+        aiGenerateDate(dateStr);
       });
-      isPlaying = true;
-    } else if (currentEra !== '2020-2026' || station.type === 'archive') {
-      // Archive or historical era - use AI TTS
-      ttsFallback(station);
+  }
+
+  function aiGenerateDate(dateStr) {
+    var st = stations[stationIdx];
+    fetch('/api/broadcast/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channel: st ? st.category : '综合',
+        year: year,
+        month: selectedMonth,
+        day: selectedDay,
+        station_name: st ? st.name : '',
+        voice: TONE_NAMES[toneIdx],
+        broadcast_style: year + '年代广播风格'
+      })
+    }).then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.audio_url) {
+          AUDIO.src = data.audio_url;
+          AUDIO.play().catch(function() {});
+          document.getElementById('nowPlaying').textContent =
+            dateStr + ' · AI生成广播';
+        }
+      })
+      .catch(function(err) {
+        console.log('AI生成失败:', err);
+        document.getElementById('nowPlaying').textContent =
+          dateStr + ' · 生成失败';
+      });
+  }
+
+  // ============ 播放控制 ============
+  function playCurrent() {
+    var s = stations[stationIdx];
+    if (!s) return;
+    if (mode === 'FM' && s.stream_url) {
+      playStream(s);
+    } else {
+      ttsGenerate(s);
     }
   }
 
-  function ttsFallback(station) {
-    audio.pause();
-    // Use API for historical broadcast generation
+  function playStream(station) {
+    if (prevStreamUrl === station.stream_url && !AUDIO.paused) return;
+    prevStreamUrl = station.stream_url;
+    AUDIO.src = station.stream_url;
+    AUDIO.play().catch(function(e) { console.log('Stream failed:', e.message); });
+  }
+
+  function ttsGenerate(station) {
+    AUDIO.pause();
+    prevStreamUrl = '';
     fetch('/api/broadcast/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         channel: station.category,
-        year: currentEra.includes('-') ? parseInt(currentEra.split('-')[0]) : 2026,
-        station_name: station.name
+        year: year,
+        station_name: station.name,
+        voice: TONE_NAMES[toneIdx]
       })
-    }).then(r => r.json()).then(data => {
+    }).then(function(r) { return r.json(); }).then(function(data) {
       if (data.audio_url) {
-        audio.src = data.audio_url;
-        audio.play().catch(e => console.log('TTS play failed:', e));
-        isPlaying = true;
+        AUDIO.src = data.audio_url;
+        AUDIO.play().catch(function(e) { console.log('TTS play failed:', e); });
       }
-    }).catch(err => console.log('TTS fallback error:', err));
+    }).catch(function(err) { console.log('TTS error:', err); });
   }
 
-  // ---- Recent Stations ----
+  // ============ 最近收听 ============
   function saveRecent(station) {
-    let recents = JSON.parse(localStorage.getItem('keyclaw_recents') || '[]');
-    recents = recents.filter(r => r.id !== station.id);
-    recents.unshift({ id: station.id, name: station.name, province: station.province, category: station.category });
-    recents = recents.slice(0, 5);
-    localStorage.setItem('keyclaw_recents', JSON.stringify(recents));
-    renderRecents();
+    var recents = [];
+    try { recents = JSON.parse(localStorage.getItem('elderradio_recents') || '[]'); } catch(e) {}
+    recents = recents.filter(function(r) { return r.id !== station.id; });
+    recents.unshift({ id: station.id, name: station.name, province: station.province, category: station.category, year: year });
+    recents = recents.slice(0, 10);
+    localStorage.setItem('elderradio_recents', JSON.stringify(recents));
   }
 
-  function renderRecents() {
-    const container = document.getElementById('recentStations');
-    const recents = JSON.parse(localStorage.getItem('keyclaw_recents') || '[]');
-    if (recents.length === 0) {
-      container.innerHTML = '<span class="recent-label">最近收听</span><span style="color:var(--text-muted);font-size:0.7rem;">暂无记录</span>';
-      return;
-    }
-    container.innerHTML = '<span class="recent-label">最近收听</span>' +
-      recents.map((r, i) =>
-        `<span class="recent-chip" data-sid="${r.id}" title="${r.name}">${i + 1}. ${r.name.slice(0, 8)}</span>`
-      ).join('');
+  // ============ 对讲按钮 (PTT) ============
+  var pttBtn = document.getElementById('knobPTT');
 
-    container.querySelectorAll('.recent-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        const sid = chip.dataset.sid;
-        const idx = currentStations.findIndex(s => s.id === sid);
-        if (idx >= 0) tuneTo(idx);
-        else {
-          // Switch to the station's category
-          const st = allStations.find(s => s.id === sid);
-          if (st) {
-            currentCategory = st.category;
-            currentEra = st.era || '2020-2026';
-            renderEraSelector();
-            filterStations();
-            const newIdx = currentStations.findIndex(s => s.id === sid);
-            tuneTo(newIdx >= 0 ? newIdx : 0);
-          }
+  pttBtn.addEventListener('mousedown', startRecording);
+  pttBtn.addEventListener('mouseup', stopRecording);
+  pttBtn.addEventListener('mouseleave', stopRecording);
+  pttBtn.addEventListener('touchstart', function(e) { e.preventDefault(); startRecording(); });
+  pttBtn.addEventListener('touchend', stopRecording);
+
+  function startRecording() {
+    if (isRecording) return;
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = sendRecording;
+      mediaRecorder.start();
+      isRecording = true;
+      pttBtn.classList.add('recording');
+      AUDIO.pause();
+    }).catch(function(e) { console.log('Mic denied:', e); });
+  }
+
+  function stopRecording() {
+    if (!isRecording) return;
+    isRecording = false;
+    pttBtn.classList.remove('recording');
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(function(t) { t.stop(); });
+    }
+  }
+
+  function sendRecording() {
+    if (recordedChunks.length === 0) return;
+    var blob = new Blob(recordedChunks, { type: 'audio/webm' });
+    var fd = new FormData();
+    fd.append('audio', blob, 'ptt.webm');
+    fd.append('station', stations[stationIdx] ? stations[stationIdx].name : '');
+    fd.append('year', String(year));
+    fd.append('voice', TONE_NAMES[toneIdx]);
+
+    fetch('/api/ai-chat', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.audio_url) {
+          var reply = new Audio(data.audio_url);
+          reply.volume = volume;
+          reply.play();
+          reply.onended = function() {
+            if (!isRecording && stations[stationIdx]) playCurrent();
+          };
         }
+      })
+      .catch(function(e) {
+        console.log('PTT error:', e);
+        if (!isRecording && stations[stationIdx]) playCurrent();
       });
-    });
   }
 
-  // ---- Era Selector ----
-  function renderEraSelector() {
-    const sel = document.getElementById('eraSelector');
-    sel.innerHTML = eras.map(e =>
-      `<button class="era-btn${e === currentEra ? ' active' : ''}" data-era="${e}">${e}</button>`
-    ).join('');
-
-    sel.querySelectorAll('.era-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentEra = btn.dataset.era;
-        renderEraSelector();
-        currentIndex = 0;
-        filterStations();
-        updateDisplay();
-      });
-    });
-  }
-
-  // ---- AI Chat ----
-  function initAIChat() {
-    const toggle = document.getElementById('aiChatToggle');
-    const body = document.getElementById('aiChatBody');
-    const input = document.getElementById('aiInput');
-    const send = document.getElementById('aiSend');
-    const msgs = document.getElementById('aiMessages');
-
-    toggle.addEventListener('click', () => {
-      body.classList.toggle('open');
-    });
-
-    function sendMsg() {
-      const text = input.value.trim();
-      if (!text) return;
-      msgs.innerHTML += `<div class="ai-msg user">你：${text}</div>`;
-      input.value = '';
-      msgs.scrollTop = msgs.scrollHeight;
-
-      fetch('/api/chat/text-only', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, station: currentStations[currentIndex]?.name || '' })
-      }).then(r => r.json()).then(data => {
-        msgs.innerHTML += `<div class="ai-msg bot">Agnes：${data.reply || '（未收到回复）'}</div>`;
-        msgs.scrollTop = msgs.scrollHeight;
-      }).catch(() => {
-        msgs.innerHTML += '<div class="ai-msg bot">Agnes：抱歉，连接失败。</div>';
-      });
-    }
-
-    send.addEventListener('click', sendMsg);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
-  }
-
-  // ---- Volume ----
-  function initVolume() {
-    const slider = document.getElementById('volumeSlider');
-    slider.addEventListener('input', () => {
-      volume = parseInt(slider.value);
-      audio.volume = volume / 100;
-    });
-  }
-
-  // ---- Knob Controls ----
-  function initKnobs() {
-    document.getElementById('knobNext').addEventListener('click', nextStation);
-    document.getElementById('knobPrev').addEventListener('click', prevStation);
-
-    // Keyboard controls
-    document.addEventListener('keydown', e => {
-      if (e.target.tagName === 'INPUT') return;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') nextStation();
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') prevStation();
-    });
-  }
-
-  // ---- URL Parameter ----
+  // ============ URL 参数加载 ============
   function loadFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const stationId = params.get('station');
-    if (!stationId) return;
+    var params = new URLSearchParams(window.location.search);
 
-    const station = allStations.find(s => s.id === stationId);
-    if (!station) return;
-
-    currentCategory = station.category;
-    currentEra = station.era || '2020-2026';
-    renderEraSelector();
-    filterStations();
-    const idx = currentStations.findIndex(s => s.id === stationId);
-    tuneTo(idx >= 0 ? idx : 0);
-  }
-
-  // ---- Initialize ----
-  async function init() {
-    // Load station data
-    try {
-      const resp = await fetch('/radio_sources.json');
-      const data = await resp.json();
-      allStations = data.stations;
-    } catch (err) {
-      console.error('Failed to load radio_sources.json:', err);
-    }
-
-    filterStations();
-    renderEraSelector();
-    renderRecents();
-    initKnobs();
-    initVolume();
-    initAIChat();
-
-    if (allStations.length > 0) {
-      loadFromURL();
-      if (!window.location.search.includes('station')) {
-        updateDisplay();
+    // 年代参数: ?year=1985
+    var yParam = params.get('year');
+    if (yParam) {
+      var y = parseInt(yParam);
+      if (y >= ERA_MIN && y <= ERA_MAX) {
+        year = y;
+        document.getElementById('nixieYear').textContent = year;
+        setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+        setMode('AM');
       }
     }
+
+    // 电台参数: ?station=cnr_001
+    var sid = params.get('station');
+    if (sid) {
+      var st = allStations.find(function(s) { return s.id === sid; });
+      if (st) {
+        if (st.stream_url) setMode('FM');
+        filterStations();
+        var idx = stations.findIndex(function(s) { return s.id === sid; });
+        if (idx >= 0) { setStIdx(idx); onTuneChange(); }
+        return;
+      }
+    }
+
+    filterStations();
+  }
+
+  // ============ 键盘控制 ============
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowRight') { setStIdx(stationIdx + 1); onTuneChange(); }
+    if (e.key === 'ArrowLeft')  { setStIdx(stationIdx - 1); onTuneChange(); }
+    if (e.key === 'ArrowUp')    { setVol(volume + 0.05); }
+    if (e.key === 'ArrowDown')  { setVol(volume - 0.05); }
+  });
+
+  // ============ 初始化 ============
+  function init() {
+    populateDateSelector();
+
+    Promise.all([
+      fetch('/radio_sources.json').then(function(r) { return r.json(); }),
+      fetch('/broadcast_data.json').then(function(r) { return r.json(); }).catch(function() { return {}; })
+    ]).then(function(results) {
+      allStations = results[0].stations || [];
+      broadcastData = results[1];
+
+      setStIdx(0);
+      setVol(0.7);
+      loadFromURL();
+      renderDial();
+      updateEraScroll();
+
+      if (stations.length > 0) {
+        if (!window.location.search.includes('station') && stations[0]) {
+          saveRecent(stations[0]);
+          playCurrent();
+        }
+      }
+    }).catch(function(e) { console.error('Load error:', e); });
   }
 
   init();

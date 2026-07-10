@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>elder-radio — 歌手频道</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    .singer-page { padding-top: 20px; }
+
+    .singer-intro {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .singer-intro h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .singer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .singer-hero-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .singer-hero-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+    }
+
+    .singer-hero-img {
+      height: 180px;
+      background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .singer-hero-img.mayday {
+      background: linear-gradient(135deg, #2d1b69 0%, #16213e 100%);
+    }
+
+    .singer-hero-img.beyond {
+      background: linear-gradient(135deg, #3d0000 0%, #16213e 100%);
+    }
+
+    .singer-hero-img::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.3) 100%);
+    }
+
+    .singer-hero-body {
+      padding: 20px;
+    }
+
+    .singer-hero-body h3 {
+      font-size: 1.2rem;
+      margin-bottom: 4px;
+    }
+
+    .singer-hero-body .singer-ename {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .singer-hero-body .singer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .singer-hero-body .singer-desc {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .singer-hero-body .singer-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .singer-hero-body .singer-stats strong {
+      color: var(--accent);
+    }
+
+    /* 歌手详情页 */
+    .detail-page {
+      display: none;
+    }
+
+    .detail-page.active {
+      display: block;
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .detail-header .back-btn {
+      padding: 8px 18px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .detail-header .back-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .detail-info {
+      margin-bottom: 24px;
+    }
+
+    .detail-info h2 {
+      font-size: 1.5rem;
+      margin-bottom: 4px;
+    }
+
+    .detail-info .detail-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .detail-info .detail-members {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .song-year-group {
+      margin-bottom: 20px;
+    }
+
+    .song-year-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .song-year-title .song-count {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .song-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .song-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+
+    .song-item:hover {
+      border-color: var(--accent);
+    }
+
+    .song-item .song-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .song-item .song-index {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .song-item .song-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .song-item .song-album {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
+    .song-item .song-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .song-item .play-btn,
+    .song-item .ai-btn {
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .play-btn {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .play-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .play-btn:disabled {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .ai-btn {
+      background: var(--bg-tertiary);
+      color: var(--warning);
+      border: 1px solid var(--warning) !important;
+    }
+
+    .ai-btn:hover {
+      background: var(--warning);
+      color: #fff;
+    }
+
+    .ai-btn.generating {
+      background: var(--warning);
+      color: #fff;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .ai-btn.completed {
+      background: var(--success);
+      border-color: var(--success) !important;
+      color: #fff;
+    }
+
+    .stream-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--success);
+      color: #fff;
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+
+    .no-stream-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      white-space: nowrap;
+      margin-left: 6px;
+    }
+
+    @media (max-width: 768px) {
+      .singer-grid {
+        grid-template-columns: 1fr;
+      }
+      .song-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .song-item .song-actions {
+        align-self: flex-end;
+      }
+    }
+  </style>
+</head>
+<body class="has-nav">
+
+<!-- 导航栏 -->
+<nav class="top-nav">
+  <a href="/" class="top-nav-brand">elder-radio</a>
+  <ul class="top-nav-links">
+    <li><a href="/">首页</a></li>
+    <li><a href="/radio">收音机</a></li>
+    <li><a href="/singer" class="active">歌手频道</a></li>
+    <li><a href="/config">配置</a></li>
+    <li><a href="/admin">管理</a></li>
+  </ul>
+</nav>
+
+<div class="container singer-page">
+
+  <!-- 歌手列表页 -->
+  <div id="listPage" class="active">
+    <div class="page-header">
+      <div>
+        <h1>歌手频道</h1>
+        <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">
+          经典歌手作品回顾 · 支持原版播放与 AI 翻唱生成
+        </p>
+      </div>
+    </div>
+
+    <div class="singer-grid" id="singerGrid">
+      <div class="loading-spin">加载歌手数据中...</div>
+    </div>
+  </div>
+
+  <!-- 歌手详情页 -->
+  <div id="detailPage" class="detail-page">
+    <div class="detail-header">
+      <button class="back-btn" onclick="goBack()">← 返回歌手列表</button>
+      <div class="detail-info">
+        <h2 id="detailName"></h2>
+        <div class="detail-desc" id="detailDesc"></div>
+        <div class="detail-members" id="detailMembers"></div>
+      </div>
+    </div>
+    <div id="songGroups">
+      <div class="loading-spin">加载歌曲中...</div>
+    </div>
+
+    <!-- 隐藏的音频播放器 -->
+    <audio id="audioPlayer" style="display:none;"></audio>
+  </div>
+
+</div>
+
+<script src="singer.js"></script>
+</body>
+</html>

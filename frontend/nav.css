@@ -1,0 +1,91 @@
+/* =============================================
+   nav.css — 统一导航栏样式
+   适用于 index.html / radio.html / config.html / admin.html / singer.html
+   ============================================= */
+
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(22, 33, 62, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.top-nav-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), #ff6b81);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none;
+  letter-spacing: -0.5px;
+}
+
+.top-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+}
+
+.top-nav-links li a {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.top-nav-links li a:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.top-nav-links li a.active {
+  color: var(--accent);
+  background: var(--accent-glow);
+  font-weight: 600;
+}
+
+/* 页面顶部留出导航栏空间 */
+body.has-nav {
+  padding-top: 52px;
+}
+
+/* radio.html 全屏收音机页面特殊处理 */
+body.radio-page.has-nav {
+  padding-top: 52px;
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    height: 46px;
+    padding: 0 12px;
+  }
+  .top-nav-links li a {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+  .top-nav-brand {
+    font-size: 0.9rem;
+  }
+  body.has-nav {
+    padding-top: 46px;
+  }
+  body.radio-page.has-nav {
+    padding-top: 46px;
+  }
+}

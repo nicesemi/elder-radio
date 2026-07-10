@@ -3,361 +3,341 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KeyClaw.Tech - 怀旧收音机</title>
+  <title>elder-radio — 怀旧收音机</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nav.css">
   <style>
-    /* Radio Simulator Styles */
-    :root {
-      --radio-bg: #111827;
-      --radio-panel: #1f2937;
-      --radio-border: #374151;
-      --radio-accent: #e94560;
-      --radio-gold: #d4a574;
-      --radio-dial: #0d1117;
-      --radio-text: #e5e7eb;
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+    .radio-page {
+      display: flex; justify-content: center; align-items: center;
+      min-height: calc(100vh - 52px); background: #1a1a1a; padding: 20px; user-select: none;
+    }
+    .radio-shell {
+      position: relative; width: 860px; height: 480px;
+      background: linear-gradient(180deg, #5D4037 0%, #4E342E 5%, #3E2723 25%, #4E342E 50%, #3E2723 75%, #2C1A12 100%);
+      border-radius: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 2px 8px rgba(255,255,255,0.05), inset 0 -2px 4px rgba(0,0,0,0.4);
+      overflow: hidden; display: flex;
+    }
+    .radio-shell::before {
+      content:''; position:absolute; inset:0; border-radius:18px;
+      background: repeating-linear-gradient(2deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
+      pointer-events:none; z-index:1;
+    }
+    .radio-feet { position:absolute; bottom:-4px; z-index:3; width:100%; pointer-events:none; }
+    .radio-feet .foot {
+      position:absolute; width:14px; height:10px;
+      background: radial-gradient(ellipse at 50% 30%, #D4A853, #8B6914);
+      border-radius:50%; box-shadow:0 2px 3px rgba(0,0,0,0.5);
+    }
+    .radio-feet .foot:nth-child(1){ left:30px; }
+    .radio-feet .foot:nth-child(2){ right:30px; }
+    .radio-feet .foot:nth-child(3){ left:50%; transform:translateX(-50%); }
+
+    .radio-left {
+      position:relative; z-index:2; width:52%;
+      display:flex; align-items:center; justify-content:center; padding:20px;
+    }
+    .speaker-frame {
+      width:100%; height:92%; background:#2C1A12; border-radius:10px;
+      border:2px solid #1A0E08; padding:10px;
+      box-shadow:inset 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .speaker-grille {
+      width:100%; height:100%; background-color:#D7CCC8;
+      background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+      border-radius:6px; position:relative; overflow:hidden;
+    }
+    .speaker-shadow {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      width:160px; height:160px; border-radius:50%;
+      background: radial-gradient(circle, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.12) 35%, rgba(0,0,0,0.04) 60%, transparent 70%);
+      pointer-events:none;
+    }
+    /* 年代模式下叠加信息 */
+    .speaker-info-overlay {
+      position: absolute; bottom: 10px; left: 0; right: 0;
+      text-align: center; z-index: 5; pointer-events: none;
+    }
+    .speaker-info-overlay .now-playing {
+      font-size: 0.75rem; color: #D4A853;
+      background: rgba(0,0,0,0.5); display: inline-block;
+      padding: 4px 12px; border-radius: 10px;
     }
 
-    .radio-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+    .radio-right {
+      position:relative; z-index:2; width:48%;
+      background: linear-gradient(180deg, #1a1a1a 0%, #111 50%, #0a0a0a 100%);
+      display:flex; flex-direction:column; padding:10px 14px 8px; gap:0;
     }
 
-    .radio-back-nav {
-      margin-bottom: 16px;
+    .dial-panel {
+      position:relative; background:#0d0d0d; border:1px solid #2a2a2a;
+      border-radius:6px; padding:8px 10px; margin-bottom:4px; height:58px; overflow:hidden;
     }
-    .radio-back-nav a {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      transition: color var(--transition);
+    .dial-fm-label {
+      position:absolute; top:4px; left:10px;
+      font-family:'Courier New',monospace; font-size:10px; font-weight:bold;
+      color:#D4A853; display:flex; align-items:center; gap:5px; z-index:2;
     }
-    .radio-back-nav a:hover { color: var(--accent); }
-
-    .radio-body {
-      background: var(--radio-panel);
-      border: 2px solid var(--radio-border);
-      border-radius: 20px;
-      padding: 0;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 30px rgba(233,69,96,0.05);
-      overflow: hidden;
+    .led-green { width:7px; height:7px; border-radius:50%; background:#4CAF50; box-shadow:0 0 6px #4CAF50; }
+    .led-green.off { background:#3a3a3a; box-shadow:none; }
+    .dial-scale-line {
+      position:absolute; top:18px; left:10px; right:10px; height:1px;
+      background: linear-gradient(90deg, transparent 0%, #555 10%, #D4A853 50%, #555 90%, transparent 100%);
     }
-
-    /* Top bar */
-    .radio-top {
-      padding: 16px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--radio-border);
-      background: rgba(0,0,0,0.2);
-    }
-    .radio-brand { font-size: 1.2rem; font-weight: 700; color: var(--radio-gold); letter-spacing: 2px; }
-    .radio-power {
-      width: 12px; height: 12px;
-      border-radius: 50%;
-      background: var(--success);
-      box-shadow: 0 0 8px var(--success);
-    }
-
-    /* Frequency Display */
-    .freq-display {
-      text-align: center;
-      padding: 24px 20px 16px;
-    }
-    .freq-number {
-      font-family: var(--font-mono);
-      font-size: 3.5rem;
-      font-weight: 700;
-      color: var(--radio-accent);
-      letter-spacing: 4px;
-      text-shadow: 0 0 20px rgba(233,69,96,0.5);
-    }
-    .freq-unit { font-size: 1.2rem; color: var(--text-muted); margin-left: 4px; }
-    .freq-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      margin-top: 4px;
-    }
-
-    /* Dial Scale */
-    .dial-scale {
-      display: flex;
-      justify-content: center;
-      gap: 0;
-      padding: 0 30px;
-      position: relative;
-    }
-    .dial-scale::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 30px; right: 30px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--radio-gold), transparent);
+    .dial-ticks {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      height:100%; padding:24px 2px 0; position:relative; z-index:1;
     }
     .dial-tick {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 60px;
-      cursor: pointer;
-      transition: color var(--transition);
+      display:flex; flex-direction:column; align-items:center;
+      min-width:0; flex:1; cursor:pointer; transition:opacity 0.2s;
     }
-    .dial-tick:hover { color: var(--radio-gold); }
-    .dial-tick.active { color: var(--radio-accent); }
-    .dial-tick .tick-line {
-      width: 1px; height: 12px;
-      background: var(--radio-border);
-      margin-bottom: 4px;
+    .dial-tick .tick-line { width:1px; height:8px; background:#444; margin-bottom:2px; }
+    .dial-tick.current .tick-line { height:14px; background:#D4A853; width:2px; }
+    .dial-tick .tick-name {
+      font-size:7.5px; color:#555; white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis; max-width:55px; text-align:center;
     }
-    .dial-tick.active .tick-line { background: var(--radio-accent); height: 18px; }
-    .dial-tick .tick-label { font-size: 0.6rem; color: var(--text-muted); }
-    .dial-tick.active .tick-label { color: var(--radio-accent); }
+    .dial-tick.current .tick-name { color:#FFB300; font-size:9px; font-weight:bold; }
+    .dial-tick:hover .tick-name { color:#999; }
 
-    /* Controls */
-    .radio-controls {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 40px;
-      padding: 20px 24px;
+    /* 数码管 + 日期 */
+    .nixie-area { text-align:center; margin-bottom:4px; }
+    .nixie-tube {
+      display:inline-block; background:#0a0a0a; border:2px solid #1a1a1a;
+      border-radius:6px; padding:4px 16px;
+      font-family:'Orbitron','Courier New',monospace; font-size:38px; font-weight:700;
+      color:#FFB300; text-shadow:0 0 12px #FFB300, 0 0 25px rgba(255,179,0,0.4);
+      letter-spacing:8px; box-shadow:inset 0 2px 8px rgba(0,0,0,0.8); line-height:1;
     }
-    .knob-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+    .nixie-label { font-size:9px; color:#555; letter-spacing:2px; margin-top:1px; }
+    .date-selector {
+      display: flex; align-items: center; justify-content: center;
+      gap: 4px; margin-top: 2px;
     }
-    .knob {
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #4a4a5a, #1a1a2a);
-      border: 3px solid var(--radio-border);
-      cursor: pointer;
-      position: relative;
-      transition: transform 0.1s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .date-selector select, .date-selector input {
+      padding: 3px 6px; border-radius: 3px; border: 1px solid #333;
+      background: #0a0a0a; color: #D4A853; font-size: 10px;
+      font-family: 'Courier New', monospace;
     }
-    .knob::after {
-      content: '';
-      position: absolute;
-      top: 6px;
-      width: 2px; height: 12px;
-      background: var(--radio-gold);
-      border-radius: 1px;
+    .date-selector select:focus { outline: none; border-color: #D4A853; }
+    .date-selector .date-sep {
+      color: #555; font-size: 10px;
     }
-    .knob:active { transform: scale(0.95); }
-    .knob-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      letter-spacing: 1px;
+    .date-go-btn {
+      padding: 3px 8px; border-radius: 3px; border: 1px solid #D4A853;
+      background: transparent; color: #D4A853; font-size: 9px; cursor: pointer;
+      font-family: 'Courier New', monospace;
     }
+    .date-go-btn:hover { background: #D4A853; color: #1a1a1a; }
 
-    /* Volume slider */
-    .volume-slider {
-      width: 120px;
+    .mode-btns { display:flex; justify-content:center; gap:16px; margin-bottom:4px; }
+    .mode-btn {
+      width:34px; height:34px; border-radius:50%; border:2px solid #3a3a3a;
+      background: radial-gradient(circle at 35% 30%, #5a5a5a, #1a1a1a);
+      color:#888; font-size:9px; font-weight:bold; cursor:pointer;
+      transition:all 0.2s; display:flex; align-items:center; justify-content:center;
+      letter-spacing:1px;
     }
+    .mode-btn:hover { border-color:#D4A853; color:#D4A853; }
+    .mode-btn.active {
+      border-color:#D4A853;
+      background: radial-gradient(circle at 35% 30%, #D4A853, #6B4E0A);
+      color:#1a1a1a; box-shadow:0 0 10px rgba(212,168,83,0.3);
+    }
+    .mode-btn-label { font-size:8px; color:#555; text-align:center; margin-top:1px; }
 
-    /* Station info */
-    .station-info {
-      text-align: center;
-      padding: 8px 24px 16px;
-      border-top: 1px solid var(--radio-border);
+    .knob-area {
+      display:flex; justify-content:space-between; align-items:flex-end;
+      flex:1; padding:0 4px; position:relative;
     }
-    .station-info .si-name {
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text-primary);
+    .knob-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .knob-group .knob-label { font-size:9px; color:#777; letter-spacing:1px; }
+    .knob-base {
+      border-radius:50%; cursor:grab; position:relative;
+      display:flex; align-items:center; justify-content:center;
     }
-    .station-info .si-detail {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 2px;
+    .knob-base:active { cursor:grabbing; }
+    .knob-base .knob-indicator {
+      position:absolute; top:4px; left:50%; transform:translateX(-50%);
+      width:2px; height:25%; background:#D4A853; border-radius:1px;
+      box-shadow:0 0 3px rgba(212,168,83,0.5);
     }
+    .knob-tuning {
+      width:64px; height:64px;
+      background: radial-gradient(circle at 40% 35%, #D4A853, #8B6914 50%, #5C3D0E 80%, #3E2608);
+      border:3px solid #3E2608;
+      box-shadow:0 4px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
+    }
+    .knob-tuning::after {
+      content:''; position:absolute; inset:8px; border-radius:50%;
+      border:1px solid rgba(0,0,0,0.3); pointer-events:none;
+    }
+    .knob-ptt {
+      width:48px; height:48px;
+      background: radial-gradient(circle at 40% 35%, #5a5a5a, #2a2a2a);
+      border:3px solid #444; box-shadow:0 3px 10px rgba(0,0,0,0.5); cursor:pointer;
+    }
+    .knob-ptt:active, .knob-ptt.recording {
+      background: radial-gradient(circle at 40% 35%, #e94560, #8B0000);
+      border-color:#e94560; box-shadow:0 0 16px rgba(233,69,96,0.5);
+    }
+    .knob-ptt .mic-icon { font-size:16px; color:#888; pointer-events:none; }
+    .knob-ptt.recording .mic-icon { color:#fff; }
+    .knob-era {
+      width:44px; height:44px;
+      background: radial-gradient(circle at 40% 35%, #8B7355, #5C3D0E 60%, #3E2608);
+      border:2px solid #3E2608; box-shadow:0 3px 8px rgba(0,0,0,0.5);
+    }
+    .knob-volume {
+      width:36px; height:36px;
+      background: radial-gradient(circle at 40% 35%, #6a6a6a, #2a2a2a);
+      border:2px solid #3a3a3a; box-shadow:0 2px 6px rgba(0,0,0,0.5);
+    }
+    .knob-volume-wrap {
+      position:absolute; bottom:0; right:10px;
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+    }
+    .knob-volume-wrap .knob-label { font-size:8px; color:#777; }
 
-    /* AI Chat */
-    .ai-chat-section {
-      padding: 0 24px 24px;
+    .radio-status {
+      position:absolute; top:6px; right:10px; z-index:3;
+      display:flex; align-items:center; gap:6px; font-size:9px; color:#888;
     }
-    .ai-chat-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      font-size: 0.85rem;
-      color: var(--radio-gold);
-      cursor: pointer;
-    }
-    .ai-chat-body {
-      display: none;
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--radio-border);
-      border-radius: var(--radius-md);
-      padding: 12px;
-    }
-    .ai-chat-body.open { display: block; }
-    .ai-messages {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      font-size: 0.85rem;
-    }
-    .ai-msg { margin-bottom: 8px; }
-    .ai-msg.user { color: var(--info); }
-    .ai-msg.bot { color: var(--text-secondary); }
-    .ai-input-row {
-      display: flex;
-      gap: 8px;
-    }
-    .ai-input-row input {
-      flex: 1;
-      padding: 8px 12px;
-      border: 1px solid var(--radio-border);
-      border-radius: var(--radius-sm);
-      background: rgba(0,0,0,0.5);
-      color: var(--text-primary);
-      font-size: 0.85rem;
-    }
-    .ai-input-row input:focus { outline: none; border-color: var(--accent); }
-
-    /* Era selector */
-    .era-selector {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 24px;
-      flex-wrap: wrap;
-    }
-    .era-btn {
-      padding: 6px 14px;
-      border: 1px solid var(--radio-border);
-      border-radius: 20px;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-    .era-btn:hover { border-color: var(--radio-gold); color: var(--text-primary); }
-    .era-btn.active {
-      background: var(--radio-accent);
-      border-color: var(--radio-accent);
-      color: #fff;
+    /* 年代模式下的电台名滚动显示 */
+    .era-scroll {
+      position: absolute; bottom: 2px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 9px; color: #D4A853; z-index: 3;
+      white-space: nowrap; pointer-events: none;
+      background: rgba(0,0,0,0.4); padding: 2px 10px;
+      border-radius: 8px; max-width: 90%; overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* Recent stations */
-    .recent-stations {
-      padding: 0 24px 16px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    .recent-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      margin-right: 4px;
-    }
-    .recent-chip {
-      padding: 4px 12px;
-      border: 1px solid var(--radio-border);
-      border-radius: 14px;
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all var(--transition);
-    }
-    .recent-chip:hover { border-color: var(--accent); color: var(--accent); }
+    #audioPlayer { display:none; }
 
-    /* Audio player hidden */
-    #audioPlayer { display: none; }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .freq-number { font-size: 2.5rem; }
-      .radio-controls { gap: 20px; }
-      .knob { width: 48px; height: 48px; }
+    @media (max-width:860px) {
+      .radio-shell { width:100%; max-width:860px; height:auto; min-height:400px; flex-direction:column; }
+      .radio-left { width:100%; height:170px; padding:10px; }
+      .radio-right { width:100%; }
+      .knob-tuning { width:52px; height:52px; }
+      .knob-ptt { width:40px; height:40px; }
+      .knob-era { width:36px; height:36px; }
+      .knob-volume { width:30px; height:30px; }
+      .nixie-tube { font-size:30px; padding:3px 12px; letter-spacing:6px; }
     }
   </style>
 </head>
-<body>
-<div class="radio-container">
-  <div class="radio-back-nav">
-    <a href="/">← 返回电台列表</a>
+<body class="radio-page has-nav">
+
+<!-- 导航栏 -->
+<nav class="top-nav">
+  <a href="/" class="top-nav-brand">elder-radio</a>
+  <ul class="top-nav-links">
+    <li><a href="/">首页</a></li>
+    <li><a href="/radio" class="active">收音机</a></li>
+    <li><a href="/singer">歌手频道</a></li>
+    <li><a href="/config">配置</a></li>
+    <li><a href="/admin">管理</a></li>
+  </ul>
+</nav>
+
+<div class="radio-shell">
+  <div class="radio-feet">
+    <div class="foot"></div><div class="foot"></div><div class="foot"></div>
+  </div>
+  <div class="radio-status">
+    <span id="modeIndicator">AM</span>
+    <span class="led-green" id="liveLed"></span>
+  </div>
+  <div class="era-scroll" id="eraScroll"></div>
+
+  <div class="radio-left">
+    <div class="speaker-frame">
+      <div class="speaker-grille"><div class="speaker-shadow"></div></div>
+      <div class="speaker-info-overlay">
+        <div class="now-playing" id="nowPlaying">等待信号...</div>
+      </div>
+    </div>
   </div>
 
-  <div class="radio-body">
-    <!-- Top Bar -->
-    <div class="radio-top">
-      <span class="radio-brand">KEYCLAW</span>
-      <span class="radio-power" id="powerIndicator"></span>
-    </div>
-
-    <!-- Frequency Display -->
-    <div class="freq-display">
-      <div>
-        <span class="freq-number" id="freqDisplay">87.5</span>
-        <span class="freq-unit">MHz</span>
+  <div class="radio-right">
+    <!-- 刻度盘：AM 模式显示电台名 / FM 模式显示频率 -->
+    <div class="dial-panel">
+      <div class="dial-fm-label">
+        <span id="dialModeLabel">AM</span>
+        <span class="led-green" id="dialLed"></span>
+        <span style="font-size:7px;color:#666;" id="dialRange">年代电台</span>
       </div>
-      <div class="freq-label" id="freqLabel">中国之声</div>
+      <div class="dial-scale-line"></div>
+      <div class="dial-ticks" id="dialTicks"></div>
     </div>
 
-    <!-- Dial Scale -->
-    <div class="dial-scale" id="dialScale"></div>
+    <!-- 数码管 + 日期选择器 -->
+    <div class="nixie-area">
+      <div class="nixie-tube" id="nixieYear">1985</div>
+      <div class="nixie-label">YEAR / 年代</div>
+      <div class="date-selector">
+        <select id="selMonth"></select>
+        <span class="date-sep">-</span>
+        <select id="selDay"></select>
+        <button class="date-go-btn" id="dateGoBtn" title="生成该日广播">GO</button>
+      </div>
+    </div>
 
-    <!-- Era Selector -->
-    <div class="era-selector" id="eraSelector"></div>
+    <!-- 模式切换 -->
+    <div class="mode-btns">
+      <div style="text-align:center;">
+        <button class="mode-btn active" id="btnAM">AM</button>
+        <div class="mode-btn-label">存档</div>
+      </div>
+      <div style="text-align:center;">
+        <button class="mode-btn" id="btnFM">FM</button>
+        <div class="mode-btn-label">直播</div>
+      </div>
+      <div style="text-align:center;">
+        <button class="mode-btn" id="btnTONE">A</button>
+        <div class="mode-btn-label">音色</div>
+      </div>
+    </div>
 
-    <!-- Controls -->
-    <div class="radio-controls">
+    <!-- 旋钮区 -->
+    <div class="knob-area">
       <div class="knob-group">
-        <div class="knob" id="knobPrev" title="上一个频道">◀</div>
-        <span class="knob-label">频道</span>
-      </div>
-      <div class="volume-slider">
-        <input type="range" id="volumeSlider" min="0" max="100" value="70" title="音量">
+        <div class="knob-base knob-era" id="knobEra">
+          <div class="knob-indicator"></div>
+        </div>
+        <span class="knob-label">年代</span>
       </div>
       <div class="knob-group">
-        <div class="knob" id="knobNext" title="下一个频道">▶</div>
-        <span class="knob-label">频道</span>
-      </div>
-    </div>
-
-    <!-- Station Info -->
-    <div class="station-info" id="stationInfo">
-      <div class="si-name">中央人民广播电台中国之声</div>
-      <div class="si-detail">北京 · 新闻 · CNR</div>
-    </div>
-
-    <!-- Recent Stations -->
-    <div class="recent-stations" id="recentStations">
-      <span class="recent-label">最近收听</span>
-    </div>
-
-    <!-- AI Chat -->
-    <div class="ai-chat-section">
-      <div class="ai-chat-header" id="aiChatToggle">
-        <span>🤖 AI 对讲</span>
-        <span style="font-size:0.7rem;color:var(--text-muted);">点击展开</span>
-      </div>
-      <div class="ai-chat-body" id="aiChatBody">
-        <div class="ai-messages" id="aiMessages">
-          <div class="ai-msg bot">你好！我是 AI 播音员 Agnes，有什么想问的？</div>
+        <div class="knob-base knob-ptt" id="knobPTT">
+          <span class="mic-icon">🎤</span>
         </div>
-        <div class="ai-input-row">
-          <input type="text" id="aiInput" placeholder="输入问题..." />
-          <button class="btn btn-accent btn-sm" id="aiSend">发送</button>
+        <span class="knob-label">对讲</span>
+      </div>
+      <div class="knob-group">
+        <div class="knob-base knob-tuning" id="knobTuning">
+          <div class="knob-indicator"></div>
         </div>
+        <span class="knob-label">调台</span>
+      </div>
+      <div class="knob-volume-wrap">
+        <div class="knob-base knob-volume" id="knobVolume">
+          <div class="knob-indicator" style="height:28%;top:3px;"></div>
+        </div>
+        <span class="knob-label">音量</span>
       </div>
     </div>
   </div>
 </div>
 
 <audio id="audioPlayer"></audio>
-
 <script src="radio.js"></script>
 </body>
 </html>

@@ -1,0 +1,479 @@
+{
+  "metadata": {
+    "version": "1.0",
+    "era_range": [1949, 2026],
+    "total_years": 78,
+    "last_updated": "2026-07-10",
+    "description": "elder-radio 历史广播元数据 — 每年电台覆盖、重大事件、AI 生成状态"
+  },
+  "years": {
+    "1949": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["开国大典", "中华人民共和国成立"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1950": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["土地改革", "抗美援朝开始"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1951": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["西藏和平解放"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1952": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["成渝铁路通车"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1953": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["第一个五年计划开始", "朝鲜停战"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1954": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["第一届全国人民代表大会", "日内瓦会议"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1955": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["万隆会议", "授衔元帅"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1956": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["三大改造完成", "双百方针"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1957": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["武汉长江大桥建成"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1958": {
+      "stations": ["中央人民广播电台中国之声", "北京新闻广播"],
+      "events": ["大跃进开始", "人民公社化"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1959": {
+      "stations": ["中央人民广播电台中国之声", "北京新闻广播"],
+      "events": ["庐山会议"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1960": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["大庆油田开发"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1961": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["三年困难时期结束"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1962": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["中印边境自卫反击战"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1963": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["向雷锋同志学习"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1964": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["第一颗原子弹爆炸", "原子弹爆炸新闻广播"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1965": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["西藏自治区成立"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1966": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["文化大革命开始"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1967": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["第一颗氢弹爆炸"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1968": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["南京长江大桥通车"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1969": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["珍宝岛事件"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1970": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["第一颗人造卫星东方红一号"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1971": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["恢复联合国合法席位"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1972": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["尼克松访华", "中日建交"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1973": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["袁隆平培育杂交水稻"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1974": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["西沙海战"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1975": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["邓小平主持中央工作"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1976": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["唐山大地震", "三位伟人逝世", "文革结束"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1977": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["恢复高考"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1978": {
+      "stations": ["中央人民广播电台中国之声"],
+      "events": ["十一届三中全会", "改革开放开始"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1979": {
+      "stations": ["中央人民广播电台中国之声", "广东新闻广播"],
+      "events": ["中美建交", "对越自卫反击战", "深圳设市"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1980": {
+      "stations": ["中央人民广播电台中国之声", "北京交通广播", "广东音乐之声"],
+      "events": ["经济特区设立", "审判林彪江青集团"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1981": {
+      "stations": ["中央人民广播电台中国之声", "上海戏剧曲艺广播"],
+      "events": ["女排首次世界冠军"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1982": {
+      "stations": ["中央人民广播电台中国之声", "天津文艺广播"],
+      "events": ["人口普查突破十亿"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1983": {
+      "stations": ["中央人民广播电台中国之声", "北京音乐广播"],
+      "events": ["严打开始", "中央电视台首届春晚"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1984": {
+      "stations": ["中央人民广播电台中国之声", "辽宁文艺广播", "北京文艺广播"],
+      "events": ["洛杉矶奥运会金牌突破", "中英香港谈判"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1985": {
+      "stations": ["中央人民广播电台中国之声", "广东音乐之声", "天津经济广播"],
+      "events": ["裁军百万", "第一个教师节"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1986": {
+      "stations": ["中央人民广播电台中国之声", "辽宁经济广播"],
+      "events": ["八六三计划启动"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1987": {
+      "stations": ["中央人民广播电台中国之声", "海南新闻广播"],
+      "events": ["十三大召开", "海南建省筹备"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1988": {
+      "stations": ["中央人民广播电台中国之声", "上海新闻广播"],
+      "events": ["海南建省", "价格闯关"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1989": {
+      "stations": ["中央人民广播电台中国之声", "中央人民广播电台音乐之声"],
+      "events": ["戈尔巴乔夫访华"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1990": {
+      "stations": ["中央人民广播电台中国之声", "上海交通广播", "天津交通广播"],
+      "events": ["上海证交所成立", "北京亚运会"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1991": {
+      "stations": ["中央人民广播电台中国之声", "四川音乐广播", "湖南交通频道"],
+      "events": ["苏联解体", "希望工程"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1992": {
+      "stations": ["中央人民广播电台中国之声", "广东城市之声", "湖北交通广播"],
+      "events": ["邓小平南巡讲话", "两岸达成九二共识"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1993": {
+      "stations": ["中央人民广播电台中国之声", "浙江交通之声"],
+      "events": ["汪辜会谈", "社会主义市场经济"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1994": {
+      "stations": ["中央人民广播电台中国之声", "内蒙古音乐之声", "新疆音乐广播"],
+      "events": ["三峡工程开工", "互联网进入中国"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1995": {
+      "stations": ["中央人民广播电台中国之声", "重庆经济广播"],
+      "events": ["科教兴国战略"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1996": {
+      "stations": ["中央人民广播电台中国之声", "陕西交通广播"],
+      "events": ["京九铁路通车"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1997": {
+      "stations": ["中央人民广播电台中国之声", "香港电台第一台"],
+      "events": ["香港回归", "邓小平逝世"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1998": {
+      "stations": ["中央人民广播电台中国之声", "江西新闻广播"],
+      "events": ["特大洪水", "抗击洪灾"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "1999": {
+      "stations": ["中央人民广播电台中国之声", "澳门电台中文频道"],
+      "events": ["澳门回归", "国庆50周年阅兵"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2000": {
+      "stations": ["中央人民广播电台中国之声", "中央人民广播电台老年之声", "河北音乐广播"],
+      "events": ["千禧年", "西部大开发"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2001": {
+      "stations": ["中央人民广播电台中国之声", "山东交通广播"],
+      "events": ["中国加入WTO", "北京申奥成功"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2002": {
+      "stations": ["中央人民广播电台中国之声", "浙江音乐广播"],
+      "events": ["南水北调工程开工"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2003": {
+      "stations": ["中央人民广播电台中国之声", "湖北农村广播"],
+      "events": ["抗击非典", "神舟五号发射"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2004": {
+      "stations": ["中央人民广播电台中国之声", "河南音乐广播"],
+      "events": ["禽流感", "刘翔雅典夺冠"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2005": {
+      "stations": ["中央人民广播电台中国之声", "湖南音乐之声", "河南农村广播"],
+      "events": ["神舟六号", "连战访问大陆"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2006": {
+      "stations": ["中央人民广播电台中国之声", "广西交通广播"],
+      "events": ["青藏铁路通车", "取消农业税"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2007": {
+      "stations": ["中央人民广播电台中国之声", "山西文艺广播"],
+      "events": ["十七大", "嫦娥一号"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2008": {
+      "stations": ["中央人民广播电台中国之声", "四川交通广播", "北京奥运会开幕式"],
+      "events": ["汶川地震", "北京奥运会", "金融危机"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2009": {
+      "stations": ["中央人民广播电台中国之声", "重庆都市广播"],
+      "events": ["建国60周年阅兵", "3G商用"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2010": {
+      "stations": ["中央人民广播电台中国之声", "海南交通广播", "广西音乐广播"],
+      "events": ["上海世博会", "玉树地震"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2011": {
+      "stations": ["中央人民广播电台中国之声", "甘肃农村广播"],
+      "events": ["歼-20首飞", "京沪高铁通车"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2012": {
+      "stations": ["中央人民广播电台中国之声", "海南文艺广播"],
+      "events": ["十八大", "莫言获诺贝尔文学奖"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2013": {
+      "stations": ["中央人民广播电台中国之声", "宁夏音乐广播"],
+      "events": ["一带一路倡议", "神舟十号"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2014": {
+      "stations": ["中央人民广播电台中国之声", "山西音乐广播"],
+      "events": ["APEC北京峰会", "全面深化改革"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2015": {
+      "stations": ["中央人民广播电台中国之声", "河北文艺广播"],
+      "events": ["抗日战争胜利70周年阅兵"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2016": {
+      "stations": ["中央人民广播电台中国之声", "青海交通音乐广播"],
+      "events": ["G20杭州峰会", "神舟十一号"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2017": {
+      "stations": ["中央人民广播电台中国之声", "宁夏经济广播"],
+      "events": ["十九大", "雄安新区设立"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2018": {
+      "stations": ["中央人民广播电台中国之声", "内蒙古农牧广播"],
+      "events": ["中美贸易战", "港珠澳大桥通车"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2019": {
+      "stations": ["中央人民广播电台中国之声", "建国70周年阅兵广播"],
+      "events": ["建国70周年", "新冠疫情起始"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2020": {
+      "stations": ["中央人民广播电台中国之声", "抗疫特别广播"],
+      "events": ["新冠疫情", "脱贫攻坚收官", "民法典"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2021": {
+      "stations": ["中央人民广播电台中国之声", "中央人民广播电台娱乐广播"],
+      "events": ["建党100周年", "天问一号火星着陆"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2022": {
+      "stations": ["中央人民广播电台中国之声", "新疆哈萨克语广播"],
+      "events": ["北京冬奥会", "党的二十大"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2023": {
+      "stations": ["中央人民广播电台中国之声", "香港电台第二台"],
+      "events": ["空间站建成", "ChatGPT热潮"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2024": {
+      "stations": ["中央人民广播电台中国之声", "云南农村广播"],
+      "events": ["巴黎奥运会", "人工智能爆发"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2025": {
+      "stations": ["中央人民广播电台中国之声", "陕西戏曲广播"],
+      "events": ["十五五规划起草"],
+      "daily_available": false,
+      "ai_generated": false
+    },
+    "2026": {
+      "stations": ["中央人民广播电台中国之声", "中央人民广播电台民族之声"],
+      "events": ["当前年份"],
+      "daily_available": true,
+      "ai_generated": false
+    }
+  }
+}

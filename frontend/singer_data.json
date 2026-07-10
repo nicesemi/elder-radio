@@ -1,0 +1,1597 @@
+{
+  "singers": [
+    {
+      "name": "Beyond",
+      "name_cn": "Beyond 乐队",
+      "formed": 1983,
+      "members": [
+        "黄家驹(主唱/吉他)",
+        "黄贯中(吉他)",
+        "黄家强(贝斯)",
+        "叶世荣(鼓)"
+      ],
+      "summary": "香港传奇摇滚乐队，1983年成立，1993年黄家驹去世后以三人阵容继续活动至2005年。代表作《海阔天空》《光辉岁月》《真的爱你》《大地》等。",
+      "songs_by_year": {
+        "1986": [
+          {
+            "title": "永远等待",
+            "album": "再见理想"
+          },
+          {
+            "title": "巨人",
+            "album": "再见理想"
+          },
+          {
+            "title": "Long Way Without Friends",
+            "album": "再见理想"
+          },
+          {
+            "title": "Last Man Who Knows You",
+            "album": "再见理想"
+          },
+          {
+            "title": "Myth",
+            "album": "再见理想"
+          },
+          {
+            "title": "再见理想",
+            "album": "再见理想"
+          },
+          {
+            "title": "Dead Romance (Part I)",
+            "album": "再见理想"
+          },
+          {
+            "title": "旧日的足迹",
+            "album": "再见理想"
+          },
+          {
+            "title": "谁是勇敢",
+            "album": "再见理想"
+          },
+          {
+            "title": "The Other Door",
+            "album": "再见理想"
+          },
+          {
+            "title": "飞越苦海",
+            "album": "再见理想"
+          },
+          {
+            "title": "木吉他",
+            "album": "再见理想"
+          },
+          {
+            "title": "Dead Romance (Part II)",
+            "album": "再见理想"
+          }
+        ],
+        "1987": [
+          {
+            "title": "东方宝藏",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "亚拉伯跳舞女郎",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "沙丘魔女",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "无声的告别",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "追忆",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "随意飘荡",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "过去与今天",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "孤单一吻",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "玻璃箱",
+            "album": "亚拉伯跳舞女郎"
+          },
+          {
+            "title": "水晶球",
+            "album": "亚拉伯跳舞女郎"
+          }
+        ],
+        "1988": [
+          {
+            "title": "旧日的足迹(重编版)",
+            "album": "现代舞台"
+          },
+          {
+            "title": "天真的创伤",
+            "album": "现代舞台"
+          },
+          {
+            "title": "赤红热血",
+            "album": "现代舞台"
+          },
+          {
+            "title": "冲上云霄",
+            "album": "现代舞台"
+          },
+          {
+            "title": "冷雨夜",
+            "album": "现代舞台"
+          },
+          {
+            "title": "雨夜之后",
+            "album": "现代舞台"
+          },
+          {
+            "title": "现代舞台",
+            "album": "现代舞台"
+          },
+          {
+            "title": "午夜流浪",
+            "album": "现代舞台"
+          },
+          {
+            "title": "Once Again",
+            "album": "现代舞台"
+          },
+          {
+            "title": "城市猎人",
+            "album": "现代舞台"
+          },
+          {
+            "title": "迷离境界",
+            "album": "现代舞台"
+          },
+          {
+            "title": "冲开一切",
+            "album": "秘密警察"
+          },
+          {
+            "title": "秘密警察",
+            "album": "秘密警察"
+          },
+          {
+            "title": "再见理想(四人合唱版)",
+            "album": "秘密警察"
+          },
+          {
+            "title": "昨日的牵绊",
+            "album": "秘密警察"
+          },
+          {
+            "title": "未知赛事的长跑",
+            "album": "秘密警察"
+          },
+          {
+            "title": "大地",
+            "album": "秘密警察"
+          },
+          {
+            "title": "喜欢你",
+            "album": "秘密警察"
+          },
+          {
+            "title": "每段路",
+            "album": "秘密警察"
+          },
+          {
+            "title": "心内心外",
+            "album": "秘密警察"
+          },
+          {
+            "title": "愿我能",
+            "album": "秘密警察"
+          }
+        ],
+        "1989": [
+          {
+            "title": "真的爱你",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "我有我风格",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "曾是拥有",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "摩登时代",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "原谅我今天",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "与你共行",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "逝去日子",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "爆裂都市",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "午夜迷墙",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "最后的对话",
+            "album": "Beyond IV"
+          },
+          {
+            "title": "岁月无声",
+            "album": "真的见证"
+          },
+          {
+            "title": "明日世界",
+            "album": "真的见证"
+          },
+          {
+            "title": "交织千个心",
+            "album": "真的见证"
+          },
+          {
+            "title": "谁是勇敢",
+            "album": "真的见证"
+          },
+          {
+            "title": "勇闯新世界",
+            "album": "真的见证"
+          },
+          {
+            "title": "又是黄昏",
+            "album": "真的见证"
+          },
+          {
+            "title": "无悔这一生",
+            "album": "真的见证"
+          },
+          {
+            "title": "午夜怨曲",
+            "album": "真的见证"
+          },
+          {
+            "title": "千金一刻",
+            "album": "真的见证"
+          },
+          {
+            "title": "无名的歌",
+            "album": "真的见证"
+          }
+        ],
+        "1990": [
+          {
+            "title": "光辉岁月",
+            "album": "命运派对"
+          },
+          {
+            "title": "两颗心",
+            "album": "命运派对"
+          },
+          {
+            "title": "俾面派对",
+            "album": "命运派对"
+          },
+          {
+            "title": "无泪的遗憾",
+            "album": "命运派对"
+          },
+          {
+            "title": "怀念你",
+            "album": "命运派对"
+          },
+          {
+            "title": "可知道",
+            "album": "命运派对"
+          },
+          {
+            "title": "相依的心",
+            "album": "命运派对"
+          },
+          {
+            "title": "撒旦的诅咒",
+            "album": "命运派对"
+          },
+          {
+            "title": "战胜心魔",
+            "album": "命运派对"
+          },
+          {
+            "title": "送给不知怎去保护环境的人",
+            "album": "命运派对"
+          },
+          {
+            "title": "大地(国)",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "漆黑的空间",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "短暂的温柔",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "不需要太懂",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "九十年代的忧伤",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "你知道我的迷惘",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "送给不懂环保的人",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "和自己的心比赛",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "破坏游戏的孩子",
+            "album": "大地(国语)"
+          },
+          {
+            "title": "今天有我",
+            "album": "大地(国语)"
+          }
+        ],
+        "1991": [
+          {
+            "title": "Amani",
+            "album": "犹豫"
+          },
+          {
+            "title": "坚持信念",
+            "album": "犹豫"
+          },
+          {
+            "title": "不再犹豫",
+            "album": "犹豫"
+          },
+          {
+            "title": "系要听ROCK N' ROLL",
+            "album": "犹豫"
+          },
+          {
+            "title": "我早应该习惯",
+            "album": "犹豫"
+          },
+          {
+            "title": "谁伴我闯荡",
+            "album": "犹豫"
+          },
+          {
+            "title": "高温派对",
+            "album": "犹豫"
+          },
+          {
+            "title": "谁来主宰",
+            "album": "犹豫"
+          },
+          {
+            "title": "爱你一切",
+            "album": "犹豫"
+          },
+          {
+            "title": "完全的拥有",
+            "album": "犹豫"
+          },
+          {
+            "title": "光辉岁月(国)",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "午夜怨曲(国)",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "撒旦的诅咒(国)",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "请你让我来决定我的路",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "射手座咒语",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "岁月无声(国)",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "曾经拥有",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "怀念你，忘记你",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "心中的太阳",
+            "album": "光辉岁月(国语)"
+          },
+          {
+            "title": "两颗心(国)",
+            "album": "光辉岁月(国语)"
+          }
+        ],
+        "1992": [
+          {
+            "title": "长城",
+            "album": "继续革命"
+          },
+          {
+            "title": "农民",
+            "album": "继续革命"
+          },
+          {
+            "title": "不可一世",
+            "album": "继续革命"
+          },
+          {
+            "title": "Bye-Bye",
+            "album": "继续革命"
+          },
+          {
+            "title": "遥望",
+            "album": "继续革命"
+          },
+          {
+            "title": "温暖的家乡",
+            "album": "继续革命"
+          },
+          {
+            "title": "可否冲破",
+            "album": "继续革命"
+          },
+          {
+            "title": "快乐王国",
+            "album": "继续革命"
+          },
+          {
+            "title": "继续沉醉",
+            "album": "继续革命"
+          },
+          {
+            "title": "早班火车",
+            "album": "继续革命"
+          },
+          {
+            "title": "厌倦寂寞",
+            "album": "继续革命"
+          },
+          {
+            "title": "无语问苍天",
+            "album": "继续革命"
+          },
+          {
+            "title": "长城(国)",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "关心永远在",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "爱过的罪",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "今天就做",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "年轻",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "最想念你",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "问自己",
+            "album": "信念(国语)"
+          },
+          {
+            "title": "The Wall",
+            "album": "超越(日语)"
+          }
+        ],
+        "1993": [
+          {
+            "title": "我是愤怒",
+            "album": "乐与怒"
+          },
+          {
+            "title": "爸爸妈妈",
+            "album": "乐与怒"
+          },
+          {
+            "title": "和平与爱",
+            "album": "乐与怒"
+          },
+          {
+            "title": "命运是你家",
+            "album": "乐与怒"
+          },
+          {
+            "title": "全是爱",
+            "album": "乐与怒"
+          },
+          {
+            "title": "海阔天空",
+            "album": "乐与怒"
+          },
+          {
+            "title": "狂人山庄",
+            "album": "乐与怒"
+          },
+          {
+            "title": "妄想",
+            "album": "乐与怒"
+          },
+          {
+            "title": "完全地爱吧",
+            "album": "乐与怒"
+          },
+          {
+            "title": "情人",
+            "album": "乐与怒"
+          },
+          {
+            "title": "走不开的快乐",
+            "album": "乐与怒"
+          },
+          {
+            "title": "无无谓",
+            "album": "乐与怒"
+          },
+          {
+            "title": "海阔天空(国)",
+            "album": "海阔天空(国语)"
+          },
+          {
+            "title": "爱不容易说",
+            "album": "海阔天空(国语)"
+          },
+          {
+            "title": "身不由己",
+            "album": "海阔天空(国语)"
+          },
+          {
+            "title": "遥かなる梦に ～Far away～",
+            "album": "This Is Love I(日语)"
+          }
+        ],
+        "1994": [
+          {
+            "title": "超级武器",
+            "album": "二楼后座"
+          },
+          {
+            "title": "总有爱",
+            "album": "二楼后座"
+          },
+          {
+            "title": "醒你",
+            "album": "二楼后座"
+          },
+          {
+            "title": "遥远的Paradise",
+            "album": "二楼后座"
+          },
+          {
+            "title": "We Don't Wanna Make It Without You",
+            "album": "二楼后座"
+          },
+          {
+            "title": "伤口",
+            "album": "二楼后座"
+          },
+          {
+            "title": "打救你",
+            "album": "二楼后座"
+          },
+          {
+            "title": "仍然是要闯",
+            "album": "二楼后座"
+          },
+          {
+            "title": "冷雨没暂停",
+            "album": "二楼后座"
+          },
+          {
+            "title": "爱得太错",
+            "album": "二楼后座"
+          },
+          {
+            "title": "祝您愉快",
+            "album": "二楼后座"
+          },
+          {
+            "title": "Paradise(国)",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "一辈子陪我走",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "无名英雄",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "情深依旧",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "温柔杀手",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "和平世界",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "因为有你有我",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "对吗",
+            "album": "Paradise(国语)"
+          },
+          {
+            "title": "Dancing In The Rain",
+            "album": "Paradise(国语)"
+          }
+        ],
+        "1995": [
+          {
+            "title": "铁马骝",
+            "album": "Sound"
+          },
+          {
+            "title": "教坏细路",
+            "album": "Sound"
+          },
+          {
+            "title": "缺口",
+            "album": "Sound"
+          },
+          {
+            "title": "阿博",
+            "album": "Sound"
+          },
+          {
+            "title": "Cryin'",
+            "album": "Sound"
+          },
+          {
+            "title": "声音",
+            "album": "Sound"
+          },
+          {
+            "title": "困兽斗",
+            "album": "Sound"
+          },
+          {
+            "title": "逼不得已",
+            "album": "Sound"
+          },
+          {
+            "title": "门外看",
+            "album": "Sound"
+          },
+          {
+            "title": "叹息",
+            "album": "Sound"
+          },
+          {
+            "title": "幻觉",
+            "album": "Sound"
+          },
+          {
+            "title": "一厢情愿",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "糊涂的人",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "唯一",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "Love",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "最后的答案",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "活得精彩",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "梦",
+            "album": "爱与生活(国语)"
+          },
+          {
+            "title": "荒谬世界",
+            "album": "爱与生活(国语)"
+          }
+        ],
+        "1996": [
+          {
+            "title": "想你",
+            "album": "Beyond得精彩(EP)"
+          },
+          {
+            "title": "太空",
+            "album": "Beyond得精彩(EP)"
+          },
+          {
+            "title": "罪",
+            "album": "Beyond得精彩(EP)"
+          },
+          {
+            "title": "夜长梦多",
+            "album": "Beyond得精彩(EP)"
+          },
+          {
+            "title": "活着便精彩",
+            "album": "Beyond得精彩(EP)"
+          }
+        ],
+        "1997": [
+          {
+            "title": "游戏(序曲)",
+            "album": "请将手放开"
+          },
+          {
+            "title": "大时代",
+            "album": "请将手放开"
+          },
+          {
+            "title": "预备",
+            "album": "请将手放开"
+          },
+          {
+            "title": "请将手放开",
+            "album": "请将手放开"
+          },
+          {
+            "title": "回响",
+            "album": "请将手放开"
+          },
+          {
+            "title": "谁命我名字",
+            "album": "请将手放开"
+          },
+          {
+            "title": "吓，讲乜野话？",
+            "album": "请将手放开"
+          },
+          {
+            "title": "麻醉",
+            "album": "请将手放开"
+          },
+          {
+            "title": "无助",
+            "album": "请将手放开"
+          },
+          {
+            "title": "我的知己在街头",
+            "album": "请将手放开"
+          },
+          {
+            "title": "我的知己",
+            "album": "请将手放开"
+          },
+          {
+            "title": "游戏",
+            "album": "请将手放开"
+          },
+          {
+            "title": "旧历(纯音乐)",
+            "album": "请将手放开"
+          },
+          {
+            "title": "回家",
+            "album": "惊喜"
+          },
+          {
+            "title": "雾",
+            "album": "惊喜"
+          },
+          {
+            "title": "深",
+            "album": "惊喜"
+          },
+          {
+            "title": "惊喜",
+            "album": "惊喜"
+          },
+          {
+            "title": "无事无事",
+            "album": "惊喜"
+          },
+          {
+            "title": "我记得",
+            "album": "惊喜"
+          },
+          {
+            "title": "管我",
+            "album": "惊喜"
+          },
+          {
+            "title": "青马大桥(纯音乐)",
+            "album": "惊喜"
+          },
+          {
+            "title": "缓慢",
+            "album": "惊喜"
+          },
+          {
+            "title": "不朽的传说",
+            "album": "惊喜"
+          }
+        ],
+        "1998": [
+          {
+            "title": "忘记你",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "想你(国)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "缓慢(国)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "管我(国)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "候诊室",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "情人(国)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "热情过后",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "十字路口",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "AMANI(国)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "命运是我家",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "PARADISE(英)",
+            "album": "这里那里(国语)"
+          },
+          {
+            "title": "星期天",
+            "album": "不见不散"
+          },
+          {
+            "title": "牺牲",
+            "album": "不见不散"
+          },
+          {
+            "title": "蚊",
+            "album": "不见不散"
+          },
+          {
+            "title": "时日无多",
+            "album": "不见不散"
+          },
+          {
+            "title": "讨厌",
+            "album": "不见不散"
+          },
+          {
+            "title": "太完美",
+            "album": "不见不散"
+          },
+          {
+            "title": "扯火",
+            "album": "不见不散"
+          },
+          {
+            "title": "崇拜",
+            "album": "不见不散"
+          },
+          {
+            "title": "不见不散",
+            "album": "不见不散"
+          },
+          {
+            "title": "无重状态",
+            "album": "不见不散"
+          },
+          {
+            "title": "奉信",
+            "album": "不见不散"
+          },
+          {
+            "title": "Phantom Power(纯音乐)",
+            "album": "不见不散"
+          }
+        ],
+        "1999": [
+          {
+            "title": "Good Time",
+            "album": "Good Time"
+          },
+          {
+            "title": "失踪",
+            "album": "Good Time"
+          },
+          {
+            "title": "错有错著",
+            "album": "Good Time"
+          },
+          {
+            "title": "十八",
+            "album": "Good Time"
+          },
+          {
+            "title": "一百零一次",
+            "album": "Good Time"
+          },
+          {
+            "title": "洗衣粉",
+            "album": "Good Time"
+          },
+          {
+            "title": "然后",
+            "album": "Good Time"
+          },
+          {
+            "title": "看星",
+            "album": "Good Time"
+          },
+          {
+            "title": "褪色",
+            "album": "Good Time"
+          },
+          {
+            "title": "荒谬",
+            "album": "Good Time"
+          },
+          {
+            "title": "进化论",
+            "album": "Good Time"
+          }
+        ]
+      }
+    },
+    {
+      "name": "五月天",
+      "name_cn": "五月天 Mayday",
+      "formed": 1997,
+      "members": [
+        "阿信(主唱)",
+        "怪兽(吉他/团长)",
+        "石头(吉他)",
+        "玛莎(贝斯)",
+        "冠佑(鼓)"
+      ],
+      "summary": "台湾摇滚乐团，1997年成立，华语乐坛最具影响力的乐团之一。四次获台湾金曲奖最佳乐团奖。代表作《倔强》《温柔》《突然好想你》《恋爱ing》等。",
+      "songs_by_year": {
+        "1999": [
+          {
+            "title": "疯狂世界",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "拥抱",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "透露",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "生活",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "爱情的模样",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "嘿！我要走了",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "志明与春娇",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "轧车",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "HoSee",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "黑白讲",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "I Love You 无望",
+            "album": "第一张创作专辑"
+          },
+          {
+            "title": "风若吹",
+            "album": "第一张创作专辑"
+          }
+        ],
+        "2000": [
+          {
+            "title": "终结孤单",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "心中无别人",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "温柔",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "明白",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "憨人",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "叫我第一名",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "雨眠",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "罗密欧与茱丽叶",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "反而",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "为什么",
+            "album": "爱情万岁"
+          },
+          {
+            "title": "有你的将来",
+            "album": "爱情万岁"
+          }
+        ],
+        "2001": [
+          {
+            "title": "一颗苹果",
+            "album": "人生海海"
+          },
+          {
+            "title": "能不能不要说",
+            "album": "人生海海"
+          },
+          {
+            "title": "好不好",
+            "album": "人生海海"
+          },
+          {
+            "title": "相信",
+            "album": "人生海海"
+          },
+          {
+            "title": "OK啦",
+            "album": "人生海海"
+          },
+          {
+            "title": "候鸟",
+            "album": "候鸟 电影音乐作品"
+          },
+          {
+            "title": "人生海海",
+            "album": "人生海海"
+          },
+          {
+            "title": "永远的永远",
+            "album": "人生海海"
+          },
+          {
+            "title": "啾啾啾",
+            "album": "人生海海"
+          },
+          {
+            "title": "纯真",
+            "album": "人生海海"
+          }
+        ],
+        "2002": [
+          {
+            "title": "摇滚本事",
+            "album": "摇滚本事(EP)"
+          },
+          {
+            "title": "王子面",
+            "album": "半成年主张"
+          }
+        ],
+        "2003": [
+          {
+            "title": "轻功",
+            "album": "时光机"
+          },
+          {
+            "title": "恒星的恒心",
+            "album": "时光机"
+          },
+          {
+            "title": "雌雄同体",
+            "album": "时光机"
+          },
+          {
+            "title": "阿姆斯壮",
+            "album": "时光机"
+          },
+          {
+            "title": "而我知道",
+            "album": "时光机"
+          },
+          {
+            "title": "赌神",
+            "album": "时光机"
+          },
+          {
+            "title": "别惹我",
+            "album": "时光机"
+          },
+          {
+            "title": "九号球",
+            "album": "时光机"
+          },
+          {
+            "title": "武装",
+            "album": "时光机"
+          },
+          {
+            "title": "时光机",
+            "album": "时光机"
+          },
+          {
+            "title": "我们",
+            "album": "时光机"
+          },
+          {
+            "title": "听不到",
+            "album": "听不到(单曲)"
+          }
+        ],
+        "2004": [
+          {
+            "title": "孙悟空",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "倔强",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "垃圾车",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "小护士",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "让我照顾你",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "约翰蓝侬",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "回来吧",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "错错错",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "圣诞夜惊魂",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "超人",
+            "album": "神的孩子都在跳舞"
+          },
+          {
+            "title": "神的孩子都在跳舞",
+            "album": "神的孩子都在跳舞"
+          }
+        ],
+        "2005": [
+          {
+            "title": "知足",
+            "album": "知足 最真杰作选"
+          },
+          {
+            "title": "恋爱ing",
+            "album": "知足 最真杰作选"
+          },
+          {
+            "title": "牙关",
+            "album": "知足 最真杰作选"
+          },
+          {
+            "title": "乱世浮生",
+            "album": "知足 最真杰作选"
+          },
+          {
+            "title": "麦来乱",
+            "album": "知足 最真杰作选"
+          },
+          {
+            "title": "花",
+            "album": "Final Home 当我们混在一起"
+          }
+        ],
+        "2006": [
+          {
+            "title": "为爱而生",
+            "album": "为爱而生"
+          },
+          {
+            "title": "天使",
+            "album": "为爱而生"
+          },
+          {
+            "title": "我又初恋了",
+            "album": "为爱而生"
+          },
+          {
+            "title": "香水",
+            "album": "为爱而生"
+          },
+          {
+            "title": "摩托车日记",
+            "album": "为爱而生"
+          },
+          {
+            "title": "最重要的小事",
+            "album": "为爱而生"
+          },
+          {
+            "title": "快乐很伟大",
+            "album": "为爱而生"
+          },
+          {
+            "title": "忘词",
+            "album": "为爱而生"
+          },
+          {
+            "title": "宠上天",
+            "album": "为爱而生"
+          },
+          {
+            "title": "米老鼠",
+            "album": "为爱而生"
+          },
+          {
+            "title": "胎音",
+            "album": "为爱而生"
+          },
+          {
+            "title": "First Day",
+            "album": "First Day(单曲)"
+          }
+        ],
+        "2007": [
+          {
+            "title": "私奔到月球",
+            "album": "离开地球表面 Jump!"
+          },
+          {
+            "title": "离开地球表面",
+            "album": "离开地球表面 Jump!"
+          },
+          {
+            "title": "抓狂",
+            "album": "离开地球表面 Jump!"
+          }
+        ],
+        "2008": [
+          {
+            "title": "突然好想你",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "生存以上 生活以下",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "你不是真正的快乐",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "爆肝",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "噢买尬",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "出头天",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "我心中尚未崩坏的地方",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "春天的呐喊",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "夜访吸血鬼",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "如烟",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "后青春期的诗",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "笑忘歌",
+            "album": "后青春期的诗"
+          },
+          {
+            "title": "小太阳",
+            "album": "小太阳(单曲)"
+          }
+        ],
+        "2011": [
+          {
+            "title": "2012",
+            "album": "第二人生"
+          },
+          {
+            "title": "洗衣机",
+            "album": "第二人生"
+          },
+          {
+            "title": "歪腰",
+            "album": "第二人生"
+          },
+          {
+            "title": "干杯",
+            "album": "第二人生"
+          },
+          {
+            "title": "我不愿让你一个人",
+            "album": "第二人生"
+          },
+          {
+            "title": "OAOA(现在就是永远)",
+            "album": "第二人生"
+          },
+          {
+            "title": "星空",
+            "album": "第二人生"
+          },
+          {
+            "title": "诺亚方舟",
+            "album": "第二人生"
+          },
+          {
+            "title": "三个傻瓜",
+            "album": "第二人生"
+          },
+          {
+            "title": "仓颉",
+            "album": "第二人生"
+          },
+          {
+            "title": "T1213121",
+            "album": "第二人生"
+          }
+        ],
+        "2013": [
+          {
+            "title": "入阵曲",
+            "album": "步步 自选作品辑"
+          },
+          {
+            "title": "步步",
+            "album": "步步 自选作品辑"
+          }
+        ],
+        "2014": [
+          {
+            "title": "由我们主宰",
+            "album": "由我们主宰(EP)"
+          },
+          {
+            "title": "Do You Ever Shine?",
+            "album": "Do You Ever Shine?(EP)"
+          },
+          {
+            "title": "将军令",
+            "album": "将军令(单曲)"
+          }
+        ],
+        "2015": [
+          {
+            "title": "勇敢",
+            "album": "勇敢(单曲)"
+          },
+          {
+            "title": "YOUR LEGEND～燃ゆる命～",
+            "album": "YOUR LEGEND(EP)"
+          }
+        ],
+        "2016": [
+          {
+            "title": "如果我们不曾相遇",
+            "album": "自传"
+          },
+          {
+            "title": "成名在望",
+            "album": "自传"
+          },
+          {
+            "title": "好好(想把你写成一首歌)",
+            "album": "自传"
+          },
+          {
+            "title": "兄弟",
+            "album": "自传"
+          },
+          {
+            "title": "人生有限公司",
+            "album": "自传"
+          },
+          {
+            "title": "后来的我们",
+            "album": "自传"
+          },
+          {
+            "title": "顽固",
+            "album": "自传"
+          },
+          {
+            "title": "派对动物",
+            "album": "自传"
+          },
+          {
+            "title": "任意门",
+            "album": "自传"
+          },
+          {
+            "title": "转眼",
+            "album": "自传"
+          },
+          {
+            "title": "你说那C和弦就是...",
+            "album": "自传"
+          }
+        ],
+        "2017": [
+          {
+            "title": "志明与春娇(国)",
+            "album": "春娇救志明 主题曲"
+          },
+          {
+            "title": "凡人歌",
+            "album": "凡人歌(单曲)"
+          }
+        ],
+        "2018": [
+          {
+            "title": "什么歌",
+            "album": "什么歌(单曲)"
+          },
+          {
+            "title": "I Will Carry You",
+            "album": "I Will Carry You(单曲)"
+          },
+          {
+            "title": "后来的我们(合唱版)",
+            "album": "后来的我们(单曲)"
+          }
+        ],
+        "2019": [
+          {
+            "title": "玫瑰少年",
+            "album": "玫瑰少年(单曲)"
+          },
+          {
+            "title": "纯真 #MaydayBlue20th",
+            "album": "MaydayBlue20th"
+          },
+          {
+            "title": "疯狂世界 #MaydayBlue20th",
+            "album": "MaydayBlue20th"
+          },
+          {
+            "title": "干啦干啦",
+            "album": "干啦干啦(单曲)"
+          }
+        ],
+        "2020": [
+          {
+            "title": "温柔 #MaydayBlue20th",
+            "album": "MaydayBlue20th"
+          },
+          {
+            "title": "因为你 所以我",
+            "album": "因为你 所以我(单曲)"
+          }
+        ],
+        "2021": [
+          {
+            "title": "刻在我心底的名字",
+            "album": "刻在我心底的名字(单曲)"
+          }
+        ]
+      }
+    }
+  ]
+}
