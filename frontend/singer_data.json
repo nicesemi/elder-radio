@@ -15,11 +15,17 @@
         "1986": [
           {
             "title": "永远等待",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://lw-sycdn.kuwo.cn/731ca604534fd0e895e6fdbfa6744244/6a511bbf/resource/30106/trackmedia/M500000bRaVn1oyOxH.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "巨人",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://nf-sycdn.kuwo.cn/68010dd8288cbbc00287416b4b21efb6/6a511bc0/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Long Way Without Friends",
@@ -31,11 +37,17 @@
           },
           {
             "title": "Myth",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://lv-sycdn.kuwo.cn/f53df0d6709eadfb5c797bcef407000a/6a511bc1/resource/30106/trackmedia/M500004HWenm4F6J0a.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "再见理想",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://er-sycdn.kuwo.cn/54cb2f6761fc45765e62c06f39ba7b3b/6a511bc2/resource/30106/trackmedia/M500001vfCMM2V8vBh.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Dead Romance (Part I)",
@@ -43,11 +55,17 @@
           },
           {
             "title": "旧日的足迹",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://lv-sycdn.kuwo.cn/f2e91e52b6b364b68fa60b68a2bfe175/6a511bc3/resource/30106/trackmedia/long/M5000038zdkK01ccfG.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "谁是勇敢",
-            "album": "再见理想"
+            "album": "再见理想",
+            "stream_url": "https://er-sycdn.kuwo.cn/0454cce14473371ad288781a968370be/6a511bc5/resource/30106/trackmedia/long/M500000VTYvU2dVfKX.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "The Other Door",
@@ -69,11 +87,17 @@
         "1987": [
           {
             "title": "东方宝藏",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/902a7a9065262d0644756851a047bec7/6a511bc6/resource/30106/trackmedia/M5000010B5F92CH77e.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "亚拉伯跳舞女郎",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/c3eab12e88152c8ff723672927a9ac66/6a511bc7/resource/30106/trackmedia/M5000008O66G2XpVXF.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "沙丘魔女",
@@ -84,19 +108,31 @@
           },
           {
             "title": "无声的告别",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/d1cd9ff886d8c0ce3d2085e33f7ca441/6a511bc8/resource/30106/trackmedia/M50000085MrK20tsfR.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "追忆",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/4849267d81e293b8f10461fb94260f6e/6a511bca/resource/30106/trackmedia/M500004fdiLG40EFWB.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "随意飘荡",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/4c1e7839f19682d07b89cda1705dd6d6/6a511bcb/resource/30106/trackmedia/M500003Xvj961vipSB.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "过去与今天",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/29815abadf068acda288049ee5bcfcf7/6a511bcc/resource/30106/trackmedia/M5000029RhL31JiQCF.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "孤单一吻",
@@ -107,29 +143,47 @@
           },
           {
             "title": "玻璃箱",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/a2d486fb9948e29f4af85cf525f7f601/6a511bcd/resource/30106/trackmedia/M500003ztckK28VDUf.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "水晶球",
-            "album": "亚拉伯跳舞女郎"
+            "album": "亚拉伯跳舞女郎",
+            "stream_url": "https://er-sycdn.kuwo.cn/c5d151c3ab31f0ea1e92498176199596/6a511bcf/resource/30106/trackmedia/M500001DsYlI3RR69e.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1988": [
           {
             "title": "旧日的足迹(重编版)",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/0a7757478066a3bd9b6c3917cc7c4043/6a511bd0/resource/30106/trackmedia/M500004Kh0443SWfIR.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "天真的创伤",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/d8cfd2448502174fdbd1c20e531c0293/6a511bd1/resource/30106/trackmedia/M50000058PMH2zIWTn.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "赤红热血",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/148690f40f8aa5b56f691b99b39dc6ca/6a511bd2/resource/30106/trackmedia/M500003GUkMa4ZxdzL.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "冲上云霄",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/3f47e73cdd05802650f414783f713e6f/6a511bd3/resource/30106/trackmedia/M500003WnqP92JKVk9.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "冷雨夜",
@@ -140,15 +194,24 @@
           },
           {
             "title": "雨夜之后",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/9c27775e415aec13f54ae33f8e927472/6a511bd5/resource/30106/trackmedia/M500000kIg9h1dLTBc.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "现代舞台",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/574677dee18d74f38951acea9aa7fb04/6a511bd6/resource/30106/trackmedia/long/M5000023eBwp2OXXVm.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "午夜流浪",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/093e83dc9db40e02d5a9edbdf4acc37e/6a511bd7/resource/30106/trackmedia/M500002qnoTa243vX1.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Once Again",
@@ -156,23 +219,38 @@
           },
           {
             "title": "城市猎人",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://er-sycdn.kuwo.cn/03eb14e9cba4d6e7a0227df86bf037f3/6a511bd8/resource/30106/trackmedia/M500000dVLGQ3VN3CT.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "迷离境界",
-            "album": "现代舞台"
+            "album": "现代舞台",
+            "stream_url": "https://nm-sycdn.kuwo.cn/052357911e5ac6bc1431c93f9d91e749/6a511bda/resource/n1/5/96/3014219764.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "冲开一切",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://er-sycdn.kuwo.cn/c6128fbca03f66b0c421017deba6824e/6a511bdb/resource/30106/trackmedia/M500003mhCpH3gu5uv.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "秘密警察",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://er-sycdn.kuwo.cn/fe46e0c31d1e7e0faa8eeb217f7d80b4/6a511bdc/resource/30106/trackmedia/M500004Denvc0xLjHQ.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "再见理想(四人合唱版)",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://re-sycdn.kuwo.cn/e69ff7a0e1ab75f3943a5c8f2e27c0da/6a511bdd/resource/n3/30/29/1124802663.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "昨日的牵绊",
@@ -180,7 +258,10 @@
           },
           {
             "title": "未知赛事的长跑",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://er-sycdn.kuwo.cn/b852f3c58f35c6001db7738599ecd3a3/6a511bdf/resource/30106/trackmedia/M500002gZ7CL4Bi2Uk.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "大地",
@@ -198,11 +279,17 @@
           },
           {
             "title": "每段路",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://lv-sycdn.kuwo.cn/5ce1b297c93a792e425491dfd6a0125e/6a511be0/resource/30106/trackmedia/long/M5000011o9ke3YKp2H.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "心内心外",
-            "album": "秘密警察"
+            "album": "秘密警察",
+            "stream_url": "https://er-sycdn.kuwo.cn/35f12cb520325480cda920916b62789b/6a511be1/resource/30106/trackmedia/M500001S4pUo4FU78Q.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "愿我能",
@@ -222,27 +309,45 @@
           },
           {
             "title": "我有我风格",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://nf-sycdn.kuwo.cn/f34be7c9c82fdd4ae23432c9596ca46c/6a511be2/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "曾是拥有",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://er-sycdn.kuwo.cn/01b3dbd94295b9c76a1ecb9438c19beb/6a511be4/resource/30106/trackmedia/M500004SCvNU1IWtlR.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "摩登时代",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://lv-sycdn.kuwo.cn/0d5395fbb3ad9538271af0f587697f1b/6a511be5/resource/30106/trackmedia/M500003QFtt40PCZLP.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "原谅我今天",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://er-sycdn.kuwo.cn/6e7874a6a05ab5cd4694c8a79d33aec7/6a511be6/resource/30106/trackmedia/M500004LmfJw2l4U0W.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "与你共行",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://nf-sycdn.kuwo.cn/399f817262af3e10b3bc94ce8f0b313b/6a511be7/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "逝去日子",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://er-sycdn.kuwo.cn/547b61f647153000e4d3267ba3e1c092/6a511be9/resource/30106/trackmedia/M500003oJRmh4cxJ1K.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "爆裂都市",
@@ -253,27 +358,45 @@
           },
           {
             "title": "午夜迷墙",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://er-sycdn.kuwo.cn/c22bc03d66f74401fa3013c41fb93f93/6a511bea/resource/30106/trackmedia/M500002drTOp39uDgm.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "最后的对话",
-            "album": "Beyond IV"
+            "album": "Beyond IV",
+            "stream_url": "https://nf-sycdn.kuwo.cn/7e564b1c602ed1e9c3d66a443be72173/6a511beb/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "岁月无声",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://lv-sycdn.kuwo.cn/1618a8c217d76a0cb68fdc0bc9ab3c30/6a511bec/resource/30106/trackmedia/long/M500000aGTrp4dC9yx.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "明日世界",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://nf-sycdn.kuwo.cn/a1316b00ca324beaab99e8881527ce38/6a511bed/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "交织千个心",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/f857b80278a95383290df32c0bc0db57/6a511bef/resource/30106/trackmedia/M5000011Iz4Y4LFZAR.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "谁是勇敢",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/0454cce14473371ad288781a968370be/6a511bc5/resource/30106/trackmedia/long/M500000VTYvU2dVfKX.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "勇闯新世界",
@@ -284,23 +407,38 @@
           },
           {
             "title": "又是黄昏",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/2c379f9b71f98614568b570777ba482b/6a511bf0/resource/30106/trackmedia/M500003I4L7Q4d9lDx.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无悔这一生",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://lv-sycdn.kuwo.cn/8c4953739403131739bfa88b7b261b50/6a511bf1/resource/30106/trackmedia/M500004SDWrr310GtS.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "午夜怨曲",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/fc994a56ac819cbf3ebceff522f08c24/6a511bf3/resource/30106/trackmedia/M500003EAYRM1wODec.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "千金一刻",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/6d52a6110bc10dabe50306a5d23d0672/6a511bf4/resource/30106/trackmedia/M500004GhcJ104NPjL.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无名的歌",
-            "album": "真的见证"
+            "album": "真的见证",
+            "stream_url": "https://er-sycdn.kuwo.cn/d44b7b563b1658c51ada005ff19e37a2/6a511bf5/resource/30106/trackmedia/M5000000ehCC056vkz.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1990": [
@@ -313,11 +451,17 @@
           },
           {
             "title": "两颗心",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://lv-sycdn.kuwo.cn/2fba7df73eb137747b990af3feb3e8f7/6a511bf6/resource/30106/trackmedia/M500000nz5iW4VdrKO.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "俾面派对",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://er-sycdn.kuwo.cn/ea38d56d378fdd5f7a5493ec3d189183/6a511bf8/resource/30106/trackmedia/M500000Xa1uy3Y8PId.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无泪的遗憾",
@@ -335,15 +479,24 @@
           },
           {
             "title": "可知道",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://er-sycdn.kuwo.cn/550a68f678ab8fc75ff2ab4ced6bacef/6a511bf9/resource/30106/trackmedia/M5000048XsTh1RBsnz.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "相依的心",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://er-sycdn.kuwo.cn/4dd03519931b3f96b2258320f02c1dcd/6a511bfa/resource/30106/trackmedia/M500000Yb92T3a4ABt.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "撒旦的诅咒",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://nf-sycdn.kuwo.cn/a6f89875906c8b79387c0edba1c4eab9/6a511bfb/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "战胜心魔",
@@ -354,7 +507,10 @@
           },
           {
             "title": "送给不知怎去保护环境的人",
-            "album": "命运派对"
+            "album": "命运派对",
+            "stream_url": "https://er-sycdn.kuwo.cn/b4a0e51523c65ec6b42be42f549db01a/6a511bfd/resource/30106/trackmedia/M500000jqUk93Qexuc.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "大地(国)",
@@ -365,15 +521,24 @@
           },
           {
             "title": "漆黑的空间",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/f1d004b09ceb2c7d6f4ee540f61c29cd/6a511bfe/resource/30106/trackmedia/long/M500002HWsKc3U5scV.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "短暂的温柔",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/3e72b52d689dcad7dd4bcea1e4ae1c71/6a511bff/resource/30106/trackmedia/M500004gJd9r3dXv2Z.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "不需要太懂",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/d5aae8d6c6e48ea47949aeb6e8c8d232/6a511c00/resource/30106/trackmedia/M500003XAYFz1rb89C.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "九十年代的忧伤",
@@ -381,11 +546,17 @@
           },
           {
             "title": "你知道我的迷惘",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/39d523a9d7cc2f16508d514dc72bfc96/6a511c01/resource/30106/trackmedia/M500003IHEF90w2htQ.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "送给不懂环保的人",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/ad94e9a8def4b61b6dada6eaefa553be/6a511c03/resource/30106/trackmedia/M500002K3FtV0YzcgC.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "和自己的心比赛",
@@ -393,11 +564,17 @@
           },
           {
             "title": "破坏游戏的孩子",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/b0fe763c4210e52b1569dbe62d696bf8/6a511c04/resource/30106/trackmedia/M500002qmVq64Bg9NS.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "今天有我",
-            "album": "大地(国语)"
+            "album": "大地(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/0f0cd25281c70514ede444850d053c76/6a511c05/resource/30106/trackmedia/long/M50000414Byb2BjlWS.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1991": [
@@ -410,7 +587,10 @@
           },
           {
             "title": "坚持信念",
-            "album": "犹豫"
+            "album": "犹豫",
+            "stream_url": "https://er-sycdn.kuwo.cn/1f0d64cb485ce2c0677f8b17f14b38ca/6a511c06/resource/30106/trackmedia/M50000048V9X1SXTH2.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "不再犹豫",
@@ -439,19 +619,31 @@
           },
           {
             "title": "高温派对",
-            "album": "犹豫"
+            "album": "犹豫",
+            "stream_url": "https://er-sycdn.kuwo.cn/b46eb2aca7344573bc5dcdc86ad09fe0/6a511c08/resource/30106/trackmedia/M5000009rON102EwVp.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "谁来主宰",
-            "album": "犹豫"
+            "album": "犹豫",
+            "stream_url": "https://er-sycdn.kuwo.cn/1e7b1efbd5224a3f3979fcd956cc37d7/6a511c09/resource/30106/trackmedia/M5000042z8wt3vDkoJ.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "爱你一切",
-            "album": "犹豫"
+            "album": "犹豫",
+            "stream_url": "https://er-sycdn.kuwo.cn/bb09b147177a713d72a2fb95b139dcbf/6a511c0a/resource/30106/trackmedia/long/M500002fabAg0zyQh3.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "完全的拥有",
-            "album": "犹豫"
+            "album": "犹豫",
+            "stream_url": "https://er-sycdn.kuwo.cn/8c16710915a460b3131fde7fa6f366ca/6a511c0b/resource/30106/trackmedia/M500002OdzLE2McpNc.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "光辉岁月(国)",
@@ -462,15 +654,24 @@
           },
           {
             "title": "午夜怨曲(国)",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/ceca13c44804676221e82b6e581863af/6a511c0d/resource/30106/trackmedia/M500000PC18x2zYPtM.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "撒旦的诅咒(国)",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/e8bc820abab0de9fc54099129c1117ce/6a511c0e/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "请你让我来决定我的路",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/4f186440f19972dcc55b59d4eb4c310e/6a511c0f/resource/30106/trackmedia/long/M500003MdEaX2sDrO6.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "射手座咒语",
@@ -478,7 +679,10 @@
           },
           {
             "title": "岁月无声(国)",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/f97a011c3b144aee7a4e903740d68247/6a511c11/resource/30106/trackmedia/long/M500000aGTrp4dC9yx.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "曾经拥有",
@@ -493,29 +697,47 @@
           },
           {
             "title": "心中的太阳",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/8f4fe01b1e6cba54eda6e59b540dfa3b/6a511c12/resource/30106/trackmedia/M500001oWdJQ31l9b0.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "两颗心(国)",
-            "album": "光辉岁月(国语)"
+            "album": "光辉岁月(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/5470af0c1d537799ddefecb8d08f2b24/6a511c13/resource/30106/trackmedia/M500000nz5iW4VdrKO.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1992": [
           {
             "title": "长城",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/43356256c3fdc9a1d845ed20ede5e600/6a511c14/resource/30106/trackmedia/M500001uacjS0rIifs.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "农民",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/01a0d547279f53f2b0f180345c617d71/6a511c16/resource/30106/trackmedia/M5000041KzP01UJqkM.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "不可一世",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/c54726b5c3b73d94eec1afc22052ee30/6a511c17/resource/30106/trackmedia/M500002laLev3mJZp1.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Bye-Bye",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/76a2f57953fba766eb43f1c5db757c7a/6a511c18/resource/30106/trackmedia/M500001PdG071EM7ME.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "遥望",
@@ -526,19 +748,31 @@
           },
           {
             "title": "温暖的家乡",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/17b8a357a877345f8664ae12c3d8f7ae/6a511c19/resource/30106/trackmedia/M500002UCvRQ3XXwjv.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "可否冲破",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/74446544b462b315fce1346a49cdfa98/6a511c1b/resource/30106/trackmedia/M5000042y22v45ZSHe.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "快乐王国",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/9b0e7dce601d31239ebce5f27f7fb601/6a511c1c/resource/30106/trackmedia/long/M500000lKJmz3v13GF.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "继续沉醉",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://er-sycdn.kuwo.cn/4ef24f95fdc6acf3ddee9908bd37245f/6a511c1d/resource/30106/trackmedia/M500001nwd0t2vzInu.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "早班火车",
@@ -549,7 +783,10 @@
           },
           {
             "title": "厌倦寂寞",
-            "album": "继续革命"
+            "album": "继续革命",
+            "stream_url": "https://lv-sycdn.kuwo.cn/6d2f1d0c41331345aa036d51d99df3d9/6a511c1e/resource/1307392909/trackmedia/long/M500001UyJNk2RtFPS.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无语问苍天",
@@ -560,7 +797,10 @@
           },
           {
             "title": "长城(国)",
-            "album": "信念(国语)"
+            "album": "信念(国语)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/f1da9d7fb801111a8c326bb764822763/6a511c20/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "关心永远在",
@@ -572,7 +812,10 @@
           },
           {
             "title": "今天就做",
-            "album": "信念(国语)"
+            "album": "信念(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/73b631b6259d58dba06395b107e4025c/6a511c21/resource/30106/trackmedia/long/M5000022qBUi3O5pCP.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "年轻",
@@ -583,7 +826,10 @@
           },
           {
             "title": "最想念你",
-            "album": "信念(国语)"
+            "album": "信念(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/1c4d3494a871c358723918c0f02a2fd9/6a511c22/resource/30106/trackmedia/long/M500002WXt321Ai8zV.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "问自己",
@@ -607,7 +853,10 @@
           },
           {
             "title": "爸爸妈妈",
-            "album": "乐与怒"
+            "album": "乐与怒",
+            "stream_url": "https://er-sycdn.kuwo.cn/490ee444daec5171d03737973e0c6d02/6a511c23/resource/30106/trackmedia/M5000003GMv828qLEX.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "和平与爱",
@@ -618,7 +867,10 @@
           },
           {
             "title": "命运是你家",
-            "album": "乐与怒"
+            "album": "乐与怒",
+            "stream_url": "https://er-sycdn.kuwo.cn/f0546d437faac9e17ff9c62c1a6d5ca4/6a511c25/resource/30106/trackmedia/M5000029nGih3bqtEb.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "全是爱",
@@ -636,11 +888,17 @@
           },
           {
             "title": "狂人山庄",
-            "album": "乐与怒"
+            "album": "乐与怒",
+            "stream_url": "https://lv-sycdn.kuwo.cn/27b65fa2f86b448eb9b5b7e7ed7aa143/6a511c26/resource/1307392909/trackmedia/long/M500003w18yz2T8Bif.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "妄想",
-            "album": "乐与怒"
+            "album": "乐与怒",
+            "stream_url": "https://lv-sycdn.kuwo.cn/97d3fe9c21872d98668fda421a6fd378/6a511c27/resource/30106/trackmedia/M500001QqWSv0EIrCT.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "完全地爱吧",
@@ -655,7 +913,10 @@
           },
           {
             "title": "走不开的快乐",
-            "album": "乐与怒"
+            "album": "乐与怒",
+            "stream_url": "https://er-sycdn.kuwo.cn/777896f5ade92974936e0e08c217d475/6a511c28/resource/30106/trackmedia/M500003soROV1FOF12.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无无谓",
@@ -674,7 +935,10 @@
           },
           {
             "title": "身不由己",
-            "album": "海阔天空(国语)"
+            "album": "海阔天空(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/9be8f10f30514bcddf123489d7ce2c54/6a511c2a/resource/30106/trackmedia/M500000k9kHL1V0O2T.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "遥かなる梦に ～Far away～",
@@ -684,15 +948,24 @@
         "1994": [
           {
             "title": "超级武器",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://lv-sycdn.kuwo.cn/b322dc08d536d70b0650d02631f23f0e/6a511c2b/resource/30106/trackmedia/long/M500002WN9dX32hBW4.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "总有爱",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://er-sycdn.kuwo.cn/ba17d0a57615a0b2ee251e8d3b328dc7/6a511c68/resource/30106/trackmedia/M500001eTySA0iPOHC.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "醒你",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://nf-sycdn.kuwo.cn/1ff08a1729489d36a75acb665bc6b373/6a511c69/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "遥远的Paradise",
@@ -707,11 +980,17 @@
           },
           {
             "title": "伤口",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://er-sycdn.kuwo.cn/54129782b0db1c5ec8fc5b66e73f5293/6a511c6b/resource/30106/trackmedia/M500002tUISd3wYEDc.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "打救你",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://er-sycdn.kuwo.cn/61cfc7f275d3ed6fa70730df16c2f7ef/6a511c6c/resource/30106/trackmedia/M500000RAGAh12ak6D.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "仍然是要闯",
@@ -722,7 +1001,10 @@
           },
           {
             "title": "冷雨没暂停",
-            "album": "二楼后座"
+            "album": "二楼后座",
+            "stream_url": "https://er-sycdn.kuwo.cn/87e9605924c1a14c65b34aa4802fa762/6a511c6d/resource/30106/trackmedia/M500000vhgvz1Dlpru.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "爱得太错",
@@ -748,19 +1030,31 @@
           },
           {
             "title": "无名英雄",
-            "album": "Paradise(国语)"
+            "album": "Paradise(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/5669dd43081b51077049fa643e79176a/6a511c6f/resource/30106/trackmedia/M500004aW3vP2NewB7.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "情深依旧",
-            "album": "Paradise(国语)"
+            "album": "Paradise(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/866891ddddb37f0cc40c0176591aab99/6a511c70/resource/30106/trackmedia/M500000jdT773eJhaq.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "温柔杀手",
-            "album": "Paradise(国语)"
+            "album": "Paradise(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/b0158a047e55397458cb94408fb52058/6a511c71/resource/30106/trackmedia/M5000023UnBu15fHkP.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "和平世界",
-            "album": "Paradise(国语)"
+            "album": "Paradise(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/363f43763e526282bdb4b188b2d51e06/6a511c72/resource/30106/trackmedia/M500004UJAk33tZdkY.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "因为有你有我",
@@ -768,7 +1062,10 @@
           },
           {
             "title": "对吗",
-            "album": "Paradise(国语)"
+            "album": "Paradise(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/3b4a9ccd95c53b3e8a4060fc6623733d/6a511c74/resource/30106/trackmedia/long/M500003HlVBg0BBkFH.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Dancing In The Rain",
@@ -778,7 +1075,10 @@
         "1995": [
           {
             "title": "铁马骝",
-            "album": "Sound"
+            "album": "Sound",
+            "stream_url": "https://er-sycdn.kuwo.cn/8deac949b1403416da0a4dae5ed177a4/6a511c75/resource/30106/trackmedia/M500001RqHd53PCf2L.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "教坏细路",
@@ -803,7 +1103,10 @@
           },
           {
             "title": "Cryin'",
-            "album": "Sound"
+            "album": "Sound",
+            "stream_url": "https://er-sycdn.kuwo.cn/5211893c4dc2144931d193105f2cd234/6a511c76/resource/30106/trackmedia/M500004U8EEc1HGbGK.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "声音",
@@ -814,11 +1117,17 @@
           },
           {
             "title": "困兽斗",
-            "album": "Sound"
+            "album": "Sound",
+            "stream_url": "https://er-sycdn.kuwo.cn/970b593616e781f94972975454b91ecf/6a511c77/resource/30106/trackmedia/M500001vSpPC0AUd0M.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "逼不得已",
-            "album": "Sound"
+            "album": "Sound",
+            "stream_url": "https://er-sycdn.kuwo.cn/58c0e864b48273f86f8db31dd65fe3c3/6a511c7a/resource/30106/trackmedia/M500003PD3O33Z0WPj.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "门外看",
@@ -833,19 +1142,31 @@
           },
           {
             "title": "幻觉",
-            "album": "Sound"
+            "album": "Sound",
+            "stream_url": "https://lv-sycdn.kuwo.cn/748f3411b000e572f6bb2a487a5b75a1/6a511c7c/resource/30106/trackmedia/M500001nETqk1HBBmt.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "一厢情愿",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/e0fb8f6365fa6f8ab96b4246191dc3bf/6a511c7d/resource/30106/trackmedia/M500004Bh2hs2QpQot.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "糊涂的人",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/0e5a23a962b80b95a435dc5fe6afe5b0/6a511c7e/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "唯一",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/c428b53e32b9a41a038887de30ac031c/6a511c7f/resource/30106/trackmedia/M500003Y7fiA1mivTE.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Love",
@@ -856,19 +1177,31 @@
           },
           {
             "title": "最后的答案",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://lx-sycdn.kuwo.cn/7fa1e9cabcfe1873eb53b58cc25ac2a7/6a511c81/resource/n2/60/6/1538384764.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "活得精彩",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/414d807a71c55b0e1b57a9c816e2197a/6a511c82/resource/30106/trackmedia/M500002K2rdO1gJOdk.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "梦",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/3a6f73d2c613febe840a1ac7f92b895d/6a511c83/resource/1307392909/trackmedia/M500000lLLi710S9Wa.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "荒谬世界",
-            "album": "爱与生活(国语)"
+            "album": "爱与生活(国语)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/8b5e3aeaf5293d68bc9e02c8694ea383/6a511c84/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1996": [
@@ -881,41 +1214,68 @@
           },
           {
             "title": "太空",
-            "album": "Beyond得精彩(EP)"
+            "album": "Beyond得精彩(EP)",
+            "stream_url": "https://er-sycdn.kuwo.cn/a02a264763993a1caae493f1e6b83c73/6a511c86/resource/30106/trackmedia/M500001U3yp31yHEmm.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "罪",
-            "album": "Beyond得精彩(EP)"
+            "album": "Beyond得精彩(EP)",
+            "stream_url": "https://er-sycdn.kuwo.cn/19e533c21111c3ef695d717eb34804f0/6a511c87/resource/30106/trackmedia/M500002PbvhC0tRN5Q.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "夜长梦多",
-            "album": "Beyond得精彩(EP)"
+            "album": "Beyond得精彩(EP)",
+            "stream_url": "https://rc-sycdn.kuwo.cn/6be630e98ca719f4d2b35dd432ea7a28/6a511c88/resource/n2/41/59/1371285256.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "活着便精彩",
-            "album": "Beyond得精彩(EP)"
+            "album": "Beyond得精彩(EP)",
+            "stream_url": "https://er-sycdn.kuwo.cn/84b074817b74d4dea3742fd96bde405a/6a511c8a/resource/30106/trackmedia/M500000MXUdA3ZORlL.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1997": [
           {
             "title": "游戏(序曲)",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://er-sycdn.kuwo.cn/243da9c94de197f02f311e9e1e4a884d/6a511c8b/resource/30106/trackmedia/long/M5000040HbOt4BuiEr.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "大时代",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://nf-sycdn.kuwo.cn/2a061f12baa52ffeed21e9fdad2ec3c8/6a511c8c/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "预备",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://lv-sycdn.kuwo.cn/f0e64b8c064bdefad826f76b704c83f9/6a511c8d/resource/30106/trackmedia/M500003zW8Ez4BrZ9U.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "请将手放开",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://er-sycdn.kuwo.cn/9a04d44f8011215ab86eed4a20979517/6a511c8f/resource/30106/trackmedia/M5000011s7Tt3H06ad.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "回响",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://er-sycdn.kuwo.cn/324d1aced3d9a8260e0900d5a82d1e13/6a511c90/resource/30106/trackmedia/long/M5000023L9I515aT2v.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "谁命我名字",
@@ -927,7 +1287,10 @@
           },
           {
             "title": "麻醉",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://lv-sycdn.kuwo.cn/5f29636e3200da527fae339a7a3afb41/6a511c91/resource/30106/trackmedia/M500003LYpRo2DFPZ6.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无助",
@@ -1180,7 +1543,10 @@
           },
           {
             "title": "透露",
-            "album": "第一张创作专辑"
+            "album": "第一张创作专辑",
+            "stream_url": "https://nf-sycdn.kuwo.cn/99f2ff760e3475b3021389a430276223/6a511a67/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "生活",
@@ -1188,7 +1554,10 @@
           },
           {
             "title": "爱情的模样",
-            "album": "第一张创作专辑"
+            "album": "第一张创作专辑",
+            "stream_url": "https://nf-sycdn.kuwo.cn/63544de5e957074377cf4bccd6733c90/6a511a69/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "嘿！我要走了",
@@ -1247,7 +1616,10 @@
           },
           {
             "title": "憨人",
-            "album": "爱情万岁"
+            "album": "爱情万岁",
+            "stream_url": "https://nf-sycdn.kuwo.cn/cf06c3f82313a6ad3377b5188a95b858/6a511a6a/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "叫我第一名",
@@ -1289,7 +1661,10 @@
           },
           {
             "title": "相信",
-            "album": "人生海海"
+            "album": "人生海海",
+            "stream_url": "https://er-sycdn.kuwo.cn/de3f2124429e9d3757ced6dfa273e91f/6a511a6c/resource/30106/trackmedia/M500000mhR992dhHv5.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "OK啦",
@@ -1369,7 +1744,10 @@
           },
           {
             "title": "九号球",
-            "album": "时光机"
+            "album": "时光机",
+            "stream_url": "https://nf-sycdn.kuwo.cn/57bf5f2c412ff97a780a13303e9b52a6/6a511a6d/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "武装",
@@ -1377,11 +1755,17 @@
           },
           {
             "title": "时光机",
-            "album": "时光机"
+            "album": "时光机",
+            "stream_url": "https://nf-sycdn.kuwo.cn/e3feb6aab617d6892343b334f5d3dc6b/6a511a6f/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "我们",
-            "album": "时光机"
+            "album": "时光机",
+            "stream_url": "https://nf-sycdn.kuwo.cn/0c46fba50a8f70cda854a302e79003cb/6a511a70/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "听不到",
@@ -1394,7 +1778,10 @@
         "2004": [
           {
             "title": "孙悟空",
-            "album": "神的孩子都在跳舞"
+            "album": "神的孩子都在跳舞",
+            "stream_url": "https://nf-sycdn.kuwo.cn/648f58aaec57d3f07aa856f5f7cc95c4/6a511a71/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "倔强",
@@ -1544,7 +1931,10 @@
           },
           {
             "title": "离开地球表面",
-            "album": "离开地球表面 Jump!"
+            "album": "离开地球表面 Jump!",
+            "stream_url": "https://er-sycdn.kuwo.cn/978d37d7b2fd28849a10751b55e918d5/6a511a73/resource/30106/trackmedia/M500000axma10aatmb.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "抓狂",
@@ -1590,7 +1980,10 @@
           },
           {
             "title": "我心中尚未崩坏的地方",
-            "album": "后青春期的诗"
+            "album": "后青春期的诗",
+            "stream_url": "https://nf-sycdn.kuwo.cn/9ae339145fa5f11ba8ba9e3d07c803b1/6a511a74/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "春天的呐喊",
@@ -1645,7 +2038,10 @@
           },
           {
             "title": "我不愿让你一个人",
-            "album": "第二人生"
+            "album": "第二人生",
+            "stream_url": "https://er-sycdn.kuwo.cn/1aa4845828662803358b7d90cfe515f6/6a511a76/resource/30106/trackmedia/M500001oKzUq3JCuot.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "OAOA(现在就是永远)",
@@ -1663,7 +2059,10 @@
           },
           {
             "title": "诺亚方舟",
-            "album": "第二人生"
+            "album": "第二人生",
+            "stream_url": "https://nf-sycdn.kuwo.cn/1e810c24b9a2c3ba756a6444dd50c3d4/6a511a77/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "三个傻瓜",
@@ -1724,11 +2123,17 @@
         "2016": [
           {
             "title": "如果我们不曾相遇",
-            "album": "自传"
+            "album": "自传",
+            "stream_url": "https://er-sycdn.kuwo.cn/bf3fd3a59ee86435f3093fe94f93b913/6a511a79/resource/30106/trackmedia/M500001tu2wT0clx6Y.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "成名在望",
-            "album": "自传"
+            "album": "自传",
+            "stream_url": "https://er-sycdn.kuwo.cn/df0f6ad211cdcac10e92205492665fca/6a511a7a/resource/30106/trackmedia/M500003ppg2X3v2biO.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "好好(想把你写成一首歌)",
@@ -1744,7 +2149,10 @@
           },
           {
             "title": "后来的我们",
-            "album": "自传"
+            "album": "自传",
+            "stream_url": "https://nf-sycdn.kuwo.cn/e26e92e73b9c47344fb816c8fcdb317c/6a511a7b/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "顽固",
@@ -1800,7 +2208,10 @@
           },
           {
             "title": "后来的我们(合唱版)",
-            "album": "后来的我们(单曲)"
+            "album": "后来的我们(单曲)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/a0eb5437c5768073130a3a4f98f97d3f/6a511a7d/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "2019": [
@@ -1817,7 +2228,10 @@
           },
           {
             "title": "疯狂世界 #MaydayBlue20th",
-            "album": "MaydayBlue20th"
+            "album": "MaydayBlue20th",
+            "stream_url": "https://nf-sycdn.kuwo.cn/c8852be17adccaa2699a4b22f3337caa/6a511a7e/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "干啦干啦",
