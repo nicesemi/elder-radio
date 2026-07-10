@@ -1294,39 +1294,66 @@
           },
           {
             "title": "无助",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://lv-sycdn.kuwo.cn/09898fc974b0d99ce4b2317794b8b117/6a511f3f/resource/30106/trackmedia/M5000037L7dt1UV9Tf.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "我的知己在街头",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://er-sycdn.kuwo.cn/3209cee563e6e4645bae854b5ccc8ff8/6a511f41/resource/30106/trackmedia/M500003IiDnq3ch13a.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "我的知己",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://lv-sycdn.kuwo.cn/3f1c640d06f10f56f38df6dd6a5cf3c2/6a511f43/resource/30106/trackmedia/M500000pY3qm489mPL.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "游戏",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://nf-sycdn.kuwo.cn/cb70f580393a978136eba2b79be87cc4/6a511f45/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "旧历(纯音乐)",
-            "album": "请将手放开"
+            "album": "请将手放开",
+            "stream_url": "https://er-sycdn.kuwo.cn/6240ffc151c7f81fcebd7aa7e4ba68dd/6a511f47/resource/30106/trackmedia/M50000183An54YGamw.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "回家",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://lv-sycdn.kuwo.cn/94de0711250766633a2754766019eeb4/6a511f49/resource/30106/trackmedia/long/M500004CSVDB1B6FHY.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "雾",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://lx-sycdn.kuwo.cn/2b6fca169ff3e7a7738d23a529e2cea8/6a511f4b/resource/n2/6/41/3455058823.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "深",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://er-sycdn.kuwo.cn/1cb5797dbcc54abb9aab7cec6df0ffc2/6a511f4d/resource/30106/trackmedia/M500004LpWNR1AYrqC.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "惊喜",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://lx-sycdn.kuwo.cn/462b48e1aaa941ab4d93199078d11457/6a511f4f/resource/n3/59/19/318177843.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无事无事",
@@ -1334,29 +1361,47 @@
           },
           {
             "title": "我记得",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://lv-sycdn.kuwo.cn/d74c0928a7787f822091dac892264a03/6a511f51/resource/30106/trackmedia/long/M500000yv4hN1ye47t.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "管我",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://er-sycdn.kuwo.cn/a525894f47a33d1151cc53166938160e/6a511f53/resource/30106/trackmedia/M500000qJcjC2A51F5.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "青马大桥(纯音乐)",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://er-sycdn.kuwo.cn/3c8fafb1e3a0f99c38fdd56a37ae1fa2/6a511f55/resource/30106/trackmedia/M5000019Vij23Y6xA5.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "缓慢",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://lv-sycdn.kuwo.cn/2a91269a11baf469d61b4468870a5060/6a511f57/resource/30106/trackmedia/M500000ZTiy13sd4pq.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "不朽的传说",
-            "album": "惊喜"
+            "album": "惊喜",
+            "stream_url": "https://er-sycdn.kuwo.cn/e7439df25a48cd1b06226d33dd6f64ba/6a511f59/resource/30106/trackmedia/M500004C4Tnq3qenvO.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1998": [
           {
             "title": "忘记你",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://lx-sycdn.kuwo.cn/8efdad7f0be97cdddeedae2ff764bcf5/6a511f5b/resource/n3/56/29/317035452.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "想你(国)",
@@ -1367,15 +1412,24 @@
           },
           {
             "title": "缓慢(国)",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://nf-sycdn.kuwo.cn/9723dd3e1040bb9738eb8fb5d19df8b0/6a511f5c/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "管我(国)",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/eaa59a219a2fb7f2a3d59e78f616cd5b/6a511f5e/resource/30106/trackmedia/long/M5000045Lo6i0OfVyG.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "候诊室",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/307d482f3b50b8b78d22310c9fb89094/6a511f6d/resource/30106/trackmedia/M500000r9ljG3ro9gt.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "情人(国)",
@@ -1386,11 +1440,17 @@
           },
           {
             "title": "热情过后",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://er-sycdn.kuwo.cn/2aef5539b49b8aa1667972ef7153b32a/6a511f6f/resource/30106/trackmedia/M500003Q4qPg0PvQP1.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "十字路口",
-            "album": "这里那里(国语)"
+            "album": "这里那里(国语)",
+            "stream_url": "https://lv-sycdn.kuwo.cn/3ce31fea29c6418ebebe381aeb4ee856/6a511f71/resource/30106/trackmedia/M500000cdX3h43CIwu.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "AMANI(国)",
@@ -1412,15 +1472,24 @@
           },
           {
             "title": "星期天",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://er-sycdn.kuwo.cn/7f246cbf3d66788d04cddb03c2115e3d/6a511f72/resource/30106/trackmedia/M500002mXIpc2XS9je.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "牺牲",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://er-sycdn.kuwo.cn/7bc4fb1ab8b4c19b22c4a80bcdffc5be/6a511f74/resource/30106/trackmedia/M500001Qp2dH2qzI6T.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "蚊",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://er-sycdn.kuwo.cn/65380732b024a33a742068d0b0686913/6a511f76/resource/30106/trackmedia/long/M500000E9UbH2nrVwW.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "时日无多",
@@ -1431,11 +1500,17 @@
           },
           {
             "title": "讨厌",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://lv-sycdn.kuwo.cn/cc75f2400ae653e478ce5688a72097bb/6a511f78/resource/30106/trackmedia/M500000CRqrf2IDf3c.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "太完美",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://er-sycdn.kuwo.cn/b403f0622ab585ce6fc44fd8ad936578/6a511f79/resource/30106/trackmedia/M500004DOkeU48v4Qo.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "扯火",
@@ -1446,11 +1521,17 @@
           },
           {
             "title": "崇拜",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://lv-sycdn.kuwo.cn/0b2132ff645e8ed54820d3c235b42b14/6a511f7b/resource/30106/trackmedia/long/M500001riwev14rxWw.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "不见不散",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://lx-sycdn.kuwo.cn/c121eec55a1c0d55fba440fcd374b0b4/6a511f7c/resource/n3/49/7/1931944472.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "无重状态",
@@ -1458,21 +1539,33 @@
           },
           {
             "title": "奉信",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://lv-sycdn.kuwo.cn/7ffe5cb9d4fb8f8676c12592a3199c44/6a511f7d/resource/1307392909/trackmedia/long/M500002u5FS230Agpu.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "Phantom Power(纯音乐)",
-            "album": "不见不散"
+            "album": "不见不散",
+            "stream_url": "https://ra-sycdn.kuwo.cn/891f9214419166b3845fd50d2ec68ae7/6a511f7e/resource/n2/2010/05/12/1881787099.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ],
         "1999": [
           {
             "title": "Good Time",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://er-sycdn.kuwo.cn/c6e1a8582dd630392eaa3bda18ede400/6a511f80/resource/30106/trackmedia/M500004Q1VW51qrUnt.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "失踪",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://nf-sycdn.kuwo.cn/0a4ba0aa6b954c48ccf1b7c335041a75/6a511f81/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "错有错著",
@@ -1480,35 +1573,59 @@
           },
           {
             "title": "十八",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://er-sycdn.kuwo.cn/bb03bbf309708e11472202105a745f49/6a511f82/resource/30106/trackmedia/M500002ysTPP3H53zy.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "一百零一次",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://nf-sycdn.kuwo.cn/2092f5b8dfae354dd1323fbaa08d3fff/6a511f83/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "洗衣粉",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://er-sycdn.kuwo.cn/a1576f2f0db3215077aaaa7a8842471f/6a511f84/resource/30106/trackmedia/long/M500003utpOv1NLm6X.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "然后",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://nf-sycdn.kuwo.cn/dd6bdcb4a47edf42f8d339f92af0e3bb/6a511f86/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "看星",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://er-sycdn.kuwo.cn/c4f344d1456e3dd1ba6b7dea1090d2db/6a511f87/resource/30106/trackmedia/M500003Tauxc1GHD29.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "褪色",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://lv-sycdn.kuwo.cn/080f757a57b6d4dd3a185a5688494b18/6a511f88/resource/30106/trackmedia/M500000UyrCp28Y0sF.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "荒谬",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://nf-sycdn.kuwo.cn/71176491471c5be95b22d86f4f0318f6/6a511f89/resource/n1/69/32/588957081.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           },
           {
             "title": "进化论",
-            "album": "Good Time"
+            "album": "Good Time",
+            "stream_url": "https://er-sycdn.kuwo.cn/858309dabc451b392479b6802c99bf88/6a511f8a/resource/30106/trackmedia/M5000018GMdc21BdWF.mp3",
+            "has_stream": true,
+            "stream_source": "kuwo"
           }
         ]
       }
