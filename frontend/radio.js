@@ -16,6 +16,7 @@
   let liveStations = [];
   let historyStations = [];
   let cntvStations = [];
+  let cntrYearSet = new Set();
   let currentCategory = '';
   let stations = [];
   let stationIdx = 0;
@@ -202,6 +203,14 @@
     } else {
       setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
       filterStations();
+      // CNR 有该年数据 → 自动切到 1月1日
+      if (cntrYearSet.has(String(year))) {
+        selectedMonth = 1;
+        selectedDay = 1;
+        document.getElementById('selMonth').value = 1;
+        populateDayOptions();
+        document.getElementById('selDay').value = 1;
+      }
       fetchHistoryStations(year);
     }
     updateEraScroll();
@@ -554,9 +563,13 @@
           return;
         }
       }
-      // 无历史数据 → 保持现有 filterStations 结果不变
+      // 无历史数据 → 尝试 CNR 云听回听兜底
+      console.log('[AM] broadcasts/ 无数据，尝试 CNR 云听回听');
+      generateDateBroadcast();
     }).catch(function() {
-      // API 不可用 → 静默回退
+      // API 不可用 → 尝试 CNR 兜底
+      console.log('[AM] broadcasts/ API 不可用，尝试 CNR 云听');
+      generateDateBroadcast();
     });
   }
 
@@ -1128,6 +1141,16 @@
       loadFromURL();
       renderDial();
       updateEraScroll();
+
+      // 预加载 CNR 年份列表（用于 AM 模式自动回退）
+      fetch('/api/cntv/years')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.years) {
+            cntrYearSet = new Set(data.years);
+            console.log('[CNR] 可用年份:', data.years);
+          }
+        }).catch(function() {});
 
       if (stations.length > 0) {
         if (!window.location.search.includes('station') && stations[0]) {
