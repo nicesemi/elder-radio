@@ -113,7 +113,7 @@
     if (songIdx >= songs.length) songIdx = 0;
     renderDial();
     updateNowPlaying();
-    // 不自动播放，等待用户点击
+    startPlayback();
   }
 
   function updateEraScroll() {
