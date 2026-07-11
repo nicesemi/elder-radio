@@ -14,6 +14,7 @@
   let allStations = [];
   let broadcastData = {};
   let liveStations = [];
+  let currentCategory = '';
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -109,7 +110,8 @@
     setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
 
     if (mode === 'AM' && year === ERA_MAX) {
-      setMode('FM');
+      // 2026 年到达年代上限，仍保持 AM 模式展示全量电台
+      // 用户可手动点击 FM 按钮切换到实时直播模式
     }
 
     filterStations();
@@ -150,6 +152,7 @@
 
     if (m === 'FM') {
       document.getElementById('dialRange').textContent = '88-108 MHz';
+      currentCategory = '';
       fetchLiveStations();
     } else {
       document.getElementById('dialRange').textContent = '年代电台';
@@ -225,7 +228,7 @@
 
   // ============ FM 实时电台获取 ============
   function fetchLiveStations(category) {
-    var url = '/api/stations/live?limit=50';
+    var url = '/api/stations/live?limit=300';
     if (category) url += '&category=' + encodeURIComponent(category);
 
     fetch(url).then(function(r) {
@@ -255,8 +258,17 @@
     });
 
     function fallbackToLocalVerified() {
-      liveStations = allStations.filter(function(s) {
-        return s.type === 'live' && s.stream_url && s.verified;
+      // 使用全部直播电台（不限定 verified），按名称去重
+      var seen = {};
+      liveStations = [];
+      allStations.forEach(function(s) {
+        if (s.type === 'live' && s.stream_url) {
+          var key = s.id || s.name;
+          if (!seen[key]) {
+            seen[key] = true;
+            liveStations.push(s);
+          }
+        }
       });
     }
 
@@ -266,6 +278,7 @@
         stationIdx = 0;
         renderDial();
         renderChannelList();
+        renderCategoryTabs();
         updateNowPlaying();
         return;
       }
@@ -274,6 +287,7 @@
       setStIdx(stationIdx);
       renderDial();
       renderChannelList();
+      renderCategoryTabs();
       playCurrent();
       updateNowPlaying();
     }
@@ -655,23 +669,33 @@
     var scroll = document.getElementById('channelListScroll');
     if (!el || !scroll) return;
 
-    if (stations.length <= 3) {
+    // 按分类筛选（仅 FM 模式生效）
+    var list = stations;
+    if (mode === 'FM' && currentCategory && currentCategory !== '全部') {
+      list = stations.filter(function(s) {
+        return s.category && s.category === currentCategory;
+      });
+    }
+
+    if (list.length === 0) {
       el.style.display = 'none';
       return;
     }
     el.style.display = 'block';
 
-    scroll.innerHTML = stations.map(function(s, i) {
+    scroll.innerHTML = list.map(function(s, i) {
       var cls = 'channel-chip';
-      if (i === stationIdx) cls += ' current';
+      // 高亮当前台：在 stations 中找到实际索引
+      var realIdx = stations.indexOf(s);
+      if (realIdx === stationIdx) cls += ' current';
       if (s.verified) cls += ' verified';
       if (s.type === 'ai_archive') cls += ' ai';
-      var label = s.name.length > 10 ? s.name.slice(0, 10) + '…' : s.name;
+      var label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
       var sourceBadge = '';
       if (mode === 'FM' && s.source) {
-        sourceBadge = ' <span style="opacity:0.5;font-size:9px;">' + s.source + '</span>';
+        sourceBadge = ' <span style="opacity:0.5;font-size:7px;">' + s.source + '</span>';
       }
-      return '<span class="' + cls + '" data-idx="' + i + '">' + label + sourceBadge + '</span>';
+      return '<span class="' + cls + '" data-idx="' + realIdx + '">' + label + sourceBadge + '</span>';
     }).join('');
 
     var chips = scroll.querySelectorAll('.channel-chip');
@@ -679,6 +703,57 @@
       chips[j].addEventListener('click', function() {
         setStIdx(parseInt(this.dataset.idx));
         onTuneChange();
+        renderChannelList();
+      });
+    }
+  }
+
+  // ============ 分类标签渲染 ============
+  function renderCategoryTabs() {
+    var el = document.getElementById('categoryTabs');
+    if (!el) return;
+
+    // 仅 FM 模式显示
+    if (mode !== 'FM') {
+      el.style.display = 'none';
+      return;
+    }
+
+    // 从 liveStations 聚合分类
+    var cats = {};
+    liveStations.forEach(function(s) {
+      if (s.category) cats[s.category] = (cats[s.category] || 0) + 1;
+    });
+
+    var catNames = Object.keys(cats).sort(function(a, b) {
+      // 常见分类排前面：新闻/音乐/体育/财经/交通/生活/教育
+      var order = ['新闻', '音乐', '体育', '财经', '交通', '生活', '教育'];
+      var ai = order.indexOf(a), bi = order.indexOf(b);
+      if (ai >= 0 && bi >= 0) return ai - bi;
+      if (ai >= 0) return -1;
+      if (bi >= 0) return 1;
+      return cats[b] - cats[a];
+    });
+
+    if (catNames.length === 0) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'flex';
+
+    var allCount = liveStations.length;
+    var html = '<span class="category-tab' + (currentCategory === '' || currentCategory === '全部' ? ' active' : '') + '" data-cat="">全部 ' + allCount + '</span>';
+    catNames.forEach(function(c) {
+      html += '<span class="category-tab' + (currentCategory === c ? ' active' : '') + '" data-cat="' + c + '">' + c + ' ' + cats[c] + '</span>';
+    });
+    el.innerHTML = html;
+
+    // 绑定点击事件
+    var tabs = el.querySelectorAll('.category-tab');
+    for (var k = 0; k < tabs.length; k++) {
+      tabs[k].addEventListener('click', function() {
+        currentCategory = this.dataset.cat;
+        renderCategoryTabs();
         renderChannelList();
       });
     }

@@ -394,17 +394,48 @@
       };
     }
 
-    // 填充电台
+    // 填充电台 — 按年代范围匹配（如 "2000-2009" 匹配 2000~2009 所有年份）
     allStations.forEach(s => {
       const era = s.era || '';
-      const matchDecade = era.match(/^(\d{4})/);
-      let y = matchDecade ? parseInt(matchDecade[1]) : null;
-      if (y && y >= ERA_MIN && y <= ERA_MAX && yearMap[y]) {
-        yearMap[y].stations.push(s);
-        yearMap[y].stationCount++;
-        if (s.type === 'live' && s.stream_url) yearMap[y].hasLive = true;
+      const matchRange = era.match(/^(\d{4})-(\d{4})$/);
+      if (matchRange) {
+        const startY = parseInt(matchRange[1]);
+        const endY = parseInt(matchRange[2]);
+        for (let y = Math.max(startY, ERA_MIN); y <= Math.min(endY, ERA_MAX); y++) {
+          if (yearMap[y]) {
+            // 去重：同一年份不重复添加
+            if (!yearMap[y].stations.some(es => es.id === s.id)) {
+              yearMap[y].stations.push(s);
+              yearMap[y].stationCount++;
+              if (s.type === 'live' && s.stream_url) yearMap[y].hasLive = true;
+            }
+          }
+        }
+      } else {
+        // 兜底：单年匹配（如仅有 "2000" 而非 "2000-2009"）
+        const matchSingle = era.match(/^(\d{4})/);
+        let y = matchSingle ? parseInt(matchSingle[1]) : null;
+        if (y && y >= ERA_MIN && y <= ERA_MAX && yearMap[y]) {
+          yearMap[y].stations.push(s);
+          yearMap[y].stationCount++;
+          if (s.type === 'live' && s.stream_url) yearMap[y].hasLive = true;
+        }
       }
     });
+
+    // 当前年份（2026）：补充所有直播电台（它们在当前都处于活跃状态）
+    const CURRENT_YEAR = 2026;
+    if (yearMap[CURRENT_YEAR]) {
+      allStations.forEach(s => {
+        if (s.type === 'live' && s.stream_url) {
+          if (!yearMap[CURRENT_YEAR].stations.some(es => es.id === s.id)) {
+            yearMap[CURRENT_YEAR].stations.push(s);
+            yearMap[CURRENT_YEAR].stationCount++;
+            yearMap[CURRENT_YEAR].hasLive = true;
+          }
+        }
+      });
+    }
 
     // 填充 broadcast_data
     if (broadcastData && broadcastData.years) {
