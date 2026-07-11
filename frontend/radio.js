@@ -14,6 +14,7 @@
   let allStations = [];
   let broadcastData = {};
   let liveStations = [];
+  let historyStations = [];
   let currentCategory = '';
   let stations = [];
   let stationIdx = 0;
@@ -115,6 +116,7 @@
     }
 
     filterStations();
+    fetchHistoryStations(year);
     updateEraScroll();
   }
 
@@ -157,6 +159,7 @@
     } else {
       document.getElementById('dialRange').textContent = '年代电台';
       filterStations();
+      fetchHistoryStations(year);
     }
 
     updateEraScroll();
@@ -291,6 +294,61 @@
       playCurrent();
       updateNowPlaying();
     }
+  }
+
+  // ============ AM 历史存档电台获取 ============
+  function fetchHistoryStations(y) {
+    var url = '/api/broadcast/history/' + y;
+
+    fetch(url).then(function(r) {
+      if (!r.ok) throw new Error('API error');
+      return r.json();
+    }).then(function(data) {
+      if (data.stations && data.stations.length > 0) {
+        // 将 R2 归档数据转为 station 对象
+        var histStations = [];
+        data.stations.forEach(function(entry) {
+          var stationName = entry.station_name || '未知电台';
+          var category = entry.category || '历史';
+          (entry.audio_urls || []).forEach(function(item, i) {
+            var url = typeof item === 'string' ? item : (item.url || '');
+            var dateLabel = '';
+            if (entry.dates && entry.dates[i]) {
+              dateLabel = ' ' + entry.dates[i];
+            } else if (entry.audio_urls.length > 1) {
+              dateLabel = ' #' + (i + 1);
+            }
+            if (!url) return;
+            histStations.push({
+              id: 'hist_' + y + '_' + (entry.category_key || entry.station_name) + '_' + i,
+              name: stationName + dateLabel,
+              stream_url: url,
+              type: 'archive',
+              category: category,
+              era: String(y),
+              verified: true,
+              source: 'r2_archive'
+            });
+          });
+        });
+
+        if (histStations.length > 0) {
+          historyStations = histStations;
+          stations = histStations;
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelList();
+          updateEraScroll();
+          updateNowPlaying();
+          return;
+        }
+      }
+      // 无历史数据 → 保持现有 filterStations 结果不变
+    }).catch(function() {
+      // API 不可用 → 静默回退
+    });
   }
 
   function updateEraScroll() {
@@ -692,7 +750,7 @@
       if (s.type === 'ai_archive') cls += ' ai';
       var label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
       var sourceBadge = '';
-      if (mode === 'FM' && s.source) {
+      if (s.source && (mode === 'FM' || s.source === 'r2_archive' || s.source === 'archive.org')) {
         sourceBadge = ' <span style="opacity:0.5;font-size:7px;">' + s.source + '</span>';
       }
       return '<span class="' + cls + '" data-idx="' + realIdx + '">' + label + sourceBadge + '</span>';

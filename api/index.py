@@ -231,13 +231,36 @@ async def broadcast_by_year(
     duration: int = Query(5, description="AI 兜底时生成的时长（分钟）")
 ):
     """
-    按年代检索广播内容，四级优先级：
-    R2缓存 → 历史API → 下载到R2 → AI兜底
+    按年代检索广播内容，五级优先级：
+    R2 历史库 → R2缓存 → 历史API → 下载到R2 → AI兜底
     """
     if category not in ("news", "music", "sports", "finance", "culture", "technology", "综合", "general"):
         raise HTTPException(status_code=400, detail=f"不支持的分类: {category}")
 
     r2 = _get_r2()
+
+    # 优先级 0：R2 历史归档库 — 如果有该年份的完整历史广播，直接返回列表
+    history_stations = r2.get_history_stations(year)
+    if history_stations:
+        # 按 category 筛选匹配的电台
+        cat_map = {
+            "news": "zgzs", "music": "yyzs", "sports": "tyzs",
+            "finance": "jjzs", "culture": "wyzs", "technology": "kj",
+            "综合": "zh", "general": "zh",
+        }
+        target_key = cat_map.get(category)
+        matched = [
+            s for s in history_stations
+            if not target_key or s.get("category_key") == target_key
+        ] if target_key else history_stations
+
+        return {
+            "success": True,
+            "year": year,
+            "stations": matched if matched else history_stations,
+            "total": len(matched) if matched else len(history_stations),
+            "source": "r2_archive",
+        }
 
     # 走四级优先级解析
     result = r2.broadcast_4level_resolve(year, category)
@@ -343,6 +366,50 @@ async def broadcast_live(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"实时广播生成失败: {str(e)}")
+
+
+@app.get("/api/broadcast/history/{year}")
+async def broadcast_history(year: int):
+    """
+    返回指定年份的历史电台列表（来自 R2 已归档的广播音频）。
+
+    调用 get_history_stations(year) 读取 R2 broadcasts/{year}/ 目录，
+    返回按频道/分类分组的可用音频列表。
+
+    返回:
+        {
+            "year": 1985,
+            "stations": [
+                {
+                    "station_name": "中国之声",
+                    "category": "新闻",
+                    "category_key": "zgzs",
+                    "audio_urls": [
+                        {"key": "broadcasts/1985/zgzs/xxx.mp3", "url": "https://...", "filename": "xxx.mp3"},
+                        ...
+                    ]
+                },
+                ...
+            ],
+            "source": "r2_archive"
+        }
+        如果该年份无数据，返回 {"year": 1985, "stations": [], "source": "none"}
+    """
+    r2 = _get_r2()
+    stations = r2.get_history_stations(year)
+
+    if stations:
+        return {
+            "year": year,
+            "stations": stations,
+            "source": "r2_archive",
+        }
+    else:
+        return {
+            "year": year,
+            "stations": [],
+            "source": "none",
+        }
 
 
 @app.get("/api/audio/{filename}")
