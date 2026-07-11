@@ -12,6 +12,7 @@ live_stations.py — 直播电台聚合模块
 
 import concurrent.futures
 import json
+import os
 import re
 import time
 import urllib.request
@@ -304,16 +305,87 @@ def get_cnr_fallback_stations():
     ]
 
 
+# ========== 数据源 3b：radio_sources.json 静态兜底 ==========
+
+def _load_static_fallback():
+    """
+    从 frontend/radio_sources.json 动态读取所有 verified=true 且 type=live
+    的电台作为兜底源。加载失败时打印日志并返回空列表，
+    让调用方回退到 CNR 硬编码兜底。
+    """
+    static_path = None
+    candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "..", "..", "frontend", "radio_sources.json"),
+        "/Users/geyechazihuaxiang/elder-radio/frontend/radio_sources.json",
+    ]
+    for p in candidates:
+        if os.path.isfile(p):
+            static_path = p
+            break
+
+    if not static_path:
+        print("[live_stations] radio_sources.json not found in any known location")
+        return []
+
+    try:
+        with open(static_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"[live_stations] Failed to load radio_sources.json: {e}")
+        return []
+
+    stations_raw = data.get("stations", [])
+    if not stations_raw:
+        print("[live_stations] radio_sources.json has empty stations array")
+        return []
+
+    result = []
+    seen_ids = set()
+    for s in stations_raw:
+        # 只取 verified=true 且 type=live 且 stream_url 非空
+        if s.get("type") != "live":
+            continue
+        if not s.get("verified", False):
+            continue
+        stream_url = (s.get("stream_url") or "").strip()
+        if not stream_url:
+            continue
+
+        sid = str(s.get("id", "")).strip()
+        if not sid:
+            continue
+        # 去重，避免 radio_sources.json 本身有重复 id
+        if sid in seen_ids:
+            continue
+        seen_ids.add(sid)
+
+        result.append({
+            "id": sid,
+            "name": s.get("name", "未知电台"),
+            "stream_url": stream_url,
+            "category": s.get("category", "综合"),
+            "source": s.get("source", "CNR"),
+            "favicon": s.get("logo", ""),
+            "hls": True,
+            "codec": "",
+        })
+
+    print(f"[live_stations] Loaded {len(result)} stations from radio_sources.json")
+    return result
+
+
 # ========== 聚合 ==========
 
 def get_all_live_stations(category=None):
     """
     聚合 Radio Browser（2 端点） + FanMingMing M3U，去重后返回统一列表。
 
-    三层容错：
+    四层容错：
       1. 并行拉取 RB + FMM
       2. 任一返回即使用
-      3. 两个外部源全挂 → 降级到 CNR 央广官方兜底
+      3. 两个外部源全挂 → 降级到 radio_sources.json 静态兜底（210 个直播源）
+      4. 静态兜底不可用 → 降级到 CNR 硬编码兜底（10 个核心台）
 
     category: 可选筛选（新闻/音乐/体育/经济/文艺/交通/综合 等）。
     """
@@ -352,10 +424,16 @@ def get_all_live_stations(category=None):
         seen.add(url)
         unique.append(s)
 
-    # 两个外部源全挂 → CNR 兜底
+    # 两个外部源全挂 → radio_sources.json 静态兜底 → CNR 硬编码最终兜底
     if not unique:
-        print("[live_stations] Both external sources failed, falling back to CNR")
-        unique = get_cnr_fallback_stations()
+        print("[live_stations] Both external sources failed, trying static fallback")
+        static_fallback = _load_static_fallback()
+        if static_fallback:
+            print(f"[live_stations] Using {len(static_fallback)} stations from radio_sources.json")
+            unique = static_fallback
+        else:
+            print("[live_stations] Static fallback empty, falling back to CNR hardcoded")
+            unique = get_cnr_fallback_stations()
 
     # 按分类筛选
     if category:
