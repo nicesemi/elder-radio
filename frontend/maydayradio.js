@@ -120,7 +120,7 @@
     var el = document.getElementById('eraScroll');
     var count = songs.length;
     var hasStream = songs.filter(function(s) { return s.stream_url; }).length;
-    el.textContent = year + '年 · ' + count + '首（' + hasStream + '首可播）';
+    el.textContent = year + '年 · ' + count + '首（' + (hasStream || count) + '首可播）';
   }
 
   // ============ 刻度盘 ============
@@ -173,20 +173,37 @@
   }
 
   // ============ 播放控制 ============
-  function startPlayback() {
-    var s = songs[songIdx];
-    if (!s) return;
 
-    if (!s.stream_url) {
-      showToast('这首歌暂无音频源', 'error');
-      updatePlayUI(false);
-      return;
-    }
+  var fetchingStream = {};  // 防并发
 
-    userInteracted = true;
-    AUDIO.src = s.stream_url;
+  function fetchStreamUrl(song, callback) {
+    var key = song.title;
+    if (fetchingStream[key]) return;  // 正在获取中
+    fetchingStream[key] = true;
+
+    var url = '/api/stream?name=' + encodeURIComponent(song.title) + '&artist=五月天';
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.url) {
+          song.stream_url = data.url;
+          song.stream_fresh = Date.now();
+          callback(data.url);
+        } else {
+          callback(null);
+        }
+      })
+      .catch(function() {
+        callback(null);
+      })
+      .finally(function() {
+        fetchingStream[key] = false;
+      });
+  }
+
+  function doPlay(url) {
+    AUDIO.src = url;
     AUDIO.load();
-
     var playPromise = AUDIO.play();
     if (playPromise !== undefined) {
       playPromise.then(function() {
@@ -197,9 +214,32 @@
         console.log('播放失败:', e.message);
         isPlaying = false;
         updatePlayUI(false);
-        showToast('播放失败，请重试（可能是音频源过期）', 'error');
+        showToast('播放失败，请重试', 'error');
       });
     }
+  }
+
+  function startPlayback() {
+    var s = songs[songIdx];
+    if (!s) return;
+    userInteracted = true;
+
+    // 有缓存流链接 → 直接播放
+    if (s.stream_url) {
+      doPlay(s.stream_url);
+      return;
+    }
+
+    // 无链接 → 实时获取
+    showToast('正在获取音频源...', '');
+    fetchStreamUrl(s, function(url) {
+      if (url) {
+        doPlay(url);
+      } else {
+        updatePlayUI(false);
+        showToast('获取音频源失败，请稍后重试', 'error');
+      }
+    });
   }
 
   function stopPlayback() {

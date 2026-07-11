@@ -8,7 +8,10 @@ import os
 import sys
 import io
 import json
+import ast
 import uuid
+import urllib.request
+import urllib.parse
 from datetime import datetime
 
 LIB_DIR = os.path.join(os.path.dirname(__file__), "_lib")
@@ -189,3 +192,75 @@ async def test_tts():
     except Exception as e:
         import traceback
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
+
+
+# ============ 酷我音乐流代理 ============
+
+KUWO_SEARCH_URL = "http://search.kuwo.cn/r.s"
+KUWO_ANTI_URL = "https://antiserver.kuwo.cn/anti.s"
+
+
+def _kuwo_search(name: str, artist: str = "五月天") -> Optional[str]:
+    """搜索歌曲并返回 MUSICRID，无结果返回 None"""
+    query = f"{artist} {name}"
+    params = urllib.parse.urlencode({
+        "all": query, "ft": "music", "itemset": "new_web",
+        "pn": "0", "rn": "5", "rformat": "json", "encoding": "utf8"
+    })
+    url = f"{KUWO_SEARCH_URL}?{params}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+        start = raw.find("{")
+        if start < 0:
+            return None
+        data = ast.literal_eval(raw[start:])
+        items = data.get("abslist", [])
+        if not items:
+            return None
+        # 优先匹配 ARTIST 包含目标歌手的
+        for item in items:
+            if artist in item.get("ARTIST", ""):
+                return item.get("MUSICRID")
+        return items[0].get("MUSICRID")
+    except Exception:
+        return None
+
+
+def _kuwo_stream_url(rid: str) -> Optional[str]:
+    """通过 musicrid 获取 MP3 直链"""
+    params = urllib.parse.urlencode({
+        "type": "convert_url3", "rid": rid, "format": "mp3"
+    })
+    url = f"{KUWO_ANTI_URL}?{params}"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if data.get("code") == 200 and data.get("url"):
+            return data["url"]
+        return None
+    except Exception:
+        return None
+
+
+@app.get("/api/stream")
+async def stream_song(
+    name: str = Query(..., description="歌曲名"),
+    artist: str = Query("五月天", description="歌手名")
+):
+    """实时获取歌曲 MP3 播放链接"""
+    rid = _kuwo_search(name, artist)
+    if not rid:
+        raise HTTPException(status_code=404, detail=f"未找到歌曲: {artist} - {name}")
+    stream_url = _kuwo_stream_url(rid)
+    if not stream_url:
+        raise HTTPException(status_code=502, detail="获取播放链接失败")
+    return {
+        "success": True,
+        "name": name,
+        "artist": artist,
+        "url": stream_url,
+        "source": "kuwo"
+    }
