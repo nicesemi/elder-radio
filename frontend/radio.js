@@ -13,6 +13,7 @@
 
   let allStations = [];
   let broadcastData = {};
+  let liveStations = [];
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -149,11 +150,12 @@
 
     if (m === 'FM') {
       document.getElementById('dialRange').textContent = '88-108 MHz';
+      fetchLiveStations();
     } else {
       document.getElementById('dialRange').textContent = '年代电台';
+      filterStations();
     }
 
-    filterStations();
     updateEraScroll();
     onTuneChange();
   }
@@ -219,6 +221,62 @@
     renderChannelList();
     playCurrent();
     updateNowPlaying();
+  }
+
+  // ============ FM 实时电台获取 ============
+  function fetchLiveStations(category) {
+    var url = '/api/stations/live?limit=50';
+    if (category) url += '&category=' + encodeURIComponent(category);
+
+    fetch(url).then(function(r) {
+      if (!r.ok) throw new Error('API error');
+      return r.json();
+    }).then(function(data) {
+      if (data.stations && data.stations.length > 0) {
+        liveStations = data.stations.map(function(s) {
+          return {
+            id: s.id,
+            name: s.name,
+            stream_url: s.stream_url,
+            type: 'live',
+            category: s.category,
+            source: s.source,
+            favicon: s.favicon || '',
+            verified: true
+          };
+        });
+      } else {
+        fallbackToLocalVerified();
+      }
+      applyLiveStations();
+    }).catch(function() {
+      fallbackToLocalVerified();
+      applyLiveStations();
+    });
+
+    function fallbackToLocalVerified() {
+      liveStations = allStations.filter(function(s) {
+        return s.type === 'live' && s.stream_url && s.verified;
+      });
+    }
+
+    function applyLiveStations() {
+      stations = liveStations;
+      if (stations.length === 0) {
+        stationIdx = 0;
+        renderDial();
+        renderChannelList();
+        updateNowPlaying();
+        return;
+      }
+      if (stationIdx >= stations.length) stationIdx = 0;
+      bindTuningKnob();
+      setStIdx(stationIdx);
+      renderDial();
+      renderChannelList();
+      playCurrent();
+      updateNowPlaying();
+    }
   }
 
   function updateEraScroll() {
@@ -609,7 +667,11 @@
       if (s.verified) cls += ' verified';
       if (s.type === 'ai_archive') cls += ' ai';
       var label = s.name.length > 10 ? s.name.slice(0, 10) + '…' : s.name;
-      return '<span class="' + cls + '" data-idx="' + i + '">' + label + '</span>';
+      var sourceBadge = '';
+      if (mode === 'FM' && s.source) {
+        sourceBadge = ' <span style="opacity:0.5;font-size:9px;">' + s.source + '</span>';
+      }
+      return '<span class="' + cls + '" data-idx="' + i + '">' + label + sourceBadge + '</span>';
     }).join('');
 
     var chips = scroll.querySelectorAll('.channel-chip');

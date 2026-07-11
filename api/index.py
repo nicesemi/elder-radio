@@ -28,6 +28,7 @@ from typing import Optional, List
 _CHANNELS = None
 _BROADCASTER_VOICES = None
 _r2_broadcast = None
+_live_stations = None
 
 def _get_channels():
     global _CHANNELS, _BROADCASTER_VOICES
@@ -43,6 +44,13 @@ def _get_r2():
         import r2_broadcast
         _r2_broadcast = r2_broadcast
     return _r2_broadcast
+
+def _get_live_stations():
+    global _live_stations
+    if _live_stations is None:
+        import live_stations
+        _live_stations = live_stations
+    return _live_stations
 
 # Supabase 客户端（延迟初始化）
 _supabase_client = None
@@ -436,3 +444,32 @@ async def stream_song(
         "url": stream_url,
         "source": "kuwo"
     }
+
+
+# ============ 实时电台 API（2026 FM 模式）============
+
+@app.get("/api/stations/live")
+async def get_live_stations(
+    category: Optional[str] = Query(None, description="分类筛选：news/music/sports/business"),
+    limit: int = Query(50, ge=1, le=500, description="返回数量上限"),
+):
+    """获取聚合直播电台列表（RadioBrowser + FanMingMing）"""
+    ls = _get_live_stations()
+    stations = ls.get_all_live_stations(category=category)
+    return {
+        "stations": stations[:limit],
+        "total": len(stations),
+        "source": "RadioBrowser + FanMingMing",
+    }
+
+
+@app.get("/api/stations/live/categories")
+async def get_live_categories():
+    """返回所有可用分类及各自电台数量"""
+    ls = _get_live_stations()
+    all_stations = ls.get_all_live_stations()
+    cats = {}
+    for s in all_stations:
+        cat = s.get("category", "综合")
+        cats[cat] = cats.get(cat, 0) + 1
+    return {"categories": list(cats.keys()), "counts": cats}
