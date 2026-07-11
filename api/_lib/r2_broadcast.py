@@ -839,3 +839,53 @@ def get_history_stations(year: int) -> Optional[List[Dict[str, Any]]]:
 
     print(f"[History] {year}: {len(stations)} 个频道/分类, {sum(len(s['audio_urls']) for s in stations)} 个文件")
     return stations if stations else None
+
+
+# ==================== 云听 CNR 节目回听（基于 ytapi.radio.cn 采集的链接） ====================
+_CNR_CACHE = {}  # year -> {date: [[start, end, name, url], ...]}
+_CNR_CACHE_TIME = {}  # year -> timestamp
+
+def get_cnr_programs_by_date(date_str: str) -> List[Dict]:
+    """
+    获取指定日期的云听中国之声节目列表。
+    date_str: YYYY-MM-DD
+    返回 [{"start": "00:00", "end": "00:30", "name": "档案揭秘", "url": "https://..."}, ...]
+    """
+    year = date_str[:4]
+    index = _get_cnr_year_index(year)
+    if index is None:
+        return []
+    return index.get(date_str, [])
+
+def get_cnr_years() -> List[str]:
+    """返回有数据的年份列表。"""
+    try:
+        s3 = _get_s3()
+        resp = s3.get_object(Bucket=R2_BUCKET, Key="cntv/_index.json")
+        data = json.loads(resp["Body"].read())
+        return data.get("years", [])
+    except Exception:
+        return []
+
+def get_cnr_year_programs(year: str) -> Dict[str, List]:
+    """返回指定年份的全部节目索引 {date: [[start, end, name, url], ...]}。"""
+    return _get_cnr_year_index(year) or {}
+
+def _get_cnr_year_index(year: str) -> Optional[Dict[str, List]]:
+    """从 R2 加载年份节目索引，带内存缓存。"""
+    global _CNR_CACHE, _CNR_CACHE_TIME
+    now = time.time()
+    if year in _CNR_CACHE and (now - _CNR_CACHE_TIME.get(year, 0)) < 3600:
+        return _CNR_CACHE[year]
+    
+    try:
+        s3 = _get_s3()
+        key = f"cntv/cntv_zhisheng_{year}.json"
+        resp = s3.get_object(Bucket=R2_BUCKET, Key=key)
+        data = json.loads(resp["Body"].read())
+        _CNR_CACHE[year] = data
+        _CNR_CACHE_TIME[year] = now
+        return data
+    except Exception as e:
+        print(f"[CNR] Failed to load year {year}: {e}")
+        return None

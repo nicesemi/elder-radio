@@ -412,6 +412,75 @@ async def broadcast_history(year: int):
         }
 
 
+# ============ 云听 CNR 回听节目 API ============
+
+@app.get("/api/cntv/years")
+async def cntv_years():
+    """返回有云听回听数据的年份列表"""
+    r2 = _get_r2()
+    years = r2.get_cnr_years()
+    return {"years": years, "source": "ytapi.radio.cn", "station": "中国之声"}
+
+
+@app.get("/api/cntv/{year}")
+async def cntv_year_programs(year: str):
+    """返回指定年份的全部节目索引（按日期分组）"""
+    r2 = _get_r2()
+    programs = r2.get_cnr_year_programs(year)
+    dates = sorted(programs.keys()) if programs else []
+    total = sum(len(v) for v in programs.values()) if programs else 0
+    return {
+        "year": year,
+        "dates": dates,
+        "total_days": len(dates),
+        "total_programs": total,
+        "programs": programs,
+        "source": "ytapi.radio.cn",
+        "station": "中国之声",
+    }
+
+
+@app.get("/api/cntv/date/{date}")
+async def cntv_date_programs(date: str):
+    """
+    返回指定日期的节目列表。
+    date: YYYY-MM-DD，例如 2023-07-01
+    返回每档节目的 start/end/name/url，可直接播放
+    """
+    from datetime import datetime as dt
+    try:
+        dt.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="日期格式错误，请使用 YYYY-MM-DD")
+
+    r2 = _get_r2()
+    programs = r2.get_cnr_programs_by_date(date)
+    if not programs:
+        return {
+            "date": date,
+            "programs": [],
+            "source": "none",
+            "message": f"{date} 无回听数据"
+        }
+
+    # programs format: [[start, end, name, url], ...]
+    result = []
+    for p in programs:
+        result.append({
+            "start": p[0],
+            "end": p[1],
+            "name": p[2],
+            "url": p[3],
+        })
+    return {
+        "date": date,
+        "programs": result,
+        "total": len(result),
+        "source": "ytapi.radio.cn",
+        "station": "中国之声",
+    }
+
+
 @app.get("/api/audio/{filename}")
 async def get_audio(filename: str):
     if AUDIO_STORAGE == "supabase":

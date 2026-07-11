@@ -15,6 +15,7 @@
   let broadcastData = {};
   let liveStations = [];
   let historyStations = [];
+  let cntvStations = [];
   let currentCategory = '';
   let stations = [];
   let stationIdx = 0;
@@ -354,12 +355,19 @@
   function updateEraScroll() {
     var el = document.getElementById('eraScroll');
     if (mode === 'AM') {
-      var events = (broadcastData.years && broadcastData.years[String(year)])
-        ? broadcastData.years[String(year)].events || [] : [];
-      var preview = events.length > 0
-        ? events.slice(0, 2).join(' · ')
-        : year + '年 — ' + stations.length + ' 个电台';
-      el.textContent = preview;
+      if (cntvStations.length > 0 && stations === cntvStations) {
+        var dateLabel = stations[0] && stations[0].id
+          ? stations[0].id.match(/\d{4}-\d{2}-\d{2}/)
+          : null;
+        el.textContent = (dateLabel ? dateLabel[0] : year) + ' · 中国之声云听回听';
+      } else {
+        var events = (broadcastData.years && broadcastData.years[String(year)])
+          ? broadcastData.years[String(year)].events || [] : [];
+        var preview = events.length > 0
+          ? events.slice(0, 2).join(' · ')
+          : year + '年 — ' + stations.length + ' 个电台';
+        el.textContent = preview;
+      }
       el.style.display = 'block';
     } else {
       el.style.display = 'none';
@@ -412,9 +420,14 @@
     var el = document.getElementById('nowPlaying');
     if (stations[stationIdx]) {
       var s = stations[stationIdx];
-      el.textContent = mode === 'FM'
-        ? '直播: ' + s.name
-        : '[' + year + '] ' + s.name;
+      if (s.type === 'cntv') {
+        var timeLabel = s.start ? s.start + '-' + s.end : '';
+        el.textContent = '[' + year + '] ' + s.name + (timeLabel ? ' ' + timeLabel : '') + ' · 云听回听';
+      } else if (mode === 'FM') {
+        el.textContent = '直播: ' + s.name;
+      } else {
+        el.textContent = '[' + year + '] ' + s.name;
+      }
     } else {
       el.textContent = '等待信号...';
     }
@@ -472,6 +485,46 @@
       String(selectedMonth).padStart(2, '0') + '-' +
       String(selectedDay).padStart(2, '0');
 
+    // 优先查云听 CNR 回听节目
+    fetch('/api/cntv/date/' + dateStr)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.programs && data.programs.length > 0) {
+          // 有云听回听数据 → 渲染为可调谐的节目列表
+          cntvStations = data.programs.map(function(p, i) {
+            return {
+              id: 'cntv_' + dateStr + '_' + i,
+              name: p.name,
+              stream_url: p.url,
+              type: 'cntv',
+              category: '新闻',
+              era: String(year),
+              verified: true,
+              source: 'ytapi.radio.cn',
+              start: p.start,
+              end: p.end
+            };
+          });
+          stations = cntvStations;
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelList();
+          updateEraScroll();
+          document.getElementById('nowPlaying').textContent =
+            '[' + dateStr + '] 中国之声 · ' + data.programs.length + ' 档节目';
+          return;
+        }
+        // 无 CNR 数据 → 走原有广播生成逻辑
+        _fallbackBroadcast(dateStr);
+      })
+      .catch(function() {
+        _fallbackBroadcast(dateStr);
+      });
+  }
+
+  function _fallbackBroadcast(dateStr) {
     var channel = stations[stationIdx] ? (stations[stationIdx].category || 'news') : 'news';
     document.getElementById('nowPlaying').textContent = '生成中: ' + dateStr;
 
@@ -748,9 +801,17 @@
       if (realIdx === stationIdx) cls += ' current';
       if (s.verified) cls += ' verified';
       if (s.type === 'ai_archive') cls += ' ai';
-      var label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
+      if (s.type === 'cntv') cls += ' cntv';
+      var label;
+      if (s.type === 'cntv' && s.start) {
+        label = s.start + ' ' + (s.name.length > 12 ? s.name.slice(0, 12) + '…' : s.name);
+      } else {
+        label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
+      }
       var sourceBadge = '';
-      if (s.source && (mode === 'FM' || s.source === 'r2_archive' || s.source === 'archive.org')) {
+      if (s.source && s.source === 'ytapi.radio.cn') {
+        sourceBadge = ' <span style="opacity:0.5;font-size:7px;">云听</span>';
+      } else if (s.source && (mode === 'FM' || s.source === 'r2_archive' || s.source === 'archive.org')) {
         sourceBadge = ' <span style="opacity:0.5;font-size:7px;">' + s.source + '</span>';
       }
       return '<span class="' + cls + '" data-idx="' + realIdx + '">' + label + sourceBadge + '</span>';
