@@ -27,6 +27,7 @@ from typing import Optional, List
 
 _CHANNELS = None
 _BROADCASTER_VOICES = None
+_r2_broadcast = None
 
 def _get_channels():
     global _CHANNELS, _BROADCASTER_VOICES
@@ -35,6 +36,13 @@ def _get_channels():
         _CHANNELS = CHANNELS
         _BROADCASTER_VOICES = BROADCASTER_VOICES
     return _CHANNELS, _BROADCASTER_VOICES
+
+def _get_r2():
+    global _r2_broadcast
+    if _r2_broadcast is None:
+        import r2_broadcast
+        _r2_broadcast = r2_broadcast
+    return _r2_broadcast
 
 # Supabase 客户端（延迟初始化）
 _supabase_client = None
@@ -109,6 +117,21 @@ async def get_voices():
 
 @app.post("/api/broadcast/generate")
 async def generate_broadcast(req: BroadcastRequest):
+    """AI 生成广播内容，优先检查 R2 缓存"""
+    r2 = _get_r2()
+
+    # 优先级 1：检查 R2 缓存
+    cached_url = r2.check_r2_cache(req.year, req.channel)
+    if cached_url:
+        return {
+            "success": True,
+            "source": "r2",
+            "audio_url": cached_url,
+            "channel": req.channel,
+            "year": req.year
+        }
+
+    # AI 生成兜底
     from ai_content import generate_broadcast_content
     from tts_service import text_to_speech
 
@@ -137,11 +160,22 @@ async def generate_broadcast(req: BroadcastRequest):
                 audio_url = f"/api/audio/{os.path.basename(audio_path)}"
         if not audio_url:
             audio_url = f"/api/audio/{os.path.basename(audio_path)}"
+
+        # 上传到 R2 缓存，下次直接用
+        if audio_path and os.path.exists(audio_path):
+            try:
+                with open(audio_path, "rb") as f:
+                    audio_bytes = f.read()
+                r2.upload_to_r2(audio_bytes, req.year, req.channel, source="ai")
+            except Exception as e:
+                print(f"[R2 Upload] 缓存失败: {e}")
+
     except Exception as e:
         print(f"[Broadcast] TTS 失败，降级文本模式: {e}")
 
     return {
         "success": True,
+        "source": "ai",
         "content": content,
         "audio_url": audio_url,
         "channel": req.channel,
@@ -163,6 +197,144 @@ async def generate_content_only(req: BroadcastRequest):
         "channel": req.channel,
         "year": req.year
     }
+
+
+# ============ 年代/日期/实时广播路由 ============
+
+async def _ai_broadcast_to_r2(r2, channel: str, year: int, date_str: str = None):
+    """AI 生成广播内容 → TTS → 上传 R2 → 返回 URL"""
+    from ai_content import generate_broadcast_content
+    from tts_service import text_to_speech
+
+    content = await generate_broadcast_content(channel=channel, year=year, duration_minutes=5)
+    output_filename = f"broadcast_{channel}_{year}_ai.mp3"
+    audio_path = await text_to_speech(text=content, year=year, output_filename=output_filename)
+
+    with open(audio_path, "rb") as f:
+        audio_bytes = f.read()
+    r2_url = r2.upload_to_r2(audio_bytes, year, channel, source="ai", date_str=date_str)
+    return r2_url, content
+
+
+@app.get("/api/broadcast/year/{year}")
+async def broadcast_by_year(
+    year: int,
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology"),
+    duration: int = Query(5, description="AI 兜底时生成的时长（分钟）")
+):
+    """
+    按年代检索广播内容，四级优先级：
+    R2缓存 → 历史API → 下载到R2 → AI兜底
+    """
+    if category not in ("news", "music", "sports", "finance", "culture", "technology", "综合", "general"):
+        raise HTTPException(status_code=400, detail=f"不支持的分类: {category}")
+
+    r2 = _get_r2()
+
+    # 走四级优先级解析
+    result = r2.broadcast_4level_resolve(year, category)
+    if result.get("source"):
+        return {
+            "success": True,
+            **result
+        }
+
+    # 兜底：AI 生成
+    try:
+        audio_url, content = await _ai_broadcast_to_r2(r2, category, year)
+        return {
+            "success": True,
+            "source": "ai",
+            "audio_url": audio_url,
+            "content": content,
+            "channel": category,
+            "year": year
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"广播生成失败: {str(e)}")
+
+
+@app.get("/api/broadcast/date/{date}")
+async def broadcast_by_date(
+    date: str,
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
+):
+    """
+    按具体日期（YYYY-MM-DD）检索广播内容，四级优先级同上。
+    """
+    # 校验日期格式
+    try:
+        parts = date.split("-")
+        year = int(parts[0])
+        if not (1949 <= year <= 2026):
+            raise ValueError
+    except (ValueError, IndexError):
+        raise HTTPException(status_code=400, detail=f"日期格式无效: {date}，应为 YYYY-MM-DD（1949-2026）")
+
+    r2 = _get_r2()
+
+    # 走四级优先级解析（带 date_str）
+    result = r2.broadcast_4level_resolve(year, category, date_str=date)
+    if result.get("source"):
+        return {
+            "success": True,
+            **result
+        }
+
+    # 兜底：AI 生成
+    try:
+        audio_url, content = await _ai_broadcast_to_r2(r2, category, year, date_str=date)
+        return {
+            "success": True,
+            "source": "ai",
+            "audio_url": audio_url,
+            "content": content,
+            "channel": category,
+            "year": year,
+            "date": date
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"广播生成失败: {str(e)}")
+
+
+@app.get("/api/broadcast/live")
+async def broadcast_live(
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
+):
+    """
+    2026 年实时广播：
+    1. 搜索在线实时广播流 → 直接返回 stream_url
+    2. AI 生成"实时"内容 → TTS → R2
+    """
+    r2 = _get_r2()
+
+    # 优先级 1：搜索在线实时广播流
+    live_result = r2.search_live_stream(category)
+    if live_result:
+        return {
+            "success": True,
+            "source": "live",
+            "audio_url": live_result["audio_url"],
+            "station_name": live_result.get("name", ""),
+            "category": category
+        }
+
+    # 优先级 2：AI 生成"实时"广播
+    try:
+        # 生成当前日期的广播
+        today = datetime.now().strftime("%Y-%m-%d")
+        audio_url, content = await _ai_broadcast_to_r2(r2, category, 2026, date_str=today)
+        return {
+            "success": True,
+            "source": "ai",
+            "audio_url": audio_url,
+            "content": content,
+            "channel": category,
+            "year": 2026,
+            "date": today
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"实时广播生成失败: {str(e)}")
 
 
 @app.get("/api/audio/{filename}")

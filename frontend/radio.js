@@ -315,34 +315,27 @@
       String(selectedMonth).padStart(2, '0') + '-' +
       String(selectedDay).padStart(2, '0');
 
+    var channel = stations[stationIdx] ? (stations[stationIdx].category || 'news') : 'news';
     document.getElementById('nowPlaying').textContent = '生成中: ' + dateStr;
 
-    // 优先尝试获取当天历史广播
-    fetch('/api/broadcast/date/' + dateStr)
+    // 调用新 API: /api/broadcast/date/{date}?category=...
+    fetch('/api/broadcast/date/' + dateStr + '?category=' + encodeURIComponent(channel))
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        if (data.audio_url || (data.station_content && data.station_content.length > 0)) {
-          // 有历史数据
-          var firstContent = data.station_content
-            ? data.station_content[0] : null;
-          var firstSeg = firstContent && firstContent.segments
-            ? firstContent.segments[0] : null;
-          if (firstSeg && firstSeg.audio_url) {
-            AUDIO.src = firstSeg.audio_url;
-            AUDIO.play().catch(function() {});
-            document.getElementById('nowPlaying').textContent =
-              dateStr + ' ' + firstSeg.title;
-          } else {
-            document.getElementById('nowPlaying').textContent =
-              dateStr + ' — 文本广播';
-          }
+        if (data.audio_url) {
+          AUDIO.src = data.audio_url;
+          AUDIO.play().catch(function() {});
+          var sourceLabel = formatSource(data.source);
+          var title = (data.metadata && data.metadata.title) ? data.metadata.title : dateStr;
+          document.getElementById('nowPlaying').textContent =
+            title + ' · ' + sourceLabel;
         } else {
-          // 无历史数据 → AI 生成
-          aiGenerateDate(dateStr);
+          document.getElementById('nowPlaying').textContent =
+            dateStr + ' — 无内容';
         }
       })
       .catch(function() {
-        // API 不可用 → AI 生成
+        // API 不可用 → AI 兜底
         aiGenerateDate(dateStr);
       });
   }
@@ -353,21 +346,19 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        channel: st ? st.category : '综合',
+        channel: st ? st.category : 'news',
         year: year,
-        month: selectedMonth,
-        day: selectedDay,
         station_name: st ? st.name : '',
-        voice: TONE_NAMES[toneIdx],
-        broadcast_style: year + '年代广播风格'
+        voice: TONE_NAMES[toneIdx]
       })
     }).then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.audio_url) {
           AUDIO.src = data.audio_url;
           AUDIO.play().catch(function() {});
+          var sourceLabel = formatSource(data.source || 'ai');
           document.getElementById('nowPlaying').textContent =
-            dateStr + ' · AI生成广播';
+            dateStr + ' · ' + sourceLabel;
         }
       })
       .catch(function(err) {
@@ -395,14 +386,20 @@
     AUDIO.play().catch(function(e) { console.log('Stream failed:', e.message); });
   }
 
-  function ttsGenerate(station) {
-    AUDIO.pause();
-    prevStreamUrl = '';
+  function formatSource(src) {
+    var labels = {
+      'r2': 'R2缓存', 'api': '历史API', 'downloaded': '已下载',
+      'ai': 'AI生成', 'live': '实时直播'
+    };
+    return labels[src] || src || '未知';
+  }
+
+  function aiFallbackGenerate(station) {
     fetch('/api/broadcast/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        channel: station.category,
+        channel: station.category || 'news',
         year: year,
         station_name: station.name,
         voice: TONE_NAMES[toneIdx]
@@ -411,8 +408,47 @@
       if (data.audio_url) {
         AUDIO.src = data.audio_url;
         AUDIO.play().catch(function(e) { console.log('TTS play failed:', e); });
+        document.getElementById('nowPlaying').textContent =
+          '[' + year + '] ' + station.name + ' · AI生成(兜底)';
       }
-    }).catch(function(err) { console.log('TTS error:', err); });
+    }).catch(function(err) { console.log('Fallback TTS error:', err); });
+  }
+
+  function ttsGenerate(station) {
+    AUDIO.pause();
+    prevStreamUrl = '';
+
+    var channel = station.category || 'news';
+    var apiUrl, fetchOptions;
+
+    if (year === ERA_MAX) {
+      // 2026 年 → 实时广播 API
+      apiUrl = '/api/broadcast/live?category=' + encodeURIComponent(channel);
+      fetchOptions = { method: 'GET' };
+    } else {
+      // 历史年代 → 年代广播 API
+      apiUrl = '/api/broadcast/year/' + year + '?category=' + encodeURIComponent(channel);
+      fetchOptions = { method: 'GET' };
+    }
+
+    fetch(apiUrl, fetchOptions)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.audio_url) {
+          AUDIO.src = data.audio_url;
+          AUDIO.play().catch(function(e) { console.log('TTS play failed:', e); });
+          var sourceLabel = formatSource(data.source);
+          var prefix = data.station_name
+            ? '直播: ' + data.station_name
+            : '[' + year + '] ' + station.name;
+          document.getElementById('nowPlaying').textContent = prefix + ' · ' + sourceLabel;
+        }
+      })
+      .catch(function(err) {
+        console.log('TTS error:', err);
+        // 兜底：回退到 POST /api/broadcast/generate
+        aiFallbackGenerate(station);
+      });
   }
 
   // ============ 最近收听 ============
