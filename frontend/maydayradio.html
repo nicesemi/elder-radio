@@ -17,14 +17,14 @@
     }
     .radio-shell {
       position: relative; width: 860px; height: 480px;
-      background: linear-gradient(180deg, #8B5E3C 0%, #6B3A1F 5%, #4A2512 25%, #6B3A1F 50%, #4A2512 75%, #2D1508 100%);
+      background: linear-gradient(180deg, #F0A040 0%, #E07820 5%, #C05010 25%, #E07820 50%, #C05010 75%, #803000 100%);
       border-radius: 18px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 2px 8px rgba(255,140,0,0.05), inset 0 -2px 4px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 2px 8px rgba(255,255,255,0.08), inset 0 -2px 4px rgba(0,0,0,0.4);
       overflow: hidden; display: flex;
     }
     .radio-shell::before {
       content:''; position:absolute; inset:0; border-radius:18px;
-      background: repeating-linear-gradient(2deg, transparent, transparent 3px, rgba(255,140,0,0.03) 3px, rgba(255,140,0,0.03) 4px);
+      background: repeating-linear-gradient(2deg, transparent, transparent 3px, rgba(255,200,100,0.04) 3px, rgba(255,200,100,0.04) 4px);
       pointer-events:none; z-index:1;
     }
     .radio-feet { position:absolute; bottom:-4px; z-index:3; width:100%; pointer-events:none; }
@@ -42,50 +42,99 @@
       display:flex; align-items:center; justify-content:center; padding:20px;
     }
     .speaker-frame {
-      width:100%; height:92%; background:#2D1508; border-radius:10px;
-      border:2px solid #1A0A02; padding:10px;
+      width:100%; height:92%; background:#5C2A08; border-radius:10px;
+      border:2px solid #3A1804; padding:10px;
       box-shadow:inset 0 2px 6px rgba(0,0,0,0.6);
     }
     .speaker-grille {
-      width:100%; height:100%; background-color:#FFF3E0;
+      width:100%; height:100%; background-color:#FFF8E8;
       background-image:
-        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(255,140,0,0.12) 3px, rgba(255,140,0,0.12) 6px),
-        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,140,0,0.12) 3px, rgba(255,140,0,0.12) 6px);
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(240,160,64,0.1) 3px, rgba(240,160,64,0.1) 6px),
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(240,160,64,0.1) 3px, rgba(240,160,64,0.1) 6px);
       border-radius:6px; position:relative; overflow:hidden;
     }
+    /* 萝卜角色 */
+    .carrot-character {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      z-index:5; pointer-events:none; opacity:0.92;
+      width:130px; height:130px;
+    }
+    .carrot-body {
+      position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+      width:90px; height:90px; background:#FF8C00; border-radius:50%;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .carrot-body::before {
+      content:''; position:absolute; top:-8px; left:50%; transform:translateX(-50%);
+      width:60px; height:8px; background:#FF8C00; border-radius:50%;
+    }
+    /* 眼睛 */
+    .carrot-eye {
+      position:absolute; width:16px; height:18px; background:#fff; border-radius:50%;
+      top:28px; box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .carrot-eye.left { left:25px; }
+    .carrot-eye.right { right:25px; }
+    .carrot-eye::after {
+      content:''; position:absolute; width:9px; height:10px; background:#4A90D9;
+      border-radius:50%; top:4px; left:3px;
+    }
+    .carrot-eye::before {
+      content:''; position:absolute; width:3px; height:3px; background:#fff;
+      border-radius:50%; top:5px; left:6px; z-index:2;
+    }
+    /* 嘴巴 */
+    .carrot-mouth {
+      position:absolute; top:50px; left:50%; transform:translateX(-50%);
+      width:18px; height:6px; border-bottom:2px solid #333; border-radius:0 0 10px 10px;
+    }
+    /* 叶子 */
+    .carrot-leaf {
+      position:absolute; width:8px; height:32px; background:#4CAF50; border-radius:50%;
+      top:-22px; transform-origin:bottom center;
+    }
+    .carrot-leaf.l1 { left:20px; transform:rotate(-20deg); }
+    .carrot-leaf.l2 { left:50%; transform:translateX(-50%) rotate(0deg); }
+    .carrot-leaf.l3 { right:20px; transform:rotate(20deg); }
+
     .speaker-shadow {
       position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
       width:160px; height:160px; border-radius:50%;
-      background: radial-gradient(circle, rgba(255,140,0,0.15) 0%, rgba(255,140,0,0.08) 35%, rgba(0,0,0,0.02) 60%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,140,0,0.1) 0%, rgba(255,140,0,0.05) 35%, transparent 70%);
       pointer-events:none;
     }
     .speaker-info-overlay {
       position: absolute; bottom: 10px; left: 0; right: 0;
-      text-align: center; z-index: 5; pointer-events: none;
+      text-align: center; z-index: 6; pointer-events: none;
     }
     .speaker-info-overlay .now-playing {
       font-size: 0.75rem; color: #FF8C00;
-      background: rgba(0,0,0,0.5); display: inline-block;
-      padding: 4px 12px; border-radius: 10px;
+      background: rgba(0,0,0,0.6); display: inline-block;
+      padding: 5px 14px; border-radius: 12px;
+      max-width: 90%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     }
-    /* 五月天标志 */
-    .mayday-badge {
-      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-      z-index: 6; pointer-events: none;
-      font-size: 28px; font-weight: 900; letter-spacing: 6px;
-      color: #FF8C00; text-shadow: 0 0 20px rgba(255,140,0,0.5);
-      font-family: 'PingFang SC','Microsoft YaHei',sans-serif;
+    /* 播放/暂停按钮 */
+    .play-overlay {
+      position: absolute; inset:0; z-index:7;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:opacity 0.3s;
     }
-    /* 胡萝卜装饰 */
-    .carrot-decor {
-      position:absolute; width:30px; height:60px; z-index:4; pointer-events:none;
-      background: linear-gradient(180deg, #4CAF50 0%, #388E3C 15%, transparent 15%),
-                  linear-gradient(180deg, #FF8C00 20%, #E65100 80%, #FF8C00 100%);
-      border-radius: 50% 50% 10% 10%;
-      opacity:0.6;
+    .play-overlay.play-btn {
+      background:rgba(0,0,0,0.35);
     }
-    .carrot-decor.left { left:5px; top:40%; transform:rotate(-15deg); }
-    .carrot-decor.right { right:5px; top:40%; transform:rotate(15deg); }
+    .play-overlay.play-btn:hover { background:rgba(0,0,0,0.5); }
+    .play-circle {
+      width:56px; height:56px; border-radius:50%;
+      background:rgba(255,140,0,0.85); display:flex;
+      align-items:center; justify-content:center;
+      box-shadow:0 0 20px rgba(255,140,0,0.4);
+      transition:transform 0.15s;
+    }
+    .play-overlay:hover .play-circle { transform:scale(1.1); }
+    .play-circle .play-icon {
+      font-size:24px; color:#fff; margin-left:4px;
+    }
+    .play-overlay.hidden { opacity:0; pointer-events:none; }
 
     .radio-right {
       position:relative; z-index:2; width:48%;
@@ -103,6 +152,7 @@
       color:#FF8C00; display:flex; align-items:center; gap:5px; z-index:2;
     }
     .led-orange { width:7px; height:7px; border-radius:50%; background:#FF8C00; box-shadow:0 0 6px #FF8C00; }
+    .led-orange.off { background:#3a3a3a; box-shadow:none; }
     .dial-scale-line {
       position:absolute; top:18px; left:10px; right:10px; height:1px;
       background: linear-gradient(90deg, transparent 0%, #555 10%, #FF8C00 50%, #555 90%, transparent 100%);
@@ -122,9 +172,10 @@
       text-overflow:ellipsis; max-width:50px; text-align:center;
     }
     .dial-tick.current .tick-name { color:#FFB300; font-size:9px; font-weight:bold; }
+    .dial-tick.has-stream .tick-name { color:#FFB300; }
     .dial-tick:hover .tick-name { color:#999; }
 
-    .nixie-area { text-align:center; margin-bottom:4px; }
+    .nixie-area { text-align:center; margin:6px 0; }
     .nixie-tube {
       display:inline-block; background:#0a0a0a; border:2px solid #1a1a1a;
       border-radius:6px; padding:4px 16px;
@@ -150,23 +201,17 @@
       width:2px; height:25%; background:#FF8C00; border-radius:1px;
       box-shadow:0 0 3px rgba(255,140,0,0.5);
     }
-    .knob-tuning {
-      width:64px; height:64px;
-      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 50%, #BF360C 80%, #7F2600);
-      border:3px solid #7F2600;
-      box-shadow:0 4px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
+    .knob-era {
+      width:56px; height:56px;
+      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 60%, #BF360C);
+      border:3px solid #BF360C; box-shadow:0 4px 12px rgba(0,0,0,0.5), inset 0 1px 2px rgba(255,255,255,0.1);
     }
-    .knob-tuning::after {
+    .knob-era::after {
       content:''; position:absolute; inset:8px; border-radius:50%;
       border:1px solid rgba(0,0,0,0.3); pointer-events:none;
     }
-    .knob-era {
-      width:52px; height:52px;
-      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 60%, #BF360C);
-      border:2px solid #BF360C; box-shadow:0 3px 8px rgba(0,0,0,0.5);
-    }
     .knob-volume {
-      width:40px; height:40px;
+      width:48px; height:48px;
       background: radial-gradient(circle at 40% 35%, #6a6a6a, #2a2a2a);
       border:2px solid #3a3a3a; box-shadow:0 2px 6px rgba(0,0,0,0.5);
     }
@@ -186,12 +231,12 @@
 
     .radio-status {
       position:absolute; top:6px; right:10px; z-index:3;
-      display:flex; align-items:center; gap:6px; font-size:9px; color:#888;
+      display:flex; align-items:center; gap:6px; font-size:9px; color:#FFD9A0;
     }
     .era-scroll {
       position: absolute; bottom: 2px; left: 50%;
       transform: translateX(-50%);
-      font-size: 9px; color: #FF8C00; z-index: 3;
+      font-size: 9px; color: #FFD9A0; z-index: 3;
       white-space: nowrap; pointer-events: none;
       background: rgba(0,0,0,0.4); padding: 2px 10px;
       border-radius: 8px; max-width: 90%; overflow: hidden;
@@ -233,18 +278,12 @@
       margin-top:8px; transition:all 0.2s;
     }
     .walkie-btn-green:hover { box-shadow:0 0 12px rgba(76,175,80,0.4); }
-    .walkie-btn-green:disabled { opacity:0.4; cursor:not-allowed; }
     .walkie-close {
       display:block; margin:12px auto 0; padding:8px 24px; border-radius:6px;
       border:1px solid #555; background:transparent; color:#888; cursor:pointer;
       font-size:12px;
     }
     .walkie-close:hover { color:#fff; border-color:#fff; }
-    .qr-placeholder {
-      width:120px; height:120px; margin:10px auto; background:#fff; border-radius:8px;
-      display:flex; align-items:center; justify-content:center;
-      font-size:10px; color:#333; text-align:center; line-height:1.4;
-    }
     .group-list { max-height:150px; overflow-y:auto; }
     .group-item {
       display:flex; justify-content:space-between; align-items:center;
@@ -258,11 +297,12 @@
 
     .toast {
       position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
-      background:#4CAF50; color:#fff; padding:10px 24px; border-radius:20px;
+      background:#FF8C00; color:#fff; padding:10px 24px; border-radius:20px;
       font-size:13px; z-index:3000; opacity:0; transition:opacity 0.3s;
       pointer-events:none;
     }
     .toast.show { opacity:1; }
+    .toast.error { background:#e94560; }
 
     #audioPlayer { display:none; }
 
@@ -270,12 +310,17 @@
       .radio-shell { width:100%; max-width:860px; height:auto; min-height:400px; flex-direction:column; }
       .radio-left { width:100%; height:170px; padding:10px; }
       .radio-right { width:100%; }
-      .knob-tuning { width:52px; height:52px; }
-      .knob-era { width:42px; height:42px; }
-      .knob-volume { width:34px; height:34px; }
+      .knob-era { width:44px; height:44px; }
+      .knob-volume { width:38px; height:38px; }
       .walkie-btn { width:40px; height:40px; font-size:16px; }
       .nixie-tube { font-size:30px; padding:3px 12px; letter-spacing:6px; }
-      .mayday-badge { font-size:22px; letter-spacing:4px; }
+      .carrot-character { width:90px; height:90px; }
+      .carrot-body { width:65px; height:65px; }
+      .carrot-eye { width:12px; height:14px; top:20px; }
+      .carrot-eye.left { left:18px; }
+      .carrot-eye.right { right:18px; }
+      .carrot-mouth { top:36px; width:14px; }
+      .carrot-leaf { width:6px; height:22px; top:-15px; }
     }
   </style>
 </head>
@@ -299,7 +344,7 @@
   </div>
   <div class="radio-status">
     <span id="modeIndicator">五月天</span>
-    <span class="led-orange"></span>
+    <span class="led-orange" id="playLed"></span>
   </div>
   <div class="era-scroll" id="eraScroll"></div>
 
@@ -307,21 +352,35 @@
     <div class="speaker-frame">
       <div class="speaker-grille">
         <div class="speaker-shadow"></div>
-        <div class="mayday-badge">五月天</div>
+        <!-- 萝卜角色 -->
+        <div class="carrot-character">
+          <div class="carrot-leaf l1"></div>
+          <div class="carrot-leaf l2"></div>
+          <div class="carrot-leaf l3"></div>
+          <div class="carrot-body">
+            <div class="carrot-eye left"></div>
+            <div class="carrot-eye right"></div>
+            <div class="carrot-mouth"></div>
+          </div>
+        </div>
+        <!-- 播放按钮遮罩 -->
+        <div class="play-overlay play-btn hidden" id="playOverlay">
+          <div class="play-circle">
+            <span class="play-icon">▶</span>
+          </div>
+        </div>
       </div>
       <div class="speaker-info-overlay">
         <div class="now-playing" id="nowPlaying">🎵 等待信号...</div>
       </div>
     </div>
-    <div class="carrot-decor left"></div>
-    <div class="carrot-decor right"></div>
   </div>
 
   <div class="radio-right">
     <div class="dial-panel">
       <div class="dial-fm-label">
         <span id="dialModeLabel">MAYDAY</span>
-        <span class="led-orange"></span>
+        <span class="led-orange" id="dialLed"></span>
         <span style="font-size:7px;color:#666;" id="dialRange">年代电台</span>
       </div>
       <div class="dial-scale-line"></div>
@@ -345,12 +404,6 @@
         <span class="knob-label">对讲</span>
       </div>
       <div class="knob-group">
-        <div class="knob-base knob-tuning" id="knobTuning">
-          <div class="knob-indicator"></div>
-        </div>
-        <span class="knob-label">选歌</span>
-      </div>
-      <div class="knob-group">
         <div class="knob-base knob-volume" id="knobVolume">
           <div class="knob-indicator" style="height:28%;top:3px;"></div>
         </div>
@@ -364,36 +417,32 @@
 <div class="walkie-overlay" id="walkieOverlay">
   <div class="walkie-panel">
     <h3>📻 五迷对讲机</h3>
-
     <div class="walkie-section">
       <h4>📡 连接五迷</h4>
-      <p>加入当前收听年代的聊天室，与同年代的五月天歌迷实时交流。</p>
+      <p>加入当前年代的聊天室，与同好实时交流。</p>
       <button class="walkie-btn-green" id="btnConnectFans">连接「<span id="connectYear">2000</span>年代」聊天室</button>
       <p style="font-size:10px;color:#666;margin-top:6px;" id="connectStatus">未连接</p>
     </div>
-
     <div class="walkie-section">
       <h4>👥 创建群组</h4>
-      <p>创建专属群组，分享给好友用手机加入。</p>
-      <input class="walkie-input" id="groupNameInput" placeholder="输入群组名称，如：2000年代五迷">
+      <p>创建专属群组分享给好友（需在手机上打开链接加入）。</p>
+      <input class="walkie-input" id="groupNameInput" placeholder="输入群组名称：2000年代五迷">
       <button class="walkie-btn-green" id="btnCreateGroup">创建群组</button>
       <div id="groupCreateResult" style="margin-top:8px;"></div>
     </div>
-
     <div class="walkie-section" id="groupListSection">
       <h4>📋 已有群组</h4>
       <div class="group-list" id="groupList">
         <p style="color:#555;font-size:11px;">暂无群组</p>
       </div>
     </div>
-
     <button class="walkie-close" id="btnWalkieClose">关闭</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<audio id="audioPlayer"></audio>
+<audio id="audioPlayer" preload="none"></audio>
 <script src="maydayradio.js"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 /* =============================================
-   maydayradio.js — 五月天胡萝卜主题收音机
+   maydayradio.js — 五月天胡萝卜收音机 v2
+   修复：浏览器自动播放策略 → 点击播放大按钮
    ============================================= */
 
 (function() {
   'use strict';
 
-  // ============ 状态 ============
   const AUDIO = document.getElementById('audioPlayer');
   const ERA_MIN = 1999, ERA_MAX = 2021;
 
@@ -14,9 +14,10 @@
   let songIdx = 0;
   let year = 2000;
   let volume = 0.7;
+  let isPlaying = false;
   let isConnected = false;
   let connectionTimer = null;
-  let prevStreamUrl = '';
+  let userInteracted = false;
 
   AUDIO.volume = volume;
 
@@ -66,30 +67,6 @@
     el.style.transform = 'rotate(' + deg + 'deg)';
   }
 
-  // ============ 选歌旋钮 ============
-  function getSongIdx() { return songIdx; }
-  function setSongIdx(idx) {
-    songIdx = Math.max(0, Math.min(idx, songs.length - 1));
-    const deg = songs.length > 1
-      ? angleForValue(songIdx, 0, songs.length - 1) : 135;
-    setKnobRotation(document.getElementById('knobTuning'), deg);
-  }
-
-  function onSongChange() {
-    renderDial();
-    playCurrent();
-    updateNowPlaying();
-    saveRecent();
-  }
-
-  function bindTuningKnob() {
-    const knob = document.getElementById('knobTuning');
-    makeKnobDraggable(knob, getSongIdx, setSongIdx, {
-      min: 0, max: Math.max(0, songs.length - 1),
-      onChange: onSongChange
-    });
-  }
-
   // ============ 年代旋钮 ============
   function getYear() { return year; }
   function setYear(y) {
@@ -101,10 +78,11 @@
     updateWalkieYear();
   }
 
-  const knobEra = document.getElementById('knobEra');
-  makeKnobDraggable(knobEra, getYear, setYear, {
-    min: ERA_MIN, max: ERA_MAX, step: 1
-  });
+  makeKnobDraggable(
+    document.getElementById('knobEra'),
+    getYear, setYear,
+    { min: ERA_MIN, max: ERA_MAX, step: 1 }
+  );
 
   // ============ 音量旋钮 ============
   function getVol() { return volume; }
@@ -114,10 +92,11 @@
     setKnobRotation(document.getElementById('knobVolume'), angleForValue(volume, 0, 1));
   }
 
-  const knobVol = document.getElementById('knobVolume');
-  makeKnobDraggable(knobVol, getVol, setVol, {
-    min: 0, max: 1, step: 0.01
-  });
+  makeKnobDraggable(
+    document.getElementById('knobVolume'),
+    getVol, setVol,
+    { min: 0, max: 1, step: 0.01 }
+  );
 
   // ============ 歌曲过滤 ============
   function filterSongs() {
@@ -128,26 +107,20 @@
       songIdx = 0;
       renderDial();
       updateNowPlaying();
+      stopPlayback();
       return;
     }
     if (songIdx >= songs.length) songIdx = 0;
-    bindTuningKnob();
-    // Keep current songIdx if within bounds
-    setSongIdx(Math.min(songIdx, songs.length - 1));
     renderDial();
-    playCurrent();
     updateNowPlaying();
+    // 不自动播放，等待用户点击
   }
 
   function updateEraScroll() {
     var el = document.getElementById('eraScroll');
     var count = songs.length;
     var hasStream = songs.filter(function(s) { return s.stream_url; }).length;
-    var album = '';
-    if (songs.length > 0) {
-      album = songs[0].album || '';
-    }
-    el.textContent = year + '年 · ' + count + '首（' + hasStream + '首可播）' + (album ? ' · ' + album : '');
+    el.textContent = year + '年 · ' + count + '首（' + hasStream + '首可播）';
   }
 
   // ============ 刻度盘 ============
@@ -169,6 +142,7 @@
     c.innerHTML = visible.map(function(s, i) {
       var realIdx = start + i;
       var cls = realIdx === songIdx ? ' current' : '';
+      if (s.stream_url) cls += ' has-stream';
       var label = s.title.slice(0, 8);
       return '<div class="dial-tick' + cls + '" data-idx="' + realIdx + '">' +
         '<div class="tick-line"></div>' +
@@ -178,8 +152,10 @@
     var ticks = c.querySelectorAll('.dial-tick');
     for (var j = 0; j < ticks.length; j++) {
       ticks[j].addEventListener('click', function() {
-        setSongIdx(parseInt(this.dataset.idx));
-        onSongChange();
+        songIdx = parseInt(this.dataset.idx);
+        renderDial();
+        updateNowPlaying();
+        startPlayback();
       });
     }
   }
@@ -197,25 +173,99 @@
   }
 
   // ============ 播放控制 ============
-  function playCurrent() {
+  function startPlayback() {
     var s = songs[songIdx];
     if (!s) return;
-    if (s.stream_url) {
-      playStream(s);
+
+    if (!s.stream_url) {
+      showToast('这首歌暂无音频源', 'error');
+      updatePlayUI(false);
+      return;
+    }
+
+    userInteracted = true;
+    AUDIO.src = s.stream_url;
+    AUDIO.load();
+
+    var playPromise = AUDIO.play();
+    if (playPromise !== undefined) {
+      playPromise.then(function() {
+        isPlaying = true;
+        updatePlayUI(true);
+        saveRecent();
+      }).catch(function(e) {
+        console.log('播放失败:', e.message);
+        isPlaying = false;
+        updatePlayUI(false);
+        showToast('播放失败，请重试（可能是音频源过期）', 'error');
+      });
     }
   }
 
-  function playStream(song) {
-    if (prevStreamUrl === song.stream_url && !AUDIO.paused) return;
-    prevStreamUrl = song.stream_url;
-    AUDIO.src = song.stream_url;
-    AUDIO.play().catch(function(e) {
-      console.log('Play failed:', e.message);
-      prevStreamUrl = '';
-    });
+  function stopPlayback() {
+    AUDIO.pause();
+    AUDIO.src = '';
+    isPlaying = false;
+    updatePlayUI(false);
   }
 
-  // ============ 最近收听 ============
+  function updatePlayUI(playing) {
+    var overlay = document.getElementById('playOverlay');
+    var led = document.getElementById('playLed');
+    if (playing) {
+      overlay.classList.add('hidden');
+      led.classList.remove('off');
+    } else {
+      overlay.classList.remove('hidden');
+      led.classList.add('off');
+    }
+  }
+
+  // 播放按钮点击
+  document.getElementById('playOverlay').addEventListener('click', function(e) {
+    e.stopPropagation();
+    startPlayback();
+  });
+
+  // 点击萝卜身体也可以播放/暂停
+  document.querySelector('.carrot-character').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (isPlaying) {
+      stopPlayback();
+    } else {
+      startPlayback();
+    }
+  });
+  // 让萝卜可点击
+  document.querySelector('.carrot-character').style.pointerEvents = 'auto';
+  document.querySelector('.carrot-character').style.cursor = 'pointer';
+
+  // 音频事件
+  AUDIO.addEventListener('ended', function() {
+    isPlaying = false;
+    updatePlayUI(false);
+  });
+
+  AUDIO.addEventListener('error', function() {
+    console.log('音频加载错误:', AUDIO.error);
+    isPlaying = false;
+    updatePlayUI(false);
+    showToast('音频源不可用，请切换其他歌曲', 'error');
+  });
+
+  AUDIO.addEventListener('playing', function() {
+    isPlaying = true;
+    updatePlayUI(true);
+  });
+
+  AUDIO.addEventListener('pause', function() {
+    if (AUDIO.src && !AUDIO.ended) {
+      isPlaying = false;
+      updatePlayUI(false);
+    }
+  });
+
+  // ============ 保存最近收听 ============
   function saveRecent() {
     var s = songs[songIdx];
     if (!s) return;
@@ -255,24 +305,20 @@
     document.getElementById('connectStatus').textContent = isConnected ? '已连接 · 在线' : '未连接';
   }
 
-  // 连接五迷聊天室（模拟）
   document.getElementById('btnConnectFans').addEventListener('click', function() {
     var btn = this;
     if (isConnected) {
-      // 断开
       isConnected = false;
       btn.textContent = '连接「' + year + '年代」聊天室';
       document.getElementById('connectStatus').textContent = '未连接';
       if (connectionTimer) { clearInterval(connectionTimer); connectionTimer = null; }
       showToast('已断开连接');
     } else {
-      // 连接
       isConnected = true;
       btn.textContent = '已连接 · 点击断开';
       document.getElementById('connectStatus').textContent = '已连接 · 在线 · ' + year + '年代';
-      showToast('已连接「' + year + '年代」聊天室，开始收听从 ' + year + ' 出发的五迷故事...');
+      showToast('已连接「' + year + '年代」聊天室');
 
-      // 模拟在线人数变化
       connectionTimer = setInterval(function() {
         var count = Math.floor(Math.random() * 50) + 10;
         document.getElementById('connectStatus').textContent = '已连接 · 在线 ' + count + ' 人 · ' + year + '年代';
@@ -280,7 +326,6 @@
     }
   });
 
-  // 创建群组
   document.getElementById('btnCreateGroup').addEventListener('click', function() {
     var nameInput = document.getElementById('groupNameInput');
     var name = nameInput.value.trim();
@@ -292,7 +337,6 @@
     var groups = [];
     try { groups = JSON.parse(localStorage.getItem('maydayradio_groups') || '[]'); } catch(e) {}
 
-    // 生成唯一群ID
     var groupId = 'MD' + Date.now().toString(36).toUpperCase();
     var group = {
       id: groupId,
@@ -305,13 +349,11 @@
     groups.unshift(group);
     localStorage.setItem('maydayradio_groups', JSON.stringify(groups));
 
-    // 显示结果
     var shareLink = window.location.origin + '/maydayradio?join=' + groupId;
     var resultDiv = document.getElementById('groupCreateResult');
     resultDiv.innerHTML =
       '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:12px;text-align:center;">' +
       '<p style="color:#4CAF50;font-size:12px;margin:0 0 8px;">群组「' + name + '」已创建</p>' +
-      '<div class="qr-placeholder">📱<br>请用手机<br>扫描加入</div>' +
       '<p style="color:#666;font-size:10px;margin:8px 0 0;">分享码: <b style="color:#4CAF50;">' + groupId + '</b></p>' +
       '<p style="color:#888;font-size:9px;margin:4px 0 0;">在手机上打开链接或输入分享码加入群组</p>' +
       '</div>';
@@ -342,7 +384,6 @@
         var gid = this.dataset.gid;
         var g = groups.find(function(x) { return x.id === gid; });
         if (g) {
-          // 模拟加入
           g.members = (g.members || 1) + 1;
           localStorage.setItem('maydayradio_groups', JSON.stringify(groups));
           renderGroupList();
@@ -353,20 +394,22 @@
   }
 
   // ============ Toast ============
-  function showToast(msg) {
+  function showToast(msg, type) {
     var t = document.getElementById('toast');
     t.textContent = msg;
+    t.className = 'toast ' + (type === 'error' ? 'error' : '');
     t.classList.add('show');
-    setTimeout(function() { t.classList.remove('show'); }, 2500);
+    setTimeout(function() { t.classList.remove('show'); }, 2800);
   }
 
   // ============ 键盘控制 ============
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if (e.key === 'ArrowRight') { setSongIdx(songIdx + 1); onSongChange(); }
-    if (e.key === 'ArrowLeft')  { setSongIdx(songIdx - 1); onSongChange(); }
+    if (e.key === 'ArrowRight') { songIdx = Math.min(songIdx + 1, songs.length - 1); renderDial(); updateNowPlaying(); startPlayback(); }
+    if (e.key === 'ArrowLeft')  { songIdx = Math.max(songIdx - 1, 0); renderDial(); updateNowPlaying(); startPlayback(); }
     if (e.key === 'ArrowUp')    { setVol(volume + 0.05); }
     if (e.key === 'ArrowDown')  { setVol(volume - 0.05); }
+    if (e.key === ' ')          { e.preventDefault(); if (isPlaying) stopPlayback(); else startPlayback(); }
   });
 
   // ============ URL 参数 ============
@@ -379,11 +422,10 @@
       if (y >= ERA_MIN && y <= ERA_MAX) {
         year = y;
         document.getElementById('nixieYear').textContent = year;
-        setKnobRotation(knobEra, angleForValue(year, ERA_MIN, ERA_MAX));
+        setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
       }
     }
 
-    // 群组加入链接
     var joinId = params.get('join');
     if (joinId) {
       setTimeout(function() {
@@ -404,13 +446,19 @@
   // ============ 初始化 ============
   function init() {
     fetch('/frontend/singer_data.json')
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) throw new Error('数据加载失败 ' + r.status);
+        return r.json();
+      })
       .then(function(data) {
         var mayday = null;
         for (var i = 0; i < data.singers.length; i++) {
           if (data.singers[i].name === '五月天') { mayday = data.singers[i]; break; }
         }
-        if (!mayday) { console.error('五月天数据未找到'); return; }
+        if (!mayday) {
+          document.getElementById('nowPlaying').textContent = '❌ 五月天数据未找到';
+          return;
+        }
 
         var songsByYear = mayday.songs_by_year || {};
         for (var y in songsByYear) {
@@ -427,14 +475,20 @@
           }
         }
 
-        setSongIdx(0);
-        setVol(0.7);
         loadFromURL();
         filterSongs();
         renderDial();
         updateEraScroll();
+        updatePlayUI(false);
+
+        // 显示总览
+        document.getElementById('nowPlaying').textContent =
+          '🎵 五月天 · ' + allSongs.length + '首 · 点击萝卜播放';
       })
-      .catch(function(e) { console.error('Load error:', e); });
+      .catch(function(e) {
+        console.error('初始化失败:', e);
+        document.getElementById('nowPlaying').textContent = '❌ 加载失败: ' + e.message;
+      });
   }
 
   init();
