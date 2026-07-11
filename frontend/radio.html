@@ -106,6 +106,32 @@
     .dial-tick.current .tick-name { color:#FFB300; font-size:9px; font-weight:bold; }
     .dial-tick:hover .tick-name { color:#999; }
 
+    /* 频道列表 */
+    .channel-list {
+      background: #0a0a0a; border: 1px solid #222; border-radius: 4px;
+      padding: 4px 6px; margin-bottom: 4px; max-height: 70px; overflow: hidden;
+    }
+    .channel-list-label {
+      font-size: 7px; color: #555; letter-spacing: 1px; margin-bottom: 3px;
+    }
+    .channel-list-scroll {
+      display: flex; flex-wrap: wrap; gap: 3px; overflow-y: auto; max-height: 52px;
+    }
+    .channel-chip {
+      font-size: 8px; padding: 2px 6px; border-radius: 3px;
+      background: #1a1a1a; color: #666; cursor: pointer; white-space: nowrap;
+      border: 1px solid transparent; transition: all 0.15s;
+    }
+    .channel-chip:hover { border-color: #D4A853; color: #D4A853; }
+    .channel-chip.current {
+      background: #2a1a08; color: #FFB300; border-color: #D4A853;
+      font-weight: bold;
+    }
+    .channel-chip.verified { color: #4CAF50; }
+    .channel-chip.verified.current { color: #FFB300; }
+    .channel-chip.ai { color: #8B7355; border: 1px dotted #555; }
+    .channel-chip.ai.current { color: #FFB300; border-color: #D4A853; }
+
     /* 数码管 + 日期 */
     .nixie-area { text-align:center; margin-bottom:4px; }
     .nixie-tube {
@@ -278,6 +304,12 @@
       </div>
       <div class="dial-scale-line"></div>
       <div class="dial-ticks" id="dialTicks"></div>
+    </div>
+
+    <!-- 频道列表（stations > 3 时显示） -->
+    <div class="channel-list" id="channelList" style="display:none;">
+      <div class="channel-list-label">频道列表</div>
+      <div class="channel-list-scroll" id="channelListScroll"></div>
     </div>
 
     <!-- 数码管 + 日期选择器 -->

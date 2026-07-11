@@ -84,6 +84,7 @@
   }
   function onTuneChange() {
     renderDial();
+    renderChannelList();
     playCurrent();
     if (stations[stationIdx]) {
       saveRecent(stations[stationIdx]);
@@ -172,9 +173,11 @@
     var filtered = allStations.slice();
 
     if (mode === 'FM') {
+      // FM: 所有有流的直播台，verified 优先
       filtered = filtered.filter(function(s) { return s.type === 'live' && s.stream_url; });
+      filtered.sort(function(a, b) { return (b.verified ? 1 : 0) - (a.verified ? 1 : 0); });
     } else {
-      // AM 模式：过滤年代匹配的电台
+      // AM: 年代匹配的电台
       filtered = filtered.filter(function(s) {
         var era = s.era || '';
         var matchDecade = era.match(/^(\d{4})/);
@@ -184,10 +187,28 @@
       });
     }
 
+    // AM 兜底：从 broadcast_data.json 生成虚拟电台
+    if (filtered.length === 0 && mode === 'AM') {
+      var yearData = broadcastData.years && broadcastData.years[String(year)];
+      var bStations = yearData ? (yearData.stations || []) : [];
+      for (var i = 0; i < bStations.length; i++) {
+        filtered.push({
+          id: 'ai_' + i,
+          name: bStations[i],
+          type: 'ai_archive',
+          category: '历史',
+          era: String(year),
+          stream_url: null,
+          verified: false
+        });
+      }
+    }
+
     stations = filtered;
     if (stations.length === 0) {
       stationIdx = 0;
       renderDial();
+      renderChannelList();
       updateNowPlaying();
       return;
     }
@@ -195,6 +216,7 @@
     bindTuningKnob();
     setStIdx(stationIdx);
     renderDial();
+    renderChannelList();
     playCurrent();
     updateNowPlaying();
   }
@@ -219,7 +241,7 @@
     var c = document.getElementById('dialTicks');
     var total = stations.length;
     if (total === 0) {
-      c.innerHTML = '<span style="color:#555;font-size:9px;align-self:center;">无信号</span>';
+      c.innerHTML = '<span style="color:#555;font-size:9px;align-self:center;">等待调谐...</span>';
       return;
     }
     var range = 3;
@@ -233,9 +255,14 @@
     c.innerHTML = visible.map(function(s, i) {
       var realIdx = start + i;
       var cls = realIdx === stationIdx ? ' current' : '';
-      var label = mode === 'FM'
-        ? (s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---')
-        : s.name.slice(0, 8);
+      var label;
+      if (mode === 'FM') {
+        label = s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---';
+      } else if (s.type === 'ai_archive') {
+        label = '◆ ' + s.name.slice(0, 7);
+      } else {
+        label = s.name.slice(0, 8);
+      }
       return '<div class="dial-tick' + cls + '" data-idx="' + realIdx + '">' +
         '<div class="tick-line"></div>' +
         '<span class="tick-name">' + label + '</span></div>';
@@ -372,7 +399,9 @@
   function playCurrent() {
     var s = stations[stationIdx];
     if (!s) return;
-    if (mode === 'FM' && s.stream_url) {
+    if (s.type === 'ai_archive') {
+      ttsGenerate(s);
+    } else if (s.stream_url) {
       playStream(s);
     } else {
       ttsGenerate(s);
@@ -561,6 +590,37 @@
     if (e.key === 'ArrowUp')    { setVol(volume + 0.05); }
     if (e.key === 'ArrowDown')  { setVol(volume - 0.05); }
   });
+
+  // ============ 频道列表渲染 ============
+  function renderChannelList() {
+    var el = document.getElementById('channelList');
+    var scroll = document.getElementById('channelListScroll');
+    if (!el || !scroll) return;
+
+    if (stations.length <= 3) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+
+    scroll.innerHTML = stations.map(function(s, i) {
+      var cls = 'channel-chip';
+      if (i === stationIdx) cls += ' current';
+      if (s.verified) cls += ' verified';
+      if (s.type === 'ai_archive') cls += ' ai';
+      var label = s.name.length > 10 ? s.name.slice(0, 10) + '…' : s.name;
+      return '<span class="' + cls + '" data-idx="' + i + '">' + label + '</span>';
+    }).join('');
+
+    var chips = scroll.querySelectorAll('.channel-chip');
+    for (var j = 0; j < chips.length; j++) {
+      chips[j].addEventListener('click', function() {
+        setStIdx(parseInt(this.dataset.idx));
+        onTuneChange();
+        renderChannelList();
+      });
+    }
+  }
 
   // ============ 初始化 ============
   function init() {

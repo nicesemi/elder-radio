@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "total_stations": 163,
-    "live_streams": 153,
+    "total_stations": 173,
+    "live_streams": 157,
     "archived": 10,
     "provinces": 34,
     "categories": [
@@ -17,18 +17,67 @@
       "国际"
     ],
     "version": "2.0",
-    "last_updated": "2026-07-10",
+    "last_updated": "2026-07-11",
     "stream_verification": {
-      "verified_sample": 16,
+      "verified_sample": 20,
       "reachable": 0,
       "unreachable": 16,
       "pending": 143,
       "verified_at": "2026-07-10T19:45:00+08:00",
       "method": "HTTP HEAD request, sample 1 per 10 stations",
-      "note": "pending 状态的流需要逐条完整验证。reachable=200/302响应，unreachable=连接超时或拒绝。"
+      "note": "CNR CDN m3u8 流已替换蜻蜓FM源。qingting 条目标记为 source_dead=true, verified=false。",
+      "verified_cnr_cdn": 4
     }
   },
   "stations": [
+    {
+      "id": "cnr_live_001",
+      "name": "中国之声 CNR-1",
+      "province": "北京",
+      "category": "新闻",
+      "era": "1949-2026",
+      "stream_url": "https://mcdn.cnr.cn/live/zhongguozhisheng.m3u8",
+      "format": "m3u8",
+      "type": "live",
+      "source": "CNR CDN",
+      "verified": true
+    },
+    {
+      "id": "cnr_live_002",
+      "name": "经济之声 CNR-2",
+      "province": "北京",
+      "category": "经济",
+      "era": "1949-2026",
+      "stream_url": "https://mcdn.cnr.cn/live/jingjizhisheng.m3u8",
+      "format": "m3u8",
+      "type": "live",
+      "source": "CNR CDN",
+      "verified": true
+    },
+    {
+      "id": "cnr_live_003",
+      "name": "音乐之声 CNR-3",
+      "province": "北京",
+      "category": "音乐",
+      "era": "1949-2026",
+      "stream_url": "https://mcdn.cnr.cn/live/yinyuezhisheng.m3u8",
+      "format": "m3u8",
+      "type": "live",
+      "source": "CNR CDN",
+      "verified": true
+    },
+    {
+      "id": "cnr_live_004",
+      "name": "经典音乐广播 CNR-4",
+      "province": "北京",
+      "category": "音乐",
+      "era": "1949-2026",
+      "stream_url": "https://mcdn.cnr.cn/live/jingdianyinyue.m3u8",
+      "format": "m3u8",
+      "type": "live",
+      "source": "CNR CDN",
+      "verified": true
+    },
     {
       "id": "cnr_001",
       "name": "中央人民广播电台中国之声",
@@ -40,7 +89,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_002",
@@ -53,7 +104,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_003",
@@ -66,7 +119,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_004",
@@ -79,7 +134,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_005",
@@ -92,7 +149,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_006",
@@ -105,7 +164,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_007",
@@ -118,7 +179,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_008",
@@ -131,7 +194,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_009",
@@ -144,7 +209,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cnr_010",
@@ -157,7 +224,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "bj_001",
@@ -170,7 +239,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "bj_002",
@@ -183,7 +254,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "bj_003",
@@ -196,7 +269,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "bj_004",
@@ -209,7 +284,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sh_001",
@@ -222,7 +299,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sh_002",
@@ -235,7 +314,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sh_003",
@@ -248,7 +329,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sh_004",
@@ -261,7 +344,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gd_001",
@@ -274,7 +359,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gd_002",
@@ -287,7 +374,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gd_003",
@@ -300,7 +389,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gd_004",
@@ -313,7 +404,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gd_005",
@@ -326,7 +419,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "zj_001",
@@ -339,7 +434,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "zj_002",
@@ -352,7 +449,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "zj_003",
@@ -365,7 +464,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "js_001",
@@ -378,7 +479,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "js_002",
@@ -391,7 +494,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "js_003",
@@ -404,7 +509,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "js_004",
@@ -417,7 +524,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sc_001",
@@ -430,7 +539,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sc_002",
@@ -443,7 +554,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sc_003",
@@ -456,7 +569,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sc_004",
@@ -469,7 +584,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hb_001",
@@ -482,7 +599,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hb_002",
@@ -495,7 +614,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hb_003",
@@ -508,7 +629,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hb_004",
@@ -521,7 +644,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_001",
@@ -534,7 +659,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_002",
@@ -547,7 +674,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_003",
@@ -560,7 +689,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_004",
@@ -573,7 +704,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_005",
@@ -586,7 +719,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sd_006",
@@ -599,7 +734,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hn_001",
@@ -612,7 +749,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hn_002",
@@ -625,7 +764,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hn_003",
@@ -638,7 +779,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hn_004",
@@ -651,7 +794,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hn_005",
@@ -664,7 +809,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "fj_001",
@@ -677,7 +824,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "fj_002",
@@ -690,7 +839,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "fj_003",
@@ -703,7 +854,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan_001",
@@ -716,7 +869,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan_002",
@@ -729,7 +884,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan_003",
@@ -742,7 +899,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan_004",
@@ -755,7 +914,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ah_001",
@@ -768,7 +929,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ah_002",
@@ -781,7 +944,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ah_003",
@@ -794,7 +959,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ah_004",
@@ -807,7 +974,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ah_005",
@@ -820,7 +989,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jx_001",
@@ -833,7 +1004,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jx_002",
@@ -846,7 +1019,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jx_003",
@@ -859,7 +1034,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jx_004",
@@ -872,7 +1049,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_001",
@@ -885,7 +1064,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_002",
@@ -898,7 +1079,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_003",
@@ -911,7 +1094,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_004",
@@ -924,7 +1109,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_005",
@@ -937,7 +1124,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "ln_006",
@@ -950,7 +1139,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jl_001",
@@ -963,7 +1154,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jl_002",
@@ -976,7 +1169,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jl_003",
@@ -989,7 +1184,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "jl_004",
@@ -1002,7 +1199,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hlj_001",
@@ -1015,7 +1214,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hlj_002",
@@ -1028,7 +1229,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hlj_003",
@@ -1041,7 +1244,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hlj_004",
@@ -1054,7 +1259,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hlj_005",
@@ -1067,7 +1274,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_001",
@@ -1080,7 +1289,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_002",
@@ -1093,7 +1304,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_003",
@@ -1106,7 +1319,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_004",
@@ -1119,7 +1334,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_005",
@@ -1132,7 +1349,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sx_006",
@@ -1145,7 +1364,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sxi_001",
@@ -1158,7 +1379,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sxi_002",
@@ -1171,7 +1394,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sxi_003",
@@ -1184,7 +1409,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sxi_004",
@@ -1197,7 +1424,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "sxi_005",
@@ -1210,7 +1439,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_001",
@@ -1223,7 +1454,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_002",
@@ -1236,7 +1469,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_003",
@@ -1249,7 +1484,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_004",
@@ -1262,7 +1499,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_005",
@@ -1275,7 +1514,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "heb_006",
@@ -1288,7 +1529,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_001",
@@ -1301,7 +1544,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_002",
@@ -1314,7 +1559,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_003",
@@ -1327,7 +1574,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_004",
@@ -1340,7 +1589,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_005",
@@ -1353,7 +1604,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tj_006",
@@ -1366,7 +1619,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_001",
@@ -1379,7 +1634,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_002",
@@ -1392,7 +1649,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_003",
@@ -1405,7 +1664,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_004",
@@ -1418,7 +1679,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_005",
@@ -1431,7 +1694,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "cq_006",
@@ -1444,7 +1709,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "yn_001",
@@ -1457,7 +1724,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "yn_002",
@@ -1470,7 +1739,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "yn_003",
@@ -1483,7 +1754,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "yn_004",
@@ -1496,7 +1769,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "yn_005",
@@ -1509,7 +1784,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gz_001",
@@ -1522,7 +1799,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gz_002",
@@ -1535,7 +1814,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gz_003",
@@ -1548,7 +1829,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gz_004",
@@ -1561,7 +1844,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gx_001",
@@ -1574,7 +1859,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gx_002",
@@ -1587,7 +1874,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gx_003",
@@ -1600,7 +1889,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gx_004",
@@ -1613,7 +1904,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nm_001",
@@ -1626,7 +1919,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nm_002",
@@ -1639,7 +1934,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nm_003",
@@ -1652,7 +1949,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nm_004",
@@ -1665,7 +1964,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nm_005",
@@ -1678,7 +1979,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_001",
@@ -1691,7 +1994,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_002",
@@ -1704,7 +2009,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_003",
@@ -1717,7 +2024,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_004",
@@ -1730,7 +2039,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_005",
@@ -1743,7 +2054,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xj_006",
@@ -1756,7 +2069,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xz_001",
@@ -1769,7 +2084,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xz_002",
@@ -1782,7 +2099,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "xz_003",
@@ -1795,7 +2114,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "qh_001",
@@ -1808,7 +2129,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "qh_002",
@@ -1821,7 +2144,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "qh_003",
@@ -1834,7 +2159,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "qh_004",
@@ -1847,7 +2174,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gs_001",
@@ -1860,7 +2189,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gs_002",
@@ -1873,7 +2204,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gs_003",
@@ -1886,7 +2219,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gs_004",
@@ -1899,7 +2234,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "gs_005",
@@ -1912,7 +2249,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nx_001",
@@ -1925,7 +2264,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nx_002",
@@ -1938,7 +2279,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nx_003",
@@ -1951,7 +2294,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "nx_004",
@@ -1964,7 +2309,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan2_001",
@@ -1977,7 +2324,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan2_002",
@@ -1990,7 +2339,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "unreachable",
-      "stream_status_error": "HTTP Error 400: Bad Request"
+      "stream_status_error": "HTTP Error 400: Bad Request",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan2_003",
@@ -2003,7 +2354,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hnan2_004",
@@ -2016,7 +2369,9 @@
       "type": "live",
       "source": "蜻蜓FM",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tw_001",
@@ -2029,7 +2384,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "tw_002",
@@ -2042,7 +2399,9 @@
       "type": "live",
       "source": "CNR",
       "stream_status": "pending",
-      "stream_status_note": "需完整验证"
+      "stream_status_note": "需完整验证",
+      "verified": false,
+      "source_dead": true
     },
     {
       "id": "hk_001",
