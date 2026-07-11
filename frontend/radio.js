@@ -581,6 +581,8 @@
           ? stations[0].id.match(/\d{4}-\d{2}-\d{2}/)
           : null;
         el.textContent = (dateLabel ? dateLabel[0] : year) + ' · 中国之声云听回听';
+      } else if (stations.length > 0 && stations[0] && stations[0].source === 'archive.org') {
+        el.textContent = year + '年 · Internet Archive · ' + stations.length + ' 个录音';
       } else {
         var events = (broadcastData.years && broadcastData.years[String(year)])
           ? broadcastData.years[String(year)].events || [] : [];
@@ -737,11 +739,70 @@
             '[' + dateStr + '] 中国之声 · ' + data.programs.length + ' 档节目';
           return;
         }
+        // CNR 无数据 → 老年代(1950-2019)尝试 Archive 兜底
+        if (year <= 2019) {
+          fetchArchiveBroadcasts(year);
+          return;
+        }
         // 无 CNR 数据 → 走原有广播生成逻辑
         _fallbackBroadcast(dateStr);
       })
       .catch(function() {
+        // CNR API 不可用 → 老年代尝试 Archive 兜底
+        if (year <= 2019) {
+          fetchArchiveBroadcasts(year);
+          return;
+        }
         _fallbackBroadcast(dateStr);
+      });
+  }
+
+  // ============ Archive 广播兜底 ============
+  function fetchArchiveBroadcasts(y) {
+    document.getElementById('nowPlaying').textContent = '搜索档案中... ' + y;
+    console.log('[Archive] 搜索 Internet Archive:', y);
+
+    fetch('/api/broadcast/archive/search?year=' + y)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.results && data.results.length > 0) {
+          // 将 Archive 结果转为 station 对象
+          var archiveStations = data.results.map(function(item, i) {
+            return {
+              id: 'archive_' + y + '_' + i,
+              name: item.title || ('Archive 广播 #' + (i + 1)),
+              stream_url: null,  // 通过 archive_audio_url 播放
+              archive_audio_url: item.audio_url,
+              archive_identifier: item.identifier,
+              type: 'archive',
+              category: '历史',
+              era: String(y),
+              verified: true,
+              source: 'archive.org'
+            };
+          });
+
+          stations = archiveStations;
+          historyStations = archiveStations;  // 复用 historyStations 存储
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelList();
+          updateEraScroll();
+          document.getElementById('nowPlaying').textContent =
+            '[' + y + '] Internet Archive · ' + archiveStations.length + ' 个录音';
+        } else {
+          document.getElementById('nowPlaying').textContent =
+            y + '年 — 无历史录音';
+          stations = [];
+          renderDial();
+        }
+      })
+      .catch(function(err) {
+        console.error('[Archive] 搜索失败:', err);
+        document.getElementById('nowPlaying').textContent =
+          y + '年 — 档案搜索失败';
       });
   }
 
@@ -807,11 +868,42 @@
       playMaydaySong(s);
     } else if (s.type === 'ai_archive') {
       ttsGenerate(s);
+    } else if (s.type === 'archive' && s.archive_identifier) {
+      playArchive(s);
     } else if (s.stream_url) {
       playStream(s);
     } else {
       ttsGenerate(s);
     }
+  }
+
+  function playArchive(station) {
+    // 优先走 R2 缓存代理 URL（加速），失败则直连 archive.org
+    document.getElementById('nowPlaying').textContent = '[' + year + '] ' + station.name + ' · 加载中...';
+
+    fetch('/api/broadcast/archive/play/' + encodeURIComponent(station.archive_identifier))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.audio_url) {
+          prevStreamUrl = data.audio_url;
+          AUDIO.src = data.audio_url;
+          AUDIO.play().catch(function(e) { console.log('Archive play failed:', e.message); });
+          document.getElementById('nowPlaying').textContent =
+            '[' + year + '] ' + station.name + ' · Archive(R2)';
+        } else {
+          throw new Error('No R2 cache');
+        }
+      })
+      .catch(function() {
+        // 兜底：直连 archive.org 原始 URL
+        if (station.archive_audio_url) {
+          prevStreamUrl = station.archive_audio_url;
+          AUDIO.src = station.archive_audio_url;
+          AUDIO.play().catch(function(e) { console.log('Archive direct failed:', e.message); });
+          document.getElementById('nowPlaying').textContent =
+            '[' + year + '] ' + station.name + ' · Archive';
+        }
+      });
   }
 
   function playMaydaySong(station) {

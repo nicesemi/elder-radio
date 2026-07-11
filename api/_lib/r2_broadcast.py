@@ -997,3 +997,156 @@ def _get_cnr_year_index(year: str) -> Optional[Dict[str, List]]:
     except Exception as e:
         print(f"[CNR] Failed to load year {year}: {e}")
         return None
+
+
+# ==================== Archive 广播代理 API ====================
+
+# 内存缓存：year → 搜索结果，TTL 1 小时
+_ARCHIVE_SEARCH_CACHE: Dict[int, Dict[str, Any]] = {}
+_ARCHIVE_SEARCH_CACHE_TIME: Dict[int, float] = {}
+_ARCHIVE_CACHE_TTL = 3600
+
+# 内存缓存：identifier → R2 URL
+_ARCHIVE_AUDIO_CACHE: Dict[str, str] = {}
+_ARCHIVE_AUDIO_CACHE_TIME: Dict[str, float] = {}
+
+# Archive 搜索关键词
+_ARCHIVE_QUERIES = [
+    "央广 {year}",
+    "中央人民广播电台 {year}",
+    "中国广播 {year}",
+    "CNR {year}",
+    "china radio broadcast {year}",
+    "chinese radio {year}",
+    "radio china {year}",
+    "china radio {decade_start}",
+]
+
+
+def _search_archive_raw(year: int) -> List[Dict[str, Any]]:
+    """
+    底层：调 Internet Archive Advanced Search + Metadata API，
+    返回可播放的音频信息列表。不做缓存。
+    """
+    decade_start = (year // 10) * 10
+    all_docs = {}
+
+    for query_template in _ARCHIVE_QUERIES:
+        query_str = query_template.format(year=year, decade_start=decade_start)
+        try:
+            params = urllib.parse.urlencode({
+                "q": f"{query_str} AND mediatype:(audio)",
+                "fl[]": ["identifier", "title", "year"],
+                "sort[]": "downloads desc",
+                "rows": "20",
+                "output": "json",
+            })
+            url = f"{ARCHIVE_SEARCH_URL}?{params}"
+            req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+
+            for doc in data.get("response", {}).get("docs", []):
+                ident = doc.get("identifier", "")
+                if ident and ident not in all_docs:
+                    all_docs[ident] = doc
+        except Exception as e:
+            print(f"[ArchiveSearch] 搜索失败 ({query_str[:40]}): {e}")
+            continue
+
+        time.sleep(0.8)  # Archive 礼貌延迟
+
+    # 逐个获取 metadata → 音频 URL（最多 30 个）
+    results = []
+    for ident in list(all_docs.keys())[:30]:
+        title = all_docs[ident].get("title", ident)
+        doc_year = all_docs[ident].get("year", str(year))
+
+        try:
+            meta_url = f"{ARCHIVE_METADATA_URL}{ident}"
+            req = urllib.request.Request(meta_url, headers={"User-Agent": "elder-radio/1.0"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                meta = json.loads(resp.read().decode("utf-8"))
+
+            for f in meta.get("files", []):
+                name = f.get("name", "")
+                fmt = (f.get("format") or "").lower()
+                if name.endswith((".mp3", ".ogg", ".wav", ".flac")) or fmt in ("mp3", "vbr mp3", "ogg vorbis"):
+                    audio_url = f"https://archive.org/download/{ident}/{name}"
+                    try:
+                        duration = int(f.get("length", "0") or "0")
+                    except (ValueError, TypeError):
+                        duration = 0
+
+                    results.append({
+                        "identifier": ident,
+                        "title": title,
+                        "year": doc_year,
+                        "audio_url": audio_url,
+                        "duration": duration,
+                        "source": "archive.org",
+                    })
+                    break  # 每个 identifier 一个音频
+        except Exception as e:
+            print(f"[ArchiveSearch] metadata 失败 ({ident[:40]}): {e}")
+            continue
+
+        time.sleep(0.5)
+
+    print(f"[ArchiveSearch] year={year}: {len(results)} 个音频")
+    return results
+
+
+def search_archive_broadcasts(year: int) -> List[Dict[str, Any]]:
+    """
+    搜索指定年份的 Archive 广播音频（1 小时内存缓存）。
+
+    返回:
+        [{identifier, title, year, audio_url, duration, source}, ...]
+    """
+    global _ARCHIVE_SEARCH_CACHE, _ARCHIVE_SEARCH_CACHE_TIME
+    now = time.time()
+
+    # 检查缓存
+    if year in _ARCHIVE_SEARCH_CACHE and (now - _ARCHIVE_SEARCH_CACHE_TIME.get(year, 0)) < _ARCHIVE_CACHE_TTL:
+        return _ARCHIVE_SEARCH_CACHE[year]
+
+    results = _search_archive_raw(year)
+    _ARCHIVE_SEARCH_CACHE[year] = results
+    _ARCHIVE_SEARCH_CACHE_TIME[year] = now
+    return results
+
+
+def get_archive_audio(identifier: str) -> Optional[str]:
+    """
+    返回指定 identifier 在 R2 上的缓存音频 URL（代理加速）。
+
+    查找逻辑：
+    1. 先查 R2 broadcasts/*/archive/{identifier}*.mp3
+    2. 命中返回 R2 公开 URL，带 1 小时内存缓存
+    3. 未命中返回 None
+    """
+    global _ARCHIVE_AUDIO_CACHE, _ARCHIVE_AUDIO_CACHE_TIME
+    now = time.time()
+
+    if identifier in _ARCHIVE_AUDIO_CACHE and (now - _ARCHIVE_AUDIO_CACHE_TIME.get(identifier, 0)) < _ARCHIVE_CACHE_TTL:
+        return _ARCHIVE_AUDIO_CACHE[identifier]
+
+    # 在 R2 中搜索：前缀 broadcasts/{any_year}/archive/{identifier}*
+    try:
+        s3 = _get_s3()
+        # 尝试常见 decade 前缀
+        for decade_start in range(1950, 2030, 10):
+            prefix = f"broadcasts/{decade_start // 10 * 10}"
+            resp = s3.list_objects_v2(Bucket=R2_BUCKET, Prefix=prefix, MaxKeys=200)
+            for obj in resp.get("Contents", []):
+                key = obj.get("Key", "")
+                if "/archive/" in key and identifier in key:
+                    url = f"{PUBLIC_BASE}/{key}"
+                    _ARCHIVE_AUDIO_CACHE[identifier] = url
+                    _ARCHIVE_AUDIO_CACHE_TIME[identifier] = now
+                    return url
+    except Exception as e:
+        print(f"[ArchiveAudio] R2 查询失败 ({identifier[:40]}): {e}")
+
+    return None

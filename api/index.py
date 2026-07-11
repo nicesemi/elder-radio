@@ -412,6 +412,61 @@ async def broadcast_history(year: int):
         }
 
 
+# ============ Internet Archive 广播代理 API ============
+
+@app.get("/api/broadcast/archive/search")
+async def archive_search(
+    year: int = Query(..., description="年份，1950-2020"),
+):
+    """
+    搜索 Internet Archive 上指定年份的中国广播录音（1 小时缓存）。
+
+    返回:
+        {
+            "year": 1980,
+            "results": [
+                {"identifier": "...", "title": "...", "year": "1980", "audio_url": "...", "duration": 0, "source": "archive.org"},
+                ...
+            ],
+            "total": 5,
+            "source": "archive.org"
+        }
+    """
+    if year < 1950 or year > 2020:
+        raise HTTPException(status_code=400, detail="年份范围: 1950-2020")
+
+    r2 = _get_r2()
+    results = r2.search_archive_broadcasts(year)
+
+    return {
+        "year": year,
+        "results": results,
+        "total": len(results),
+        "source": "archive.org",
+    }
+
+
+@app.get("/api/broadcast/archive/play/{identifier:path}")
+async def archive_play(identifier: str):
+    """
+    获取 Archive 广播在 R2 上的缓存音频代理 URL。
+    identifier: Archive.org identifier，如 'cnr_1980_news_001'
+    返回 R2 公开直链或 404。
+    """
+    r2 = _get_r2()
+    r2_url = r2.get_archive_audio(identifier)
+
+    if r2_url:
+        return {
+            "success": True,
+            "identifier": identifier,
+            "audio_url": r2_url,
+            "source": "r2_cache",
+        }
+
+    raise HTTPException(status_code=404, detail=f"未找到缓存的音频: {identifier}")
+
+
 # ============ 云听 CNR 回听节目 API ============
 
 @app.get("/api/cntv/years")
