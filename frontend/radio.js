@@ -30,6 +30,13 @@
   let selectedMonth = 7;
   let selectedDay = 10;
 
+  // 五月天模式
+  let maydayYears = [];
+  let maydaySongs = [];
+  let maydayYearsInfo = {};
+  let maydayLoaded = false;
+  const MAYDAY_MIN = 1999, MAYDAY_MAX = 2024;
+
   AUDIO.volume = volume;
 
   // ============ 旋钮拖动系统 ============
@@ -40,37 +47,105 @@
   function makeKnobDraggable(el, getVal, setVal, opts) {
     const { min, max, step, onChange } = opts;
     let dragging = false, startY, startVal;
+    let lastY = 0, lastTime = 0, velocity = 0;
+    let inertiaFrame = null;
 
-    el.addEventListener('mousedown', (e) => {
-      e.preventDefault();
+    // 移动端：增大触摸热区
+    el.style.minWidth = '88px';
+    el.style.minHeight = '88px';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+
+    function startDrag(clientY) {
       dragging = true;
-      startY = e.clientY;
+      startY = clientY;
       startVal = getVal();
+      lastY = clientY;
+      lastTime = performance.now();
+      velocity = 0;
       el.style.cursor = 'grabbing';
-    });
+      if (inertiaFrame) { cancelAnimationFrame(inertiaFrame); inertiaFrame = null; }
+    }
 
-    window.addEventListener('mousemove', (e) => {
+    function moveDrag(clientY, e) {
       if (!dragging) return;
-      const dy = startY - e.clientY;
+      if (e && e.cancelable) e.preventDefault();
+      const now = performance.now();
+      const dt = now - lastTime;
+      if (dt > 0) {
+        velocity = (lastY - clientY) / dt;
+      }
+      lastY = clientY;
+      lastTime = now;
+
+      const dy = startY - clientY;
       const sens = (max - min) / 200;
       let newVal = startVal + dy * sens;
       if (step) newVal = Math.round(newVal / step) * step;
       newVal = Math.max(min, Math.min(max, newVal));
       setVal(newVal);
-      onChange(newVal);
+      if (onChange) onChange(newVal);
+    }
+
+    function endDrag() {
+      if (!dragging) return;
+      dragging = false;
+      el.style.cursor = 'grab';
+
+      // 惯性滑动
+      if (Math.abs(velocity) > 0.05) {
+        let v = velocity * 80 * ((max - min) / 200);
+        function animate() {
+          v *= 0.92;
+          if (Math.abs(v) < 0.01) { inertiaFrame = null; return; }
+          let newVal = getVal() + v;
+          if (step) newVal = Math.round(newVal / step) * step;
+          newVal = Math.max(min, Math.min(max, newVal));
+          setVal(newVal);
+          if (onChange) onChange(newVal);
+          inertiaFrame = requestAnimationFrame(animate);
+        }
+        inertiaFrame = requestAnimationFrame(animate);
+      }
+    }
+
+    // Mouse events (desktop)
+    el.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      startDrag(e.clientY);
     });
 
-    window.addEventListener('mouseup', () => {
-      if (dragging) { dragging = false; el.style.cursor = 'grab'; }
+    window.addEventListener('mousemove', function(e) {
+      moveDrag(e.clientY, e);
     });
 
-    el.addEventListener('wheel', (e) => {
+    window.addEventListener('mouseup', endDrag);
+
+    // Touch events (mobile)
+    el.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        startDrag(e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', function(e) {
+      if (e.touches.length === 1) {
+        moveDrag(e.touches[0].clientY, e);
+      }
+    }, { passive: false });
+
+    el.addEventListener('touchend', endDrag);
+    el.addEventListener('touchcancel', endDrag);
+
+    // Wheel (desktop scroll)
+    el.addEventListener('wheel', function(e) {
       e.preventDefault();
       const dir = e.deltaY > 0 ? -1 : 1;
       let newVal = getVal() + dir * (step || 1);
       newVal = Math.max(min, Math.min(max, newVal));
       setVal(newVal);
-      onChange(newVal);
+      if (onChange) onChange(newVal);
     }, { passive: false });
   }
 
@@ -107,17 +182,28 @@
   // ============ 年代旋钮 ============
   function getYear() { return year; }
   function setYear(y) {
-    year = Math.max(ERA_MIN, Math.min(ERA_MAX, y));
-    document.getElementById('nixieYear').textContent = year;
-    setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
-
-    if (mode === 'AM' && year === ERA_MAX) {
-      // 2026 年到达年代上限，仍保持 AM 模式展示全量电台
-      // 用户可手动点击 FM 按钮切换到实时直播模式
+    if (mode === 'MAYDAY' && maydayYears.length > 0) {
+      var curIdx = maydayYears.indexOf(year);
+      if (curIdx < 0) curIdx = 0;
+      if (y > year) curIdx = Math.min(curIdx + 1, maydayYears.length - 1);
+      else if (y < year) curIdx = Math.max(curIdx - 1, 0);
+      year = maydayYears[curIdx];
+    } else {
+      year = Math.max(ERA_MIN, Math.min(ERA_MAX, Math.round(y)));
     }
+    document.getElementById('nixieYear').textContent = year;
 
-    filterStations();
-    fetchHistoryStations(year);
+    if (mode === 'MAYDAY') {
+      if (maydayYears.length > 0) {
+        var idx = maydayYears.indexOf(year);
+        if (idx >= 0) setKnobRotation(document.getElementById('knobEra'), angleForValue(idx, 0, maydayYears.length - 1));
+      }
+      fetchMaydaySongs(year);
+    } else {
+      setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+      filterStations();
+      fetchHistoryStations(year);
+    }
     updateEraScroll();
   }
 
@@ -146,29 +232,46 @@
     mode = m;
     document.getElementById('btnAM').classList.toggle('active', m === 'AM');
     document.getElementById('btnFM').classList.toggle('active', m === 'FM');
-    document.getElementById('modeIndicator').textContent = m;
+    document.getElementById('btnMAYDAY').classList.toggle('active', m === 'MAYDAY');
+    document.getElementById('modeIndicator').textContent = m === 'MAYDAY' ? 'MD' : m;
 
     var isLive = m === 'FM';
-    document.getElementById('liveLed').classList.toggle('off', !isLive);
-    document.getElementById('dialLed').classList.toggle('off', !isLive);
-    document.getElementById('dialModeLabel').textContent = m;
+    var isMayday = m === 'MAYDAY';
+    document.getElementById('liveLed').classList.toggle('off', !isLive && !isMayday);
+    document.getElementById('dialLed').classList.toggle('off', !isLive && !isMayday);
+    document.getElementById('dialModeLabel').textContent = m === 'MAYDAY' ? 'MAYDAY' : m;
 
     if (m === 'FM') {
       document.getElementById('dialRange').textContent = '88-108 MHz';
+      document.getElementById('channelList').style.display = '';
+      document.getElementById('categoryTabs').style.display = '';
       currentCategory = '';
       fetchLiveStations();
+    } else if (m === 'MAYDAY') {
+      document.getElementById('dialRange').textContent = '五月天电台';
+      document.getElementById('channelList').style.display = 'none';
+      document.getElementById('categoryTabs').style.display = 'none';
+      document.getElementById('nixieLabel').textContent = 'YEAR / 年代';
+      // 隐藏日期选择器
+      document.getElementById('selMonth').parentElement.style.display = 'none';
+      fetchMaydayYears();
     } else {
       document.getElementById('dialRange').textContent = '年代电台';
+      document.getElementById('channelList').style.display = '';
+      document.getElementById('categoryTabs').style.display = '';
+      document.getElementById('nixieLabel').textContent = 'YEAR / 年代';
+      document.getElementById('selMonth').parentElement.style.display = '';
       filterStations();
       fetchHistoryStations(year);
     }
 
     updateEraScroll();
-    onTuneChange();
+    if (!isMayday) onTuneChange();
   }
 
   document.getElementById('btnAM').addEventListener('click', function() { setMode('AM'); });
   document.getElementById('btnFM').addEventListener('click', function() { setMode('FM'); });
+  document.getElementById('btnMAYDAY').addEventListener('click', function() { setMode('MAYDAY'); });
   document.getElementById('btnTONE').addEventListener('click', function() {
     toneIdx = (toneIdx + 1) % TONE_NAMES.length;
     var t = TONE_NAMES[toneIdx];
@@ -177,7 +280,112 @@
     if (mode === 'AM' && stations[stationIdx]) ttsGenerate(stations[stationIdx]);
   });
 
-  // ============ 电台过滤 ============
+  // ============ 五月天模式 ============
+  function fetchMaydayYears() {
+    fetch('/api/mayday/years')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.years && data.years.length > 0) {
+          maydayYears = data.years;
+          maydayYearsInfo = data.years_info || {};
+          maydayLoaded = true;
+
+          if (maydayYears.indexOf(year) < 0) {
+            year = maydayYears[0];
+          }
+          document.getElementById('nixieYear').textContent = year;
+          if (maydayYears.length > 0) {
+            setKnobRotation(document.getElementById('knobEra'), angleForValue(
+              maydayYears.indexOf(year), 0, maydayYears.length - 1
+            ));
+          }
+          fetchMaydaySongs(year);
+        } else {
+          document.getElementById('nowPlaying').textContent = '五月天数据为空';
+        }
+      })
+      .catch(function(e) {
+        console.error('五月天API失败:', e);
+        document.getElementById('nowPlaying').textContent = '五月天电台暂不可用';
+      });
+  }
+
+  function fetchMaydaySongs(y) {
+    document.getElementById('nowPlaying').textContent = '加载中... ' + y;
+    fetch('/api/mayday/year/' + y)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.songs && data.songs.length > 0) {
+          maydaySongs = data.songs;
+          stations = maydaySongs.map(function(s, i) {
+            return {
+              id: 'mayday_' + y + '_' + i,
+              name: s.filename.replace(/\.[^.]+$/, '').replace(/^[\d]{4}-/, ''),
+              stream_url: s.url,
+              type: 'mayday',
+              category: '五月天',
+              era: String(y),
+              verified: true,
+              source: 'r2_mayday'
+            };
+          });
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelListMayday();
+          updateEraScrollMayday();
+          updateNowPlaying();
+          playCurrent();
+        } else {
+          stations = [];
+          stationIdx = 0;
+          renderDial();
+          updateNowPlaying();
+          stopPlayback();
+        }
+      })
+      .catch(function(e) {
+        console.error('五月天歌曲API失败:', e);
+        document.getElementById('nowPlaying').textContent = '加载失败';
+      });
+  }
+
+  function renderChannelListMayday() {
+    var el = document.getElementById('channelList');
+    var scroll = document.getElementById('channelListScroll');
+    if (!el || !scroll) return;
+    document.getElementById('categoryTabs').style.display = 'none';
+
+    if (stations.length <= 1) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+    document.getElementById('channelList').querySelector('.channel-list-label').textContent = year + '年 歌曲列表';
+
+    scroll.innerHTML = stations.map(function(s, i) {
+      var cls = 'channel-chip';
+      if (i === stationIdx) cls += ' current';
+      var label = s.name.length > 22 ? s.name.slice(0, 22) + '…' : s.name;
+      return '<span class="' + cls + '" data-idx="' + i + '">' + label + '</span>';
+    }).join('');
+
+    var chips = scroll.querySelectorAll('.channel-chip');
+    for (var j = 0; j < chips.length; j++) {
+      chips[j].addEventListener('click', function() {
+        setStIdx(parseInt(this.dataset.idx));
+        onTuneChange();
+      });
+    }
+  }
+
+  function updateEraScrollMayday() {
+    var el = document.getElementById('eraScroll');
+    el.style.display = 'block';
+    el.textContent = year + '年 · ' + stations.length + '首 · 循环播放中';
+  }
+
   function filterStations() {
     var filtered = allStations.slice();
 
@@ -582,13 +790,28 @@
   function playCurrent() {
     var s = stations[stationIdx];
     if (!s) return;
-    if (s.type === 'ai_archive') {
+    if (mode === 'MAYDAY') {
+      playMaydaySong(s);
+    } else if (s.type === 'ai_archive') {
       ttsGenerate(s);
     } else if (s.stream_url) {
       playStream(s);
     } else {
       ttsGenerate(s);
     }
+  }
+
+  function playMaydaySong(station) {
+    if (!station.stream_url) return;
+    prevStreamUrl = station.stream_url;
+    AUDIO.src = station.stream_url;
+    AUDIO.play().catch(function(e) { console.log('Mayday play failed:', e.message); });
+  }
+
+  function stopPlayback() {
+    AUDIO.pause();
+    AUDIO.src = '';
+    prevStreamUrl = '';
   }
 
   function playStream(station) {
@@ -877,6 +1100,17 @@
       });
     }
   }
+
+  // ============ 五月天模式：歌曲循环播放 ============
+  AUDIO.addEventListener('ended', function() {
+    if (mode === 'MAYDAY' && stations.length > 0) {
+      stationIdx = (stationIdx + 1) % stations.length;
+      renderDial();
+      renderChannelListMayday();
+      updateNowPlaying();
+      playCurrent();
+    }
+  });
 
   // ============ 初始化 ============
   function init() {

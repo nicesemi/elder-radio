@@ -609,3 +609,33 @@ async def get_live_categories():
         cat = s.get("category", "综合")
         cats[cat] = cats.get(cat, 0) + 1
     return {"categories": list(cats.keys()), "counts": cats}
+
+
+# ============ 五月天电台 API ============
+
+@app.get("/api/mayday/years")
+async def mayday_years():
+    """返回所有有五月天歌曲的年份列表（1999-2024），含歌曲数。1 小时缓存。"""
+    r2 = _get_r2()
+    data = r2.get_mayday_years()
+    return {
+        "success": True,
+        "years": data["years"],
+        "years_info": data["years_info"],
+        "total_songs": data["total_songs"],
+    }
+
+
+@app.get("/api/mayday/year/{year}")
+async def mayday_year_songs(year: int):
+    """返回某年份所有五月天歌曲的 R2 公开 URL 列表。1 小时缓存。"""
+    if year < 1999 or year > 2024:
+        raise HTTPException(status_code=400, detail=f"年份超出范围: {year}（仅支持 1999-2024）")
+    r2 = _get_r2()
+    data = r2.get_mayday_year_songs(year)
+    return {
+        "success": True,
+        "year": data["year"],
+        "songs": data["songs"],
+        "count": data["count"],
+    }

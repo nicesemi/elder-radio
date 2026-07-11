@@ -857,6 +857,114 @@ def get_cnr_programs_by_date(date_str: str) -> List[Dict]:
         return []
     return index.get(date_str, [])
 
+
+# ==================== 五月天电台 ====================
+
+_MAYDAY_CACHE: Dict[str, Any] = {}
+_MAYDAY_CACHE_TIME: float = 0.0
+_MAYDAY_CACHE_TTL: int = 3600
+
+
+def _list_all_r2_objects(prefix: str) -> List[Dict[str, Any]]:
+    """列出 R2 指定前缀下所有对象（处理分页），返回 [Key, Size, LastModified] 列表。"""
+    all_objects = []
+    try:
+        s3 = _get_s3()
+        paginator = s3.get_paginator("list_objects_v2")
+        for page in paginator.paginate(Bucket=R2_BUCKET, Prefix=prefix):
+            contents = page.get("Contents", [])
+            all_objects.extend(contents)
+        return all_objects
+    except Exception as e:
+        print(f"[R2] list_all_objects 失败 ({prefix}): {e}")
+        return []
+
+
+def _build_mayday_cache() -> Dict[str, Any]:
+    """扫描 R2 mayday/ 前缀，建立 年份→歌曲列表 映射，1 小时缓存。"""
+    global _MAYDAY_CACHE, _MAYDAY_CACHE_TIME
+
+    now = time.time()
+    if _MAYDAY_CACHE and (now - _MAYDAY_CACHE_TIME) < _MAYDAY_CACHE_TTL:
+        return _MAYDAY_CACHE
+
+    objects = _list_all_r2_objects("mayday/")
+    years_map: Dict[int, List[Dict[str, str]]] = {}
+
+    import re
+    # 匹配: mayday/{year}-{album}/filename 或 mayday/{year}/filename
+    pattern_album = re.compile(r"^mayday/(\d{4})-[^/]+/(.+)$")
+    pattern_single = re.compile(r"^mayday/(\d{4})/(.+)$")
+
+    for obj in objects:
+        key = obj.get("Key", "")
+        if key.endswith("/"):
+            continue
+
+        m = pattern_album.match(key)
+        if m:
+            y = int(m.group(1))
+            filename = m.group(2)
+        else:
+            m = pattern_single.match(key)
+            if m:
+                y = int(m.group(1))
+                filename = m.group(2)
+            else:
+                continue
+
+        # 只取音频文件
+        if not any(filename.lower().endswith(ext) for ext in (".mp3", ".flac", ".m4a", ".wav", ".ogg", ".aac", ".wma")):
+            continue
+
+        url = f"{PUBLIC_BASE}/{key}"
+        if y not in years_map:
+            years_map[y] = []
+        years_map[y].append({
+            "filename": filename,
+            "url": url,
+            "size": obj.get("Size", 0),
+        })
+
+    # 按文件名排序
+    for y in years_map:
+        years_map[y].sort(key=lambda x: x["filename"])
+
+    result = {
+        "years": sorted(years_map.keys()),
+        "songs_by_year": {str(y): years_map[y] for y in years_map},
+        "total_songs": sum(len(v) for v in years_map.values()),
+    }
+
+    _MAYDAY_CACHE = result
+    _MAYDAY_CACHE_TIME = now
+    return result
+
+
+def get_mayday_years() -> Dict[str, Any]:
+    """返回所有有五月天歌曲的年份列表及其歌曲数。"""
+    cache = _build_mayday_cache()
+    years_info = {
+        str(y): len(cache["songs_by_year"].get(str(y), []))
+        for y in cache["years"]
+    }
+    return {
+        "years": cache["years"],
+        "years_info": years_info,
+        "total_songs": cache["total_songs"],
+    }
+
+
+def get_mayday_year_songs(year: int) -> Dict[str, Any]:
+    """返回某年份所有五月天歌曲的 R2 公开 URL 列表。"""
+    cache = _build_mayday_cache()
+    songs = cache["songs_by_year"].get(str(year), [])
+    return {
+        "year": year,
+        "songs": songs,
+        "count": len(songs),
+    }
+
 def get_cnr_years() -> List[str]:
     """返回有数据的年份列表。"""
     try:
