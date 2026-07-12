@@ -606,78 +606,167 @@
   }
 
   // ============ FM 实时电台获取 ============
-  // v5.0: radio_sources.json 为主源，API 为补充（解决 Vercel 上 API 不可靠的问题）
+  // v6.0: 三级策略 — localStorage缓存 → 浏览器直调 Radio Browser API → radio_sources.json 兜底
+  var _liveFetchInFlight = false;
+
   function fetchLiveStations(category) {
-    // Step 1 — 主源：从已加载的 radio_sources.json (allStations) 提取直播源
-    var localStations = [];
-    var seenUrls = {};
-    allStations.forEach(function(s) {
-      if (s.type === 'live' && s.stream_url && s.source_dead !== true) {
-        var sUrl = s.stream_url;
-        if (!seenUrls[sUrl]) {
-          seenUrls[sUrl] = true;
-          localStations.push({
-            id: s.id || s.name,
-            name: s.name,
-            stream_url: s.stream_url,
-            type: 'live',
-            category: s.category || '综合',
-            source: s.source || 'local',
-            favicon: s.favicon || '',
-            verified: s.verified || false
-          });
+    var CACHE_KEY = 'elder_radio_live_stations';
+    var CACHE_TTL = 3600000; // 1 小时
+
+    // Step 1: localStorage 缓存
+    try {
+      var cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      if (cached && cached.timestamp && Array.isArray(cached.stations) && cached.stations.length > 0) {
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          liveStations = cached.stations;
+          applyLiveStations();
+          return;
         }
       }
-    });
+    } catch(e) {}
 
-    // Step 2 — 本地源 >= 10 个：直接使用，不调 API
-    if (localStations.length >= 10) {
-      liveStations = localStations;
-      applyLiveStations();
-      return;
+    // Step 2: 浏览器直调 Radio Browser API（镜像切换）
+    var MIRRORS = ['de1.api.radio-browser.info', 'de2.api.radio-browser.info'];
+
+    function tryMirror(idx) {
+      if (idx >= MIRRORS.length) {
+        // 所有镜像失败 → 第三级：本地兜底
+        fallbackToLocal();
+        return;
+      }
+      var apiUrl = 'https://' + MIRRORS[idx] + '/json/stations/country/China';
+
+      fetch(apiUrl).then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function(data) {
+        if (!Array.isArray(data) || data.length === 0) {
+          tryMirror(idx + 1);
+          return;
+        }
+
+        var rbStations = [];
+        var seenUrls = {};
+
+        data.forEach(function(s) {
+          // 过滤：必须有 url_resolved 且 codec 不为空
+          if (!s.url_resolved || !s.codec) return;
+          var sUrl = s.url_resolved;
+          if (seenUrls[sUrl]) return;
+          seenUrls[sUrl] = true;
+
+          rbStations.push({
+            id: s.stationuuid,
+            name: s.name,
+            stream_url: s.url_resolved,
+            category: mapCategory(s.tags),
+            source: 'RadioBrowser',
+            favicon: s.favicon || '',
+            bitrate: s.bitrate || 0,
+            codec: s.codec,
+            votes: s.votes || 0,
+            type: 'live',
+            verified: true
+          });
+        });
+
+        // 按 votes 降序（热门优先）
+        rbStations.sort(function(a, b) { return b.votes - a.votes; });
+
+        if (rbStations.length > 0) {
+          // 存入 localStorage
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              timestamp: Date.now(),
+              stations: rbStations
+            }));
+          } catch(e) {}
+
+          liveStations = rbStations;
+          applyLiveStations();
+        } else {
+          tryMirror(idx + 1);
+        }
+      }).catch(function() {
+        tryMirror(idx + 1);
+      });
     }
 
-    // Step 3 — 本地源不足 10 个：API 补充
-    var url = '/api/stations/live?limit=300';
-    if (category) url += '&category=' + encodeURIComponent(category);
-
-    fetch(url).then(function(r) {
-      if (!r.ok) throw new Error('API error');
-      return r.json();
-    }).then(function(data) {
-      if (data.stations && data.stations.length > 0) {
-        data.stations.forEach(function(s) {
+    function fallbackToLocal() {
+      var localStations = [];
+      var seenUrls = {};
+      allStations.forEach(function(s) {
+        if (s.type === 'live' && s.stream_url && s.source_dead !== true) {
           var sUrl = s.stream_url;
-          if (sUrl && !seenUrls[sUrl]) {
+          if (!seenUrls[sUrl]) {
             seenUrls[sUrl] = true;
             localStations.push({
-              id: s.id,
+              id: s.id || s.name,
               name: s.name,
               stream_url: s.stream_url,
               type: 'live',
               category: s.category || '综合',
-              source: s.source || 'api',
+              source: s.source || 'local',
               favicon: s.favicon || '',
-              verified: true
+              verified: s.verified || false
             });
           }
-        });
+        }
+      });
+
+      if (localStations.length === 0) {
+        localStations = getHardcodedFallback();
       }
+
       liveStations = localStations;
       applyLiveStations();
-    }).catch(function() {
-      liveStations = localStations;
-      applyLiveStations();
-    });
+    }
+
+    // 分类映射：Radio Browser tags → 中文分类
+    function mapCategory(tags) {
+      if (!tags) return '综合';
+      var t = tags.toLowerCase();
+      if (/news|information|talk|public\s*radio/.test(t)) return '新闻';
+      if (/sports/.test(t)) return '体育';
+      if (/business|finance/.test(t)) return '财经';
+      if (/music|pop|rock|classical|jazz|folk/.test(t)) return '音乐';
+      return '综合';
+    }
+
+    // 终极兜底：8 个 CNR 官方直播流
+    function getHardcodedFallback() {
+      return [
+        { id: 'cnr_1',  name: 'CNR-1 中国之声',       stream_url: 'http://ngcdn001.cnr.cn/live/zgzs/index.m3u8',    type: 'live', category: '新闻', source: 'cnr', verified: true },
+        { id: 'cnr_2',  name: 'CNR-2 经济之声',       stream_url: 'http://ngcdn002.cnr.cn/live/jjzs/index.m3u8',    type: 'live', category: '财经', source: 'cnr', verified: true },
+        { id: 'cnr_3',  name: 'CNR-3 音乐之声',       stream_url: 'http://ngcdn003.cnr.cn/live/yyzs/index.m3u8',    type: 'live', category: '音乐', source: 'cnr', verified: true },
+        { id: 'cnr_5',  name: 'CNR-5 台海之声',       stream_url: 'http://ngcdn005.cnr.cn/live/twzs/index.m3u8',    type: 'live', category: '新闻', source: 'cnr', verified: true },
+        { id: 'cnr_7',  name: 'CNR-7 中国交通广播',   stream_url: 'http://ngcdn007.cnr.cn/live/zgzb/index.m3u8',    type: 'live', category: '交通', source: 'cnr', verified: true },
+        { id: 'cnr_9',  name: 'CNR-9 文艺之声',       stream_url: 'http://ngcdn009.cnr.cn/live/wyzs/index.m3u8',    type: 'live', category: '音乐', source: 'cnr', verified: true },
+        { id: 'cnr_11', name: 'CNR-11 经典音乐广播',   stream_url: 'http://ngcdn011.cnr.cn/live/dszs/index.m3u8',    type: 'live', category: '音乐', source: 'cnr', verified: true },
+        { id: 'cnr_8',  name: 'CNR-8 环球资讯广播',   stream_url: 'http://ngcdn008.cnr.cn/live/hqzx/index.m3u8',    type: 'live', category: '新闻', source: 'cnr', verified: true }
+      ];
+    }
+
+    // 开始请求（从第一镜像）
+    tryMirror(0);
 
     function applyLiveStations() {
-      stations = liveStations;
+      // 若有 category 参数，客户端过滤
+      if (category && category !== '全部') {
+        var filtered = liveStations.filter(function(s) {
+          return s.category === category;
+        });
+        stations = filtered.length > 0 ? filtered : liveStations;
+      } else {
+        stations = liveStations;
+      }
+
       if (stations.length === 0) {
         stationIdx = 0;
         renderDial();
         renderChannelList();
         renderCategoryTabs();
-        updateNowPlaying();
+        document.getElementById('nowPlaying').textContent = '暂无可用直播源';
         return;
       }
       if (stationIdx >= stations.length) stationIdx = 0;
