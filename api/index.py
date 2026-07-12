@@ -476,19 +476,59 @@ async def archive_play(identifier: str):
 
 # ============ 云听 CNR 回听节目 API ============
 
+# ==================== CNTV 云听回听（直读 R2 公开 HTTP，不依赖 r2_broadcast） ====================
+
+CNTV_PUBLIC_BASE = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"
+
+# 内存缓存（Vercel 冷启动不共享，但在单次请求内节省重复 HTTP 调用）
+_cntv_index_cache = None
+_cntv_year_cache = {}
+
+def _cntv_http_json(path: str):
+    """从 R2 公开 URL 读取 JSON。"""
+    import httpx
+    url = f"{CNTV_PUBLIC_BASE}/{path}"
+    try:
+        r = httpx.get(url, timeout=15.0)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"[CNTV HTTP] {path} failed: {e}")
+    return None
+
+def _cntv_get_years():
+    """返回有数据的年份列表。"""
+    global _cntv_index_cache
+    if _cntv_index_cache is not None:
+        return _cntv_index_cache
+    data = _cntv_http_json("cntv/_index.json")
+    _cntv_index_cache = (data or {}).get("years", [])
+    return _cntv_index_cache
+
+def _cntv_get_year(year: str):
+    """返回指定年份的节目索引。"""
+    if year in _cntv_year_cache:
+        return _cntv_year_cache[year]
+    data = _cntv_http_json(f"cntv/cntv_zhisheng_{year}.json")
+    _cntv_year_cache[year] = data or {}
+    return _cntv_year_cache[year]
+
+def _cntv_get_date(date: str):
+    """返回指定日期的节目列表。"""
+    year = date[:4]
+    year_data = _cntv_get_year(year)
+    return year_data.get(date, [])
+
+
 @app.get("/api/cntv/years")
 async def cntv_years():
-    """返回有云听回听数据的年份列表"""
-    r2 = _get_r2()
-    years = r2.get_cnr_years()
+    years = _cntv_get_years()
     return {"years": years, "source": "ytapi.radio.cn", "station": "中国之声"}
 
 
 @app.get("/api/cntv/{year}")
 async def cntv_year_programs(year: str):
-    """返回指定年份的全部节目索引（按日期分组）"""
-    r2 = _get_r2()
-    programs = r2.get_cnr_year_programs(year)
+    programs = _cntv_get_year(year)
     dates = sorted(programs.keys()) if programs else []
     total = sum(len(v) for v in programs.values()) if programs else 0
     return {
@@ -504,60 +544,30 @@ async def cntv_year_programs(year: str):
 
 @app.get("/api/cntv/date/{date}")
 async def cntv_date_programs(date: str):
-    """
-    返回指定日期的节目列表。
-    date: YYYY-MM-DD，例如 2023-07-01
-    返回每档节目的 start/end/name/url，可直接播放
-    """
     from datetime import datetime as dt
     try:
         dt.strptime(date, "%Y-%m-%d")
     except ValueError:
         raise HTTPException(status_code=400, detail="日期格式错误，请使用 YYYY-MM-DD")
 
-    r2 = _get_r2()
-    programs = r2.get_cnr_programs_by_date(date)
+    programs = _cntv_get_date(date)
     if not programs:
-        return {
-            "date": date,
-            "programs": [],
-            "source": "none",
-            "message": f"{date} 无回听数据"
-        }
+        return {"date": date, "programs": [], "source": "none", "message": f"{date} 无回听数据"}
 
-    # programs format: [[start, end, name, url], ...]
-    result = []
-    for p in programs:
-        result.append({
-            "start": p[0],
-            "end": p[1],
-            "name": p[2],
-            "url": p[3],
-        })
+    result = [{"start": p[0], "end": p[1], "name": p[2], "url": p[3]} for p in programs]
     return {
-        "date": date,
-        "programs": result,
-        "total": len(result),
-        "source": "ytapi.radio.cn",
-        "station": "中国之声",
+        "date": date, "programs": result, "total": len(result),
+        "source": "ytapi.radio.cn", "station": "中国之声",
     }
 
 
 @app.get("/api/cntv/summary")
 async def cntv_summary():
-    """返回 CNTV 各年份轻量统计（不含节目明细），供首页年份卡片展示"""
-    try:
-        r2 = _get_r2()
-    except Exception as e:
-        print(f"[CNTV Summary] _get_r2() failed: {e}")
-        return {"years": {}, "source": "cntv", "error": str(e)}
-    
-    years = r2.get_cnr_years()
+    years = _cntv_get_years()
     result = {}
-
     for year in years:
         try:
-            year_programs = r2.get_cnr_year_programs(str(year))
+            year_programs = _cntv_get_year(str(year))
             sorted_dates = sorted(year_programs.keys()) if year_programs else []
             result[str(year)] = {
                 "days": len(sorted_dates),
@@ -565,13 +575,7 @@ async def cntv_summary():
                 "date_range": [sorted_dates[0], sorted_dates[-1]] if sorted_dates else [],
             }
         except Exception as e:
-            print(f"[CNTV Summary] Failed for year {year}: {e}")
-            result[str(year)] = {
-                "days": 0,
-                "total_programs": 0,
-                "date_range": [],
-                "error": str(e),
-            }
+            result[str(year)] = {"days": 0, "total_programs": 0, "date_range": [], "error": str(e)}
 
     return {"years": result, "source": "cntv"}
 
