@@ -42,6 +42,28 @@
 
   AUDIO.volume = volume;
 
+  // ============ 浏览器自动播放策略兼容 ============
+  // 页面加载时 autoPlayToday() 可能触发 FM 直播自动播放，
+  // 但浏览器要求有声播放需用户手势。先静音自动播放，用户交互后取消静音。
+  var audioMutedByPolicy = false;
+
+  function tryUnmuteAudio() {
+    if (audioMutedByPolicy) {
+      audioMutedByPolicy = false;
+      AUDIO.muted = false;
+      // 恢复真实电台名称
+      var s = stations[stationIdx];
+      if (s && mode === 'FM') {
+        document.getElementById('nowPlaying').textContent = '直播: ' + s.name;
+      } else {
+        updateNowPlaying();
+      }
+    }
+  }
+  document.addEventListener('click', tryUnmuteAudio);
+  document.addEventListener('touchstart', tryUnmuteAudio);
+  document.addEventListener('keydown', tryUnmuteAudio);
+
   // ============ 旋钮拖动系统 ============
   function angleForValue(val, min, max) {
     return ((val - min) / (max - min)) * 270;
@@ -1099,7 +1121,25 @@
     if (prevStreamUrl === station.stream_url && !AUDIO.paused) return;
     prevStreamUrl = station.stream_url;
     AUDIO.src = station.stream_url;
-    AUDIO.play().catch(function(e) { console.log('Stream failed:', e.message); });
+    // 浏览器自动播放策略：先静音尝试播放，用户交互后取消静音
+    AUDIO.play().then(function() {
+      // 播放成功 — 如果之前因策略静音，提示用户点击任意位置
+      if (audioMutedByPolicy) {
+        updateNowPlaying();
+      }
+    }).catch(function(e) {
+      if (e.name === 'NotAllowedError') {
+        // 自动播放被浏览器拦截 → 静音重试
+        AUDIO.muted = true;
+        audioMutedByPolicy = true;
+        AUDIO.play().catch(function(e2) {
+          console.log('Stream failed (muted):', e2.message);
+        });
+        document.getElementById('nowPlaying').textContent = '点击任意位置开始收听';
+      } else {
+        console.log('Stream failed:', e.message);
+      }
+    });
   }
 
   function formatSource(src) {

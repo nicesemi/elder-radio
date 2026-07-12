@@ -113,8 +113,8 @@ _RB_SERVERS = [
 ]
 
 
-def _try_fetch_json(url, timeout=15):
-    """尝试从多个接口获取 JSON，逐个重试"""
+def _try_fetch_json(url, timeout=8):
+    """尝试从接口获取 JSON（Vercel Serverless 限制 10s，预留 2s 余量）"""
     req = urllib.request.Request(url, headers={
         "User-Agent": "elder-radio/2.0",
         "Accept": "application/json",
@@ -177,7 +177,7 @@ def fetch_fanmingming_stations():
     })
 
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=8) as resp:
             text = resp.read().decode("utf-8", errors="ignore")
     except Exception as e:
         print(f"[live_stations] FanMingMing fetch failed: {e}")

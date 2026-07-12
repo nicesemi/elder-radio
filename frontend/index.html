@@ -588,20 +588,58 @@
       });
     }
 
-    // 加载 live stations
+    /** 从 radio_sources.json 加载直播电台作为本地兜底 */
+    function loadLocalFallback() {
+      fetch('/radio_sources.json')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          var rawStations = (data.stations || []).filter(function(s) {
+            return s.type === 'live' && s.stream_url;
+          });
+          if (rawStations.length === 0) {
+            listEl.innerHTML = '<div class="region-empty">暂无直播电台数据</div>';
+            countEl.textContent = '0 个电台';
+            chipsEl.innerHTML = '';
+            return;
+          }
+          // 去重（按 stream_url）
+          var seen = {};
+          var unique = [];
+          rawStations.forEach(function(s) {
+            var url = (s.stream_url || '').trim();
+            if (!url || seen[url]) return;
+            seen[url] = true;
+            unique.push({
+              id: s.id || '',
+              name: s.name || '未知电台',
+              stream_url: s.stream_url,
+              category: s.category || '综合',
+              source: s.source || 'local',
+              favicon: s.favicon || '',
+              frequency: s.frequency || ''
+            });
+          });
+          allLiveStations = unique;
+          renderChips(allLiveStations);
+          renderLiveList();
+          console.log('[首页] API 不可用，已从 radio_sources.json 加载 ' + unique.length + ' 个直播电台');
+        }).catch(function() {
+          listEl.innerHTML = '<div class="region-empty">加载失败，请稍后重试</div>';
+          countEl.textContent = '—';
+        });
+    }
+
+    // 加载 live stations（API 优先，失败则本地兜底）
     safeFetch('/api/stations/live').then(function(data) {
       if (data && data.stations && data.stations.length > 0) {
         allLiveStations = data.stations;
         renderChips(allLiveStations);
         renderLiveList();
       } else {
-        listEl.innerHTML = '<div class="region-empty">暂无直播电台数据</div>';
-        countEl.textContent = '0 个电台';
-        chipsEl.innerHTML = '';
+        loadLocalFallback();
       }
     }).catch(function() {
-      listEl.innerHTML = '<div class="region-empty">加载失败，请稍后重试</div>';
-      countEl.textContent = '—';
+      loadLocalFallback();
     });
 
     // 搜索防抖 250ms
