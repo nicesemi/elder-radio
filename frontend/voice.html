@@ -375,8 +375,9 @@
     pendingAction = null;
   }
   btnConfirmOk.addEventListener('click', function() {
+    var action = pendingAction;
     hideConfirm();
-    if (pendingAction) pendingAction();
+    if (action) action();
   });
   btnConfirmCancel.addEventListener('click', hideConfirm);
 

@@ -347,6 +347,8 @@
   var jitsiLoaded = false;
   var isConnected = false;
   var pttActive = false;
+  var pttConnecting = false;
+  var lastTouchTime = 0;
 
   function loadJitsiAPI(callback) {
     if (jitsiLoaded) { callback(); return; }
@@ -359,7 +361,8 @@
   }
 
   function connectJitsi() {
-    if (isConnected) return;
+    if (isConnected || pttConnecting) return;
+    pttConnecting = true;
     loadJitsiAPI(function() {
       var room = 'mayday-' + year + 'era';
       var meet = document.getElementById('jitsiMeet');
@@ -388,6 +391,7 @@
       jitsiApi = new window.JitsiMeetExternalAPI('meet.jit.si', opts);
       jitsiApi.addEventListeners({
         videoConferenceJoined: function() {
+          pttConnecting = false;
           isConnected = true;
           updatePTTUI(true);
         },
@@ -449,10 +453,14 @@
 
   var pttBtn = document.getElementById('pttButton');
   pttBtn.addEventListener('click', function(e) {
+    // 忽略触摸释放后 500ms 内的合成 click，避免刚连上就断开
+    if (Date.now() - lastTouchTime < 500) return;
     // 短点击 → 断开（仅已连接时生效）
     if (isConnected) { disconnectJitsi(); }
   });
   pttBtn.addEventListener('mousedown', function(e) {
+    // 忽略触摸触发的合成 mousedown，避免重复连接
+    if (Date.now() - lastTouchTime < 500) return;
     e.preventDefault();
     if (!isConnected) { connectJitsi(); return; }
     pttStart();
@@ -466,14 +474,17 @@
   });
   pttBtn.addEventListener('touchstart', function(e) {
     e.preventDefault();
+    lastTouchTime = Date.now();
     if (!isConnected) { connectJitsi(); return; }
     pttStart();
   });
   pttBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
+    lastTouchTime = Date.now();
     if (pttActive) pttStop();
   });
   pttBtn.addEventListener('touchcancel', function(e) {
+    lastTouchTime = Date.now();
     pttStop();
   });
 
