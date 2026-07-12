@@ -43,14 +43,14 @@ def _get_channels():
 def _get_r2():
     global _r2_broadcast
     if _r2_broadcast is None:
-        import r2_broadcast
+        from _lib import r2_broadcast
         _r2_broadcast = r2_broadcast
     return _r2_broadcast
 
 def _get_live_stations():
     global _live_stations
     if _live_stations is None:
-        import live_stations
+        from _lib import live_stations
         _live_stations = live_stations
     return _live_stations
 
