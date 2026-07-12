@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "total_stations": 220,
-    "live_streams": 210,
+    "total_stations": 176,
+    "live_streams": 166,
     "archived": 10,
     "categories": [
       "交通",
@@ -18,8 +18,8 @@
       "综合",
       "音乐"
     ],
-    "version": "3.0",
-    "last_updated": "2026-07-12",
+    "version": "3.1",
+    "last_updated": "2026-07-13",
     "sources": {
       "cnr_cdn": 14,
       "satellitepull": 184,
@@ -29,32 +29,6 @@
     }
   },
   "stations": [
-    {
-      "id": "live_dwwqzs",
-      "name": "大湾区之声",
-      "province": "中央",
-      "category": "新闻",
-      "stream_url": "https://ngcdn007.cnr.cn/live/hxzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CMG-大湾区之声.png"
-    },
-    {
-      "id": "live_jdyygb",
-      "name": "经典音乐",
-      "province": "中央",
-      "category": "音乐",
-      "stream_url": "https://ngcdn004.cnr.cn/live/dszs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/经典音乐广播.png"
-    },
     {
       "id": "live_jjzsgb",
       "name": "经济之声",
@@ -67,32 +41,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/central/经济之声.png"
-    },
-    {
-      "id": "live_lnzsgb",
-      "name": "老年之声",
-      "province": "中央",
-      "category": "生活",
-      "stream_url": "https://ngcdn011.cnr.cn/live/lnzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-老年之声.jpg"
-    },
-    {
-      "id": "live_mzzsgb",
-      "name": "民族之声",
-      "province": "中央",
-      "category": "民族",
-      "stream_url": "https://ngcdn009.cnr.cn/live/mzzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-民族之声.jpg"
     },
     {
       "id": "live_nhzsgb",
@@ -108,71 +56,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/central/南海之声.jpg"
     },
     {
-      "id": "live_szzsgb",
-      "name": "神州之声",
-      "province": "中央",
-      "category": "新闻",
-      "stream_url": "https://ngcdn006.cnr.cn/live/szzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-神州之声.png"
-    },
-    {
-      "id": "live_wyzsgb",
-      "name": "文艺之声",
-      "province": "中央",
-      "category": "文艺",
-      "stream_url": "https://ngcdn010.cnr.cn/live/wyzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CMG-文艺之声.jpg"
-    },
-    {
-      "id": "live_xgzsgb",
-      "name": "香港之声",
-      "province": "中央",
-      "category": "新闻",
-      "stream_url": "https://ngcdn008.cnr.cn/live/xgzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-香港之声.png"
-    },
-    {
-      "id": "live_yyzsgb",
-      "name": "音乐之声",
-      "province": "中央",
-      "category": "音乐",
-      "stream_url": "https://ngcdn003.cnr.cn/live/yyzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/音乐之声.png"
-    },
-    {
-      "id": "live_ydzsgb",
-      "name": "阅读之声",
-      "province": "中央",
-      "category": "新闻",
-      "stream_url": "https://ngcdn014.cnr.cn/live/ylgb/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-阅读之声.png"
-    },
-    {
       "id": "live_zgzsgb",
       "name": "中国之声",
       "province": "中央",
@@ -184,45 +67,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/central/CMG-中国之声.jpg"
-    },
-    {
-      "id": "live_thzsgb",
-      "name": "台海之声",
-      "province": "中央",
-      "category": "新闻",
-      "stream_url": "https://ngcdn005.cnr.cn/live/zhzs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CMG-台海之声.png"
-    },
-    {
-      "id": "live_zgjtgb",
-      "name": "中国交通广播",
-      "province": "中央",
-      "category": "交通",
-      "stream_url": "https://ngcdn016.cnr.cn/live/gsgljtgb/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CMG-中国交通广播.jpg"
-    },
-    {
-      "id": "live_zgxczs",
-      "name": "中国乡村之声",
-      "province": "中央",
-      "category": "农村",
-      "stream_url": "https://ngcdn017.cnr.cn/live/xczs/index.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CDN",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/CNR-中国乡村之声.jpg"
     },
     {
       "id": "live_hyhqgb",
@@ -251,19 +95,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/central/环球资讯.jpg"
     },
     {
-      "id": "live_qspgbdt",
-      "name": "轻松调频",
-      "province": "中央",
-      "category": "音乐",
-      "stream_url": "https://sk.cri.cn/915.m3u8",
-      "stream_type": "m3u8",
-      "source": "CRI",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/轻松调频.png"
-    },
-    {
       "id": "live_sjhsgb",
       "name": "世界华声",
       "province": "中央",
@@ -290,32 +121,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/central/"
     },
     {
-      "id": "live_hitfmgjlxyy",
-      "name": "HITFM国际流行音乐",
-      "province": "中央",
-      "category": "音乐",
-      "stream_url": "https://sk.cri.cn/887.m3u8",
-      "stream_type": "m3u8",
-      "source": "CRI",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/central/HITFM.png"
-    },
-    {
-      "id": "live_jxdsgb",
-      "name": "江西都市广播",
-      "province": "江西省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32jiangxdsgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/jx/江西都市广播.jpg"
-    },
-    {
       "id": "live_jxjtgb",
       "name": "江西交通广播",
       "province": "江西省",
@@ -327,32 +132,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/jx/江西交通广播.jpg"
-    },
-    {
-      "id": "live_jxmsgb",
-      "name": "江西民生广播",
-      "province": "江西省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32jiangxmsgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/jx/江西民生广播.jpg"
-    },
-    {
-      "id": "live_jxncgb",
-      "name": "江西农村广播",
-      "province": "江西省",
-      "category": "农村",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32jiangxncgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/jx/江西农村广播.png"
     },
     {
       "id": "live_jxyygb",
@@ -511,19 +290,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/bj/北京城市广播.jpg"
     },
     {
-      "id": "live_bjjtgb",
-      "name": "北京交通广播",
-      "province": "北京市",
-      "category": "交通",
-      "stream_url": "https://cnlive.cnr.cn/hls/bjjtgb.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CNLive",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/bj/北京交通广播.jpg"
-    },
-    {
       "id": "live_bjxgbgb",
       "name": "北京新闻广播",
       "province": "北京市",
@@ -537,19 +303,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/bj/北京新闻广播.jpg"
     },
     {
-      "id": "live_bjyygb",
-      "name": "北京音乐广播",
-      "province": "北京市",
-      "category": "音乐",
-      "stream_url": "https://cnlive.cnr.cn/hls/bjyygb.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR CNLive",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/bj/北京音乐广播.jpg"
-    },
-    {
       "id": "live_cqdsgb",
       "name": "重庆都市广播",
       "province": "重庆市",
@@ -561,19 +314,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/cq/重庆都市广播.jpg"
-    },
-    {
-      "id": "live_cqjtgb",
-      "name": "重庆交通广播",
-      "province": "重庆市",
-      "category": "交通",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxcqjtgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/cq/重庆交通广播.png"
     },
     {
       "id": "live_cqjjgb",
@@ -678,19 +418,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/fj/福建财经961.jpg"
-    },
-    {
-      "id": "live_fjcyygb",
-      "name": "福建汽车音乐",
-      "province": "福建省",
-      "category": "音乐",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32fjdnyygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/fj/福建音乐广播.jpg"
     },
     {
       "id": "live_fjxgbgb",
@@ -1421,45 +1148,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/楚天交通广播.jpg"
     },
     {
-      "id": "live_ctyygb",
-      "name": "楚天音乐广播",
-      "province": "湖北省",
-      "category": "音乐",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubctyygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/楚天音乐广播.png"
-    },
-    {
-      "id": "live_hbfngb",
-      "name": "湖北妇女儿童",
-      "province": "湖北省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubfnetgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北妇女儿童广播.png"
-    },
-    {
-      "id": "live_hbjtgb1",
-      "name": "湖北交通广播",
-      "province": "湖北省",
-      "category": "交通",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubjtgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北交通广播.png"
-    },
-    {
       "id": "live_hbjdyy",
       "name": "湖北经典音乐",
       "province": "湖北省",
@@ -1484,45 +1172,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北经济广播.png"
-    },
-    {
-      "id": "live_hbncgb",
-      "name": "湖北农村广播",
-      "province": "湖北省",
-      "category": "农村",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubncgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北农村广播.png"
-    },
-    {
-      "id": "live_hbshgb1",
-      "name": "湖北生活广播",
-      "province": "湖北省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubczshgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北生活广播.png"
-    },
-    {
-      "id": "live_hbzxgb",
-      "name": "湖北资讯广播",
-      "province": "湖北省",
-      "category": "新闻",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hubzxgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hb/湖北资讯广播.png"
     },
     {
       "id": "live_hbzsgb",
@@ -1575,32 +1224,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/hn/湖南经济广播.jpg"
-    },
-    {
-      "id": "live_hnnyyt",
-      "name": "湖南年代音乐台",
-      "province": "湖南省",
-      "category": "音乐",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hunlygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hn/湖南年代音乐台.jpg"
-    },
-    {
-      "id": "live_hnwygb",
-      "name": "湖南文艺广播",
-      "province": "湖南省",
-      "category": "文艺",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32hunwygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/hn/湖南文艺广播.png"
     },
     {
       "id": "live_hnxxzs",
@@ -1928,19 +1551,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/nm/内蒙古交通之声广播.jpg"
     },
     {
-      "id": "live_nmgjjsh",
-      "name": "内蒙古经济生活",
-      "province": "内蒙古自治区",
-      "category": "经济",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32nmgjjgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/nm/内蒙古经济生活广播.png"
-    },
-    {
       "id": "live_nmglyzs",
       "name": "内蒙古绿野之声",
       "province": "内蒙古自治区",
@@ -1954,19 +1564,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/nm/内蒙古绿野之声广播.png"
     },
     {
-      "id": "live_nmgpsqy",
-      "name": "内蒙古评书曲艺",
-      "province": "内蒙古自治区",
-      "category": "文艺",
-      "stream_url": "https://satellitepull.cnr.cn/live/wx32nmgpsqy/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/nm/内蒙古评书曲艺广播.png"
-    },
-    {
       "id": "live_nmgyyzs",
       "name": "内蒙古音乐之声",
       "province": "内蒙古自治区",
@@ -1978,45 +1575,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/nm/内蒙古音乐之声.jpg"
-    },
-    {
-      "id": "live_nxdsgb",
-      "name": "宁夏都市广播",
-      "province": "宁夏回族自治区",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxnxdsgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/nx/宁夏都市广播.jpg"
-    },
-    {
-      "id": "live_nxjjgb",
-      "name": "宁夏经济广播",
-      "province": "宁夏回族自治区",
-      "category": "经济",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxnxjjgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/nx/宁夏经济广播.jpg"
-    },
-    {
-      "id": "live_nxlygb",
-      "name": "宁夏旅游广播",
-      "province": "宁夏回族自治区",
-      "category": "旅游",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxnxdsgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/nx/宁夏旅游广播.jpg"
     },
     {
       "id": "live_nxxgbgb",
@@ -2188,19 +1746,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sx/山西综合广播.png"
     },
     {
-      "id": "live_sxdsgb",
-      "name": "陕西都市广播",
-      "province": "陕西省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxsxxdsgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sn/陕西都市广播.png"
-    },
-    {
       "id": "live_sxjtgb",
       "name": "陕西交通广播",
       "province": "陕西省",
@@ -2251,19 +1796,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sn/陕西青春广播.png"
-    },
-    {
-      "id": "live_sxxqgb",
-      "name": "陕西戏曲广播",
-      "province": "陕西省",
-      "category": "文艺",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxsxxxqgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sn/陕西戏曲广播.png"
     },
     {
       "id": "live_sxxgbgb",
@@ -2331,19 +1863,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sh/第一财经广播.png"
     },
     {
-      "id": "live_scszygb",
-      "name": "四川城市之音",
-      "province": "四川省",
-      "category": "生活",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxsccszs/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川城市之音.jpg"
-    },
-    {
       "id": "live_sjtgbgb",
       "name": "四川交通广播",
       "province": "四川省",
@@ -2355,19 +1874,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川交通广播.jpg"
-    },
-    {
-      "id": "live_sjjgbgb",
-      "name": "四川经济广播",
-      "province": "四川省",
-      "category": "经济",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxscjjgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川经济广播.png"
     },
     {
       "id": "live_smzplgb",
@@ -2383,19 +1889,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川民族频率.jpg"
     },
     {
-      "id": "live_sjyygb",
-      "name": "四川岷江音乐",
-      "province": "四川省",
-      "category": "音乐",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxscmjyyt/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川岷江音乐广播.jpg"
-    },
-    {
       "id": "live_ssjc925",
       "name": "四川私家车925",
       "province": "四川省",
@@ -2407,32 +1900,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川私家车925.jpg"
-    },
-    {
-      "id": "live_swygbgb",
-      "name": "四川文艺广播",
-      "province": "四川省",
-      "category": "文艺",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxscwygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川文艺广播.jpg"
-    },
-    {
-      "id": "live_sxplgb",
-      "name": "四川新闻频率",
-      "province": "四川省",
-      "category": "新闻",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxsclyshgb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sc/四川新闻频率.png"
     },
     {
       "id": "live_szzgbgb",
@@ -2552,19 +2019,6 @@
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/xj/新疆新闻广播.jpg"
     },
     {
-      "id": "live_xgllzs",
-      "name": "香格里拉之声",
-      "province": "云南省",
-      "category": "新闻",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxxgllzs/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/yn/云南香格里拉之声FM99.jpg"
-    },
-    {
       "id": "live_njtzsgb",
       "name": "云南交通之声",
       "province": "云南省",
@@ -2589,19 +2043,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/yn/云南国际广播.png"
-    },
-    {
-      "id": "live_njygbgb",
-      "name": "云南教育广播",
-      "province": "云南省",
-      "category": "教育",
-      "stream_url": "https://satellitepull.cnr.cn/live/wxynjygb/playlist.m3u8",
-      "stream_type": "m3u8",
-      "source": "CNR Satellitepull",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/yn/云南教育广播.jpg"
     },
     {
       "id": "live_njjgbgb",
@@ -2745,19 +2186,6 @@
       "type": "live",
       "era": "1949-2026",
       "logo": "https://huangsuming.codeberg.page/logo/radio/local/zj/浙江之声.jpg"
-    },
-    {
-      "id": "live_mrgqgb",
-      "name": "每日歌曲",
-      "province": "其他",
-      "category": "音乐",
-      "stream_url": "https://lhttp.qingting.fm/live/5021381/64k.mp3",
-      "stream_type": "m3u8",
-      "source": "蜻蜓FM",
-      "verified": true,
-      "type": "live",
-      "era": "1949-2026",
-      "logo": "https://huangsuming.codeberg.page/logo/radio/local/sao/每日歌曲.jpg"
     },
     {
       "id": "arch_001",
