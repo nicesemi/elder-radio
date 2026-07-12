@@ -1109,40 +1109,77 @@
 
   function playMaydaySong(station) {
     if (!station.stream_url) return;
+    _destroyHls();
     prevStreamUrl = station.stream_url;
     AUDIO.src = station.stream_url;
     AUDIO.play().catch(function(e) { console.log('Mayday play failed:', e.message); });
   }
 
   function stopPlayback() {
+    _destroyHls();
     AUDIO.pause();
     AUDIO.src = '';
     prevStreamUrl = '';
   }
 
+  var hlsInstance = null;
+
+  function _destroyHls() {
+    if (hlsInstance) {
+      hlsInstance.destroy();
+      hlsInstance = null;
+    }
+  }
+
   function playStream(station) {
     if (prevStreamUrl === station.stream_url && !AUDIO.paused) return;
     prevStreamUrl = station.stream_url;
-    AUDIO.src = station.stream_url;
-    // 浏览器自动播放策略：先静音尝试播放，用户交互后取消静音
-    AUDIO.play().then(function() {
-      // 播放成功 — 如果之前因策略静音，提示用户点击任意位置
-      if (audioMutedByPolicy) {
-        updateNowPlaying();
-      }
-    }).catch(function(e) {
-      if (e.name === 'NotAllowedError') {
-        // 自动播放被浏览器拦截 → 静音重试
-        AUDIO.muted = true;
-        audioMutedByPolicy = true;
-        AUDIO.play().catch(function(e2) {
-          console.log('Stream failed (muted):', e2.message);
-        });
-        document.getElementById('nowPlaying').textContent = '点击任意位置开始收听';
-      } else {
-        console.log('Stream failed:', e.message);
-      }
-    });
+    var url = station.stream_url;
+
+    // HLS (.m3u8) 流 — 浏览器 <audio> 原生不支持，走 HLS.js
+    var isHls = /\.m3u8(\?|$)/i.test(url);
+    if (isHls && window.Hls && Hls.isSupported()) {
+      _destroyHls();
+      hlsInstance = new Hls({
+        enableWorker: false,
+        lowLatencyMode: false,
+        backBufferLength: 30
+      });
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(AUDIO);
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+        _doPlay();
+      });
+      hlsInstance.on(Hls.Events.ERROR, function(event, data) {
+        if (data.fatal) {
+          console.log('HLS fatal error: ' + data.type);
+          _destroyHls();
+        }
+      });
+    } else {
+      _destroyHls();
+      AUDIO.src = url;
+      _doPlay();
+    }
+
+    function _doPlay() {
+      AUDIO.play().then(function() {
+        if (audioMutedByPolicy) {
+          updateNowPlaying();
+        }
+      }).catch(function(e) {
+        if (e.name === 'NotAllowedError') {
+          AUDIO.muted = true;
+          audioMutedByPolicy = true;
+          AUDIO.play().catch(function(e2) {
+            console.log('Stream failed (muted):', e2.message);
+          });
+          document.getElementById('nowPlaying').textContent = '点击任意位置开始收听';
+        } else {
+          console.log('Stream failed:', e.message);
+        }
+      });
+    }
   }
 
   function formatSource(src) {

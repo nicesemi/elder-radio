@@ -3,11 +3,14 @@ live_stations.py — 直播电台聚合模块
 
 数据源：
   1. Radio Browser API (de1.api.radio-browser.info)
-  2. FanMingMing M3U (live.fanmingming.com)
+  2. FanMingMing M3U (live.fanmingming.com，多镜像容错)
+  3. 本地内置电台（硬编码兜底）
 
 聚合去重后返回统一格式电台列表，支持按分类筛选。
+注意：RadioBrowser 返回大量 HLS (.m3u8) 流，前端已集成 HLS.js 支持播放。
 """
 
+import concurrent.futures
 import json
 import re
 import time
@@ -157,6 +160,8 @@ def fetch_radio_browser_stations(tag=None):
                 "category": _resolve_category(s.get("tags", "")),
                 "source": "RadioBrowser",
                 "favicon": s.get("favicon", ""),
+                "hls": bool(s.get("hls", 0)),
+                "codec": s.get("codec", "") or "",
             })
         return stations
 
@@ -166,21 +171,40 @@ def fetch_radio_browser_stations(tag=None):
 
 # ========== 数据源 2：FanMingMing M3U ==========
 
+# FanMingMing 主域名及镜像列表（主域名不稳定时自动降级）
+_FMM_MIRRORS = [
+    "https://live.fanmingming.com/radio/m3u/index.m3u",
+    "https://raw.fastgit.org/fanmingming/live/main/radio/m3u/index.m3u",
+    "https://raw.githubusercontent.com/fanmingming/live/main/radio/m3u/index.m3u",
+    "https://gh-proxy.com/raw.githubusercontent.com/fanmingming/live/main/radio/m3u/index.m3u",
+]
+
+
+def _try_fetch_text(url, timeout=5):
+    """尝试获取文本内容"""
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "elder-radio/2.0",
+    })
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return resp.read().decode("utf-8", errors="ignore")
+
+
 def fetch_fanmingming_stations():
     """
     从 FanMingMing 拉取广播 M3U 列表，正则解析电台名和流 URL。
-    返回统一格式列表。
+    多镜像容错，任一可用即返回。
     """
-    m3u_url = "https://live.fanmingming.com/radio/m3u/index.m3u"
-    req = urllib.request.Request(m3u_url, headers={
-        "User-Agent": "elder-radio/2.0",
-    })
+    text = None
+    for mirror_url in _FMM_MIRRORS:
+        try:
+            text = _try_fetch_text(mirror_url, timeout=5)
+            if text and "#EXTINF" in text:
+                break
+        except Exception:
+            continue
+        text = None
 
-    try:
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            text = resp.read().decode("utf-8", errors="ignore")
-    except Exception as e:
-        print(f"[live_stations] FanMingMing fetch failed: {e}")
+    if not text:
         return []
 
     # 解析 M3U：#EXTINF:-1 tvg-name="台名" ... ,台名
@@ -196,6 +220,7 @@ def fetch_fanmingming_stations():
         url = m.group("url").strip()
         if not url:
             continue
+        is_hls = ".m3u8" in url.lower()
         stations.append({
             "id": f"fmm_{abs(hash(url)) % (10**12):012d}",
             "name": name,
@@ -203,9 +228,89 @@ def fetch_fanmingming_stations():
             "category": "综合",
             "source": "FanMingMing",
             "favicon": "",
+            "hls": is_hls,
+            "codec": "",
         })
 
     return stations
+
+
+# ========== 内置兜底电台（两个外部数据源均不可用时使用） ==========
+
+def _get_builtin_stations():
+    """返回一组硬编码的已验证可用电台，作为最终兜底。"""
+    return [
+        {
+            "id": "builtin_001",
+            "name": "中国之声",
+            "stream_url": "https://lhttp.qtfm.cn/live/486/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_002",
+            "name": "经济之声",
+            "stream_url": "https://lhttp.qtfm.cn/live/487/64k.mp3",
+            "category": "经济", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_003",
+            "name": "音乐之声",
+            "stream_url": "https://lhttp.qtfm.cn/live/488/64k.mp3",
+            "category": "音乐", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_004",
+            "name": "经典音乐广播",
+            "stream_url": "https://lhttp.qtfm.cn/live/489/64k.mp3",
+            "category": "音乐", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_005",
+            "name": "环球资讯广播",
+            "stream_url": "https://lhttp.qtfm.cn/live/490/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_006",
+            "name": "文艺之声",
+            "stream_url": "https://lhttp.qtfm.cn/live/491/64k.mp3",
+            "category": "文艺", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_007",
+            "name": "上海新闻广播",
+            "stream_url": "https://lhttp.qtfm.cn/live/267/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_008",
+            "name": "北京新闻广播",
+            "stream_url": "https://lhttp.qtfm.cn/live/331/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_009",
+            "name": "广东新闻广播",
+            "stream_url": "https://lhttp.qtfm.cn/live/309/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+        {
+            "id": "builtin_010",
+            "name": "央视台海之声",
+            "stream_url": "http://lhttp.qtfm.cn/live/5022227/64k.mp3",
+            "category": "新闻", "source": "Builtin",
+            "favicon": "", "hls": False, "codec": "MP3",
+        },
+    ]
 
 
 # ========== 聚合 ==========
@@ -214,15 +319,29 @@ def get_all_live_stations(category=None):
     """
     聚合 Radio Browser + FanMingMing，去重后返回统一列表。
     category: 可选筛选（新闻/音乐/体育/经济/文艺/交通/综合 等）。
+
+    使用并行请求避免 Vercel Serverless 10s 超时。
     """
     # 缓存检查
     if _cache_valid():
         all_stations = _cache["stations"]
     else:
-        # 并行拉取
-        rb = fetch_radio_browser_stations()
-        fmm = fetch_fanmingming_stations()
-        all_stations = rb + fmm
+        # 并行拉取两个数据源，超时各自独立（避免网络波动互相拖累）
+        sources = {}
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = {
+                executor.submit(fetch_radio_browser_stations): "RadioBrowser",
+                executor.submit(fetch_fanmingming_stations): "FanMingMing",
+            }
+            for future in concurrent.futures.as_completed(futures):
+                name = futures[future]
+                try:
+                    sources[name] = future.result(timeout=9)
+                except Exception as e:
+                    print(f"[live_stations] {name} fetch failed: {e}")
+                    sources[name] = []
+
+        all_stations = sources.get("RadioBrowser", []) + sources.get("FanMingMing", [])
         _cache["stations"] = all_stations
         _cache["ts"] = time.time()
 
@@ -237,6 +356,10 @@ def get_all_live_stations(category=None):
             continue
         seen.add(url)
         unique.append(s)
+
+    # 如果两个数据源都挂了，使用内置兜底电台
+    if not unique:
+        unique = _get_builtin_stations()
 
     # 按分类筛选
     if category:
