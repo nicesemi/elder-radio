@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "api/cntv_data/**"
+    }
+  },
   "rewrites": [
     { "source": "/config", "destination": "/frontend/config.html" },
     { "source": "/admin", "destination": "/frontend/admin.html" },
