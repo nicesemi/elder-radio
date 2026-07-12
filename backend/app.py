@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional
 import io
+import httpx
 
 from config import SERVER_HOST, SERVER_PORT, CHANNELS, AGNES_BASE_URL, AGNES_API_KEY, AGNES_MODEL
 from ai_content import generate_broadcast_content, generate_ai_answer
