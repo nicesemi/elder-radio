@@ -394,13 +394,26 @@
     var s = document.createElement('script');
     s.src = 'https://meet.jit.si/libs/external_api.min.js';
     s.onload = function() { jitsiLoaded = true; callback(); };
-    s.onerror = function() { showToast('对讲服务加载失败', 'error'); };
+    s.onerror = function() {
+      pttConnecting = false;  // 复位死锁锁
+      showToast('对讲服务加载失败', 'error');
+    };
     document.head.appendChild(s);
   }
+
+  var pttConnectTimeout = null;  // 连接超时定时器
 
   function connectJitsi() {
     if (isConnected || pttConnecting) return;
     pttConnecting = true;
+    // 15 秒连接超时，防止 Jitsi 无响应导致按钮永久死锁
+    clearTimeout(pttConnectTimeout);
+    pttConnectTimeout = setTimeout(function() {
+      if (pttConnecting && !isConnected) {
+        pttConnecting = false;
+        showToast('连接超时，请重试', 'error');
+      }
+    }, 15000);
     loadJitsiAPI(function() {
       var room = 'mayday-' + year + 'era';
       var meet = document.getElementById('jitsiMeet');
@@ -429,12 +442,15 @@
       jitsiApi = new window.JitsiMeetExternalAPI('meet.jit.si', opts);
       jitsiApi.addEventListeners({
         videoConferenceJoined: function() {
+          clearTimeout(pttConnectTimeout);
           pttConnecting = false;
           isConnected = true;
           updatePTTUI(true);
           AgnesRobot.updateContext();
         },
         videoConferenceLeft: function() {
+          clearTimeout(pttConnectTimeout);
+          pttConnecting = false;
           isConnected = false;
           pttActive = false;
           updatePTTUI(false);
@@ -455,6 +471,8 @@
   }
 
   function disconnectJitsi() {
+    clearTimeout(pttConnectTimeout);
+    pttConnecting = false;
     AgnesRobot.cancel();
     if (jitsiApi) {
       jitsiApi.dispose();
@@ -528,12 +546,12 @@
     lastTouchTime = Date.now();
     if (!isConnected) { connectJitsi(); return; }
     pttStart();
-  });
+  }, { passive: false });
   pttBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
     lastTouchTime = Date.now();
     if (pttActive) pttStop();
-  });
+  }, { passive: false });
   pttBtn.addEventListener('touchcancel', function(e) {
     lastTouchTime = Date.now();
     pttStop();
@@ -681,18 +699,23 @@
           context: '五月天 ' + year + ' 年代对讲频道'
         })
       })
-      .then(function(r) { return r.json(); })
+      .then(function(r) {
+        if (!r.ok) {
+          throw new Error('Agnes API 返回 ' + r.status);
+        }
+        return r.json();
+      })
       .then(function(data) {
         if (data.success && data.reply) {
           self._speak(data.reply);
         } else {
-          console.log('[Agnes] API 返回失败:', data);
-          self._hideIndicator();
+          throw new Error('Agnes API 返回异常: ' + JSON.stringify(data));
         }
       })
       .catch(function(e) {
-        console.log('[Agnes] API 请求失败:', e);
+        console.log('[Agnes] 请求失败:', e.message || e);
         self._hideIndicator();
+        showToast('Agnes 暂时无法回应，请稍后再试', 'error');
       });
     },
 
@@ -776,6 +799,19 @@
       window.speechSynthesis.getVoices();
     };
   }
+
+  // Agnes API 健康检查（启动时静默探测，失败仅 console 记录）
+  (function() {
+    fetch('/api/agnes/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: '__health_check__' })
+    }).then(function(r) {
+      if (!r.ok) console.warn('[Agnes] 启动健康检查失败 (HTTP ' + r.status + ')，对讲自动回应功能可能不可用');
+    }).catch(function(e) {
+      console.warn('[Agnes] 启动健康检查网络失败:', e.message || e);
+    });
+  })();
 
   // ============ 初始化 ============
   function init() {
