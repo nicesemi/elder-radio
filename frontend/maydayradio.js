@@ -414,22 +414,20 @@
   }
 
   function updatePTTUI(connected) {
-    var pttArea = document.getElementById('pttArea');
-    var btn = document.getElementById('intercomBtn');
+    var btn = document.getElementById('pttButton');
+    var label = document.getElementById('pttLabel');
     if (connected) {
-      pttArea.style.display = 'block';
-      btn.textContent = '挂断';
-      btn.className = 'intercom-btn connected';
-      document.getElementById('pttLabel').textContent = '按住说话';
-      document.getElementById('pttButton').classList.remove('pressed');
+      btn.className = 'ptt-button connected';
+      label.textContent = '按住说话';
+      btn.classList.remove('pressed');
     } else {
-      pttArea.style.display = 'none';
-      btn.textContent = '对讲';
-      btn.className = 'intercom-btn';
+      btn.className = 'ptt-button';
+      label.textContent = '连接对讲';
+      btn.classList.remove('pressed');
     }
   }
 
-  // ============ PTT 按钮交互 ============
+  // PTT 按钮：同时处理连接/断开和按住说话
   function pttStart() {
     if (!isConnected || !jitsiApi) return;
     if (pttActive) return;
@@ -439,7 +437,6 @@
     btn.classList.add('pressed');
     document.getElementById('pttLabel').textContent = '正在发言...';
   }
-
   function pttStop() {
     if (!isConnected || !jitsiApi) return;
     if (!pttActive) return;
@@ -450,36 +447,34 @@
     document.getElementById('pttLabel').textContent = '按住说话';
   }
 
-  document.getElementById('pttButton').addEventListener('mousedown', function(e) {
+  var pttBtn = document.getElementById('pttButton');
+  pttBtn.addEventListener('click', function(e) {
+    // 短点击 → 断开（仅已连接时生效）
+    if (isConnected) { disconnectJitsi(); }
+  });
+  pttBtn.addEventListener('mousedown', function(e) {
     e.preventDefault();
+    if (!isConnected) { connectJitsi(); return; }
     pttStart();
   });
-  document.getElementById('pttButton').addEventListener('mouseup', function(e) {
+  pttBtn.addEventListener('mouseup', function(e) {
     e.preventDefault();
-    pttStop();
-  });
-  document.getElementById('pttButton').addEventListener('mouseleave', function(e) {
     if (pttActive) pttStop();
   });
-  document.getElementById('pttButton').addEventListener('touchstart', function(e) {
+  pttBtn.addEventListener('mouseleave', function(e) {
+    if (pttActive) pttStop();
+  });
+  pttBtn.addEventListener('touchstart', function(e) {
     e.preventDefault();
+    if (!isConnected) { connectJitsi(); return; }
     pttStart();
   });
-  document.getElementById('pttButton').addEventListener('touchend', function(e) {
+  pttBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
+    if (pttActive) pttStop();
+  });
+  pttBtn.addEventListener('touchcancel', function(e) {
     pttStop();
-  });
-  document.getElementById('pttButton').addEventListener('touchcancel', function(e) {
-    pttStop();
-  });
-
-  document.getElementById('pttDisconnectBtn').addEventListener('click', function() {
-    disconnectJitsi();
-  });
-
-  // 点击按钮 → 连接/断开 Jitsi（默认静音，显示 PTT）
-  document.getElementById('intercomBtn').addEventListener('click', function() {
-    if (isConnected) { disconnectJitsi(); } else { connectJitsi(); }
   });
 
   // ============ 初始化 ============

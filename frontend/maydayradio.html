@@ -238,24 +238,13 @@
     .toast.show { opacity:1; }
     .toast.error { background:#e94560; }
 
-    .intercom-sep { color:#555; margin:0 4px; font-size:10px; }
-    .intercom-btn {
-      background: #FF8C00; color: #fff; border: none;
-      padding: 3px 10px; border-radius: 10px; font-size: 9px; font-weight: 700;
-      cursor: pointer; transition: all 0.25s;
-      white-space: nowrap;
-    }
-    .intercom-btn:hover { background: #FFA733; }
-    .intercom-btn.connected { background: #4CAF50; }
-    .intercom-btn.connected:hover { background: #e94560; }
-
     /* PTT 大按钮 */
     .ptt-button {
-      width:140px; height:140px; border-radius:50%;
-      border:4px solid #FF8C00;
+      width:110px; height:110px; border-radius:50%;
+      border:3px solid #FF8C00;
       background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 60%, #BF360C);
-      color:#fff; font-size:16px; font-weight:700; cursor:pointer;
-      box-shadow: 0 0 30px rgba(255,140,0,0.3), 0 4px 15px rgba(0,0,0,0.4);
+      color:#fff; font-size:13px; font-weight:700; cursor:pointer;
+      box-shadow: 0 0 25px rgba(255,140,0,0.3), 0 3px 10px rgba(0,0,0,0.4);
       transition: all 0.15s ease;
       user-select: none; -webkit-user-select: none;
       outline:none; -webkit-tap-highlight-color: transparent;
@@ -263,18 +252,19 @@
     .ptt-button:active, .ptt-button.pressed {
       border-color:#FFD700;
       background: radial-gradient(circle at 40% 35%, #FFD700, #FF8C00 60%, #E65100);
-      box-shadow: 0 0 50px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
+      box-shadow: 0 0 40px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
       transform: scale(0.95);
     }
-    .ptt-button .ptt-icon {
-      display:block; font-size:28px; margin-bottom:4px;
+    .ptt-button.connected {
+      border-color:#4CAF50;
+      background: radial-gradient(circle at 40% 35%, #4CAF50, #2E7D32 60%, #1B5E20);
+      box-shadow: 0 0 25px rgba(76,175,80,0.3), 0 3px 10px rgba(0,0,0,0.4);
     }
-    .ptt-disconnect-btn {
-      background:transparent; color:#888; border:1px solid #444;
-      padding:4px 16px; border-radius:14px; font-size:11px; cursor:pointer;
-      transition: all 0.25s;
+    .ptt-button.connected:active, .ptt-button.connected.pressed {
+      border-color:#81C784;
+      background: radial-gradient(circle at 40% 35%, #81C784, #4CAF50 60%, #2E7D32);
+      box-shadow: 0 0 40px rgba(129,199,132,0.6);
     }
-    .ptt-disconnect-btn:hover { border-color:#e94560; color:#e94560; }
 
     #audioPlayer { display:none; }
 
@@ -317,8 +307,6 @@
   <div class="radio-status">
     <span id="modeIndicator">五月天</span>
     <span class="led-orange" id="playLed"></span>
-    <span class="intercom-sep">|</span>
-    <button id="intercomBtn" class="intercom-btn">对讲</button>
   </div>
   <div class="era-scroll" id="eraScroll"></div>
 
@@ -374,22 +362,17 @@
         <span class="knob-label">年代</span>
       </div>
       <div class="knob-group">
+        <button id="pttButton" class="ptt-button">
+          <span id="pttLabel">连接对讲</span>
+        </button>
+      </div>
+      <div class="knob-group">
         <div class="knob-base knob-volume" id="knobVolume">
           <div class="knob-indicator" style="height:28%;top:3px;"></div>
         </div>
         <span class="knob-label">音量</span>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- PTT 对讲区域 -->
-<div id="pttArea" style="display:none; text-align:center; margin:16px auto 0; max-width:860px;">
-  <button id="pttButton" class="ptt-button">
-    <span id="pttLabel">按住说话</span>
-  </button>
-  <div style="margin-top:10px;">
-    <button id="pttDisconnectBtn" class="ptt-disconnect-btn">断开对讲</button>
   </div>
 </div>
 
