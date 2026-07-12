@@ -480,6 +480,40 @@ async def archive_play(identifier: str):
 
 CNTV_PUBLIC_BASE = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"
 
+@app.get("/api/debug/cntv")
+async def debug_cntv():
+    """诊断端点：测试 CNTV 数据链路"""
+    import httpx, time
+    results = {"ts": time.time(), "tests": {}}
+    
+    # Test 1: httpx import
+    results["tests"]["httpx"] = "ok"
+    
+    # Test 2: _index.json
+    url = f"{CNTV_PUBLIC_BASE}/cntv/_index.json"
+    try:
+        r = httpx.get(url, timeout=15.0)
+        results["tests"]["index_json"] = {
+            "status": r.status_code,
+            "body_preview": str(r.json())[:200]
+        }
+    except Exception as e:
+        results["tests"]["index_json"] = {"error": str(e)}
+    
+    # Test 3: year JSON
+    try:
+        r2 = httpx.get(f"{CNTV_PUBLIC_BASE}/cntv/cntv_zhisheng_2025.json", timeout=15.0)
+        data = r2.json()
+        results["tests"]["year_json"] = {
+            "status": r2.status_code,
+            "dates_count": len(data),
+            "sample_date": list(data.keys())[:1]
+        }
+    except Exception as e:
+        results["tests"]["year_json"] = {"error": str(e)}
+    
+    return results
+
 # 内存缓存（Vercel 冷启动不共享，但在单次请求内节省重复 HTTP 调用）
 _cntv_index_cache = None
 _cntv_year_cache = {}
