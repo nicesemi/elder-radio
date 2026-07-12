@@ -63,6 +63,7 @@
       cursor: pointer;
       font-weight: 500;
       transition: opacity 0.2s;
+      white-space: nowrap;
     }
     .voice-btn:hover { opacity: 0.85; }
     .voice-btn.small {
@@ -71,6 +72,14 @@
     }
     .voice-btn.danger {
       background: #e94560;
+    }
+    .voice-btn.success {
+      background: #4CAF50;
+    }
+    .voice-btn.outline {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
     }
     .voice-row {
       display: flex;
@@ -81,12 +90,6 @@
       flex: 1;
       margin-bottom: 0;
     }
-    .voice-status {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 8px;
-    }
-    .voice-status.connected { color: #4CAF50; }
     .voice-result {
       margin-top: 10px;
       padding: 12px;
@@ -115,8 +118,70 @@
       display: none;
     }
     .voice-error.show { display: block; }
+
+    /* 活跃群组卡片 */
+    .active-group-card {
+      border-color: #4CAF50;
+      background: rgba(76,175,80,0.05);
+    }
+    .active-group-card h3 {
+      color: #4CAF50;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .active-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4CAF50;
+      box-shadow: 0 0 6px #4CAF50;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .active-group-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      background: rgba(76,175,80,0.06);
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .active-group-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .active-group-code {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+    .active-group-share {
+      font-size: 11px;
+      color: var(--text-muted);
+      word-break: break-all;
+    }
+    .active-group-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .active-empty {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* 群组列表 */
     .group-list {
-      max-height: 200px;
+      max-height: 300px;
       overflow-y: auto;
     }
     .group-item {
@@ -129,6 +194,10 @@
       border-radius: 6px;
       font-size: 12px;
     }
+    .group-item.active {
+      border: 1px solid #4CAF50;
+      background: rgba(76,175,80,0.04);
+    }
     .group-item .gname {
       color: var(--text-primary);
     }
@@ -137,65 +206,41 @@
       font-size: 10px;
       display: block;
     }
-    .jitsi-area {
-      margin-top: 16px;
-      display: none;
-      text-align: center;
-    }
-    .jitsi-area.show {
-      display: block;
-    }
-    .jitsi-area-inner {
-      position: absolute;
-      width: 1px; height: 1px;
-      overflow: hidden;
-      opacity: 0;
-      pointer-events: none;
-    }
-    .jitsi-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 12px;
-    }
-    .jitsi-bar .room-label {
+    .group-item .gstatus {
+      font-size: 10px;
       color: #4CAF50;
-      font-weight: 500;
+      margin-left: 6px;
     }
 
-    /* PTT 按钮 */
-    .ptt-button {
-      width: 130px; height: 130px; border-radius: 50%;
-      border: 4px solid var(--accent);
-      background: radial-gradient(circle at 40% 35%, var(--accent), #0066cc 60%, #004499);
-      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
-      box-shadow: 0 0 25px rgba(0,123,255,0.3), 0 4px 12px rgba(0,0,0,0.4);
-      transition: all 0.15s ease;
-      user-select: none; -webkit-user-select: none;
-      outline: none; -webkit-tap-highlight-color: transparent;
-      margin: 12px 0;
+    /* 确认弹窗 */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .ptt-button:active, .ptt-button.pressed {
-      border-color: #66b3ff;
-      background: radial-gradient(circle at 40% 35%, #66b3ff, #007bff 60%, #0055cc);
-      box-shadow: 0 0 40px rgba(0,123,255,0.6), 0 2px 8px rgba(0,0,0,0.5);
-      transform: scale(0.95);
+    .confirm-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 360px;
+      text-align: center;
     }
-    .ptt-btn-row {
-      display: flex; flex-direction: column; align-items: center;
+    .confirm-dialog p {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin: 0 0 16px;
+      line-height: 1.6;
     }
-    .ptt-disconnect-btn {
-      background: transparent; color: var(--text-muted);
-      border: 1px solid var(--border); padding: 4px 16px;
-      border-radius: 14px; font-size: 11px; cursor: pointer;
-      transition: all 0.25s;
+    .confirm-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
     }
-    .ptt-disconnect-btn:hover { border-color: #e94560; color: #e94560; }
   </style>
 </head>
 <body class="has-nav">
@@ -217,16 +262,12 @@
 
   <div class="voice-cards">
 
-    <!-- 卡片1：公共聊天室 -->
-    <div class="voice-card full">
-      <h3>公共聊天室</h3>
-      <p>加入每日公共聊天室，与所有在线用户实时交流。</p>
-      <div class="voice-row">
-        <input class="voice-input" id="publicRoomInput" placeholder="房间名">
-        <button class="voice-btn" id="btnPublicJoin">加入</button>
-        <button class="voice-btn danger" id="btnPublicLeave" style="display:none;">断开</button>
+    <!-- 卡片1：当前活跃群组 -->
+    <div class="voice-card full" id="activeCard">
+      <h3><span class="active-dot"></span>当前群组</h3>
+      <div id="activeContent">
+        <div class="active-empty">未加入任何群组，请创建或搜索加入</div>
       </div>
-      <div class="voice-status" id="publicStatus">未连接</div>
     </div>
 
     <!-- 卡片2：创建群组 -->
@@ -241,7 +282,7 @@
     <!-- 卡片3：加入群组 -->
     <div class="voice-card">
       <h3>加入群组</h3>
-      <p>输入好友分享的群组码，立即加入对讲。</p>
+      <p>输入好友分享的群组码，立即加入。</p>
       <div class="voice-row">
         <input class="voice-input" id="joinCodeInput" placeholder="输入分享码：MDxxxx">
         <button class="voice-btn" id="btnJoinGroup">加入</button>
@@ -250,7 +291,7 @@
     </div>
 
     <!-- 卡片4：我的群组 -->
-    <div class="voice-card">
+    <div class="voice-card full">
       <h3>我的群组</h3>
       <div class="group-list" id="groupList">
         <p style="color:var(--text-muted);font-size:12px;">暂无群组</p>
@@ -259,212 +300,113 @@
 
   </div>
 
-  <!-- Jitsi 嵌入区域（隐藏）+ PTT 按钮 -->
-  <div class="jitsi-area" id="jitsiArea">
-    <div class="jitsi-bar">
-      <span>对讲 · <span class="room-label" id="jitsiRoomLabel"></span></span>
-      <button class="voice-btn small danger" id="btnJitsiClose">关闭</button>
-    </div>
-    <div class="jitsi-area-inner" id="jitsiContainer"></div>
-    <div class="ptt-btn-row">
-      <button id="pttButton" class="ptt-button">
-        <span id="pttLabel">按住说话</span>
-      </button>
-      <button id="pttDisconnectBtn" class="ptt-disconnect-btn">断开对讲</button>
+</div>
+
+<!-- 确认弹窗 -->
+<div id="confirmOverlay" class="confirm-overlay" style="display:none;">
+  <div class="confirm-dialog">
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="voice-btn outline" id="btnConfirmCancel">取消</button>
+      <button class="voice-btn danger" id="btnConfirmOk">确认断开</button>
     </div>
   </div>
-
 </div>
 
 <script>
 (function() {
   'use strict';
 
-  var publicRoomInput = document.getElementById('publicRoomInput');
-  var btnPublicJoin  = document.getElementById('btnPublicJoin');
-  var btnPublicLeave = document.getElementById('btnPublicLeave');
-  var publicStatus   = document.getElementById('publicStatus');
+  var STORAGE_KEY   = 'elderradio_groups';
+  var ACTIVE_KEY    = 'elderradio_active_group';
 
   var createNameInput = document.getElementById('createNameInput');
   var btnCreateGroup  = document.getElementById('btnCreateGroup');
   var createResult    = document.getElementById('createResult');
+  var joinCodeInput   = document.getElementById('joinCodeInput');
+  var btnJoinGroup    = document.getElementById('btnJoinGroup');
+  var joinError       = document.getElementById('joinError');
+  var groupListEl     = document.getElementById('groupList');
+  var activeContent   = document.getElementById('activeContent');
 
-  var joinCodeInput = document.getElementById('joinCodeInput');
-  var btnJoinGroup  = document.getElementById('btnJoinGroup');
-  var joinError     = document.getElementById('joinError');
+  var confirmOverlay  = document.getElementById('confirmOverlay');
+  var confirmMsg      = document.getElementById('confirmMsg');
+  var btnConfirmOk    = document.getElementById('btnConfirmOk');
+  var btnConfirmCancel = document.getElementById('btnConfirmCancel');
 
-  var groupListEl  = document.getElementById('groupList');
+  var pendingAction = null; // 待确认的动作回调
 
-  var jitsiArea      = document.getElementById('jitsiArea');
-  var jitsiContainer = document.getElementById('jitsiContainer');
-  var jitsiRoomLabel = document.getElementById('jitsiRoomLabel');
-  var btnJitsiClose  = document.getElementById('btnJitsiClose');
-
-  var jitsiApi     = null;
-  var isConnected  = false;
-  var currentRoom  = '';
-  var pttActive    = false;
-  var STORAGE_KEY  = 'elderradio_groups';
-
-  var today = new Date().toISOString().slice(0, 10);
-  publicRoomInput.value = 'elder-radio-' + today;
-
-  // ==================== Jitsi 核心（PTT 模式）====================
-  function initJitsi(roomName) {
-    disconnectJitsi();
-    jitsiArea.classList.add('show');
-    jitsiRoomLabel.textContent = roomName;
-    currentRoom = roomName;
-    isConnected = true;
-
-    var doCreate = function() {
-      jitsiContainer.innerHTML = '';
-      jitsiApi = new JitsiMeetExternalAPI('meet.jit.si', {
-        roomName: roomName,
-        parentNode: jitsiContainer,
-        configOverwrite: {
-          prejoinPageEnabled: false,
-          startWithAudioMuted: true,
-          startWithVideoMuted: true,
-          disableDeepLinking: true
-        },
-        interfaceConfigOverwrite: {
-          TOOLBAR_BUTTONS: [],
-          SHOW_PROMOTIONAL_CLOSE_PAGE: false,
-          SHOW_JITSI_WATERMARK: false,
-          SHOW_WATERMARK_FOR_GUESTS: false,
-          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
-          FILM_STRIP_MAX_HEIGHT: 0,
-          VIDEO_LAYOUT_FIT: 'both'
-        }
-      });
-      jitsiApi.addEventListeners({
-        videoConferenceJoined: function() {
-          updatePublicUI();
-        },
-        videoConferenceLeft: function() {
-          disconnectJitsi();
-        },
-        readyToClose: function() {
-          disconnectJitsi();
-        }
-      });
-    };
-
-    if (typeof JitsiMeetExternalAPI === 'undefined') {
-      var script = document.createElement('script');
-      script.src = 'https://meet.jit.si/libs/external_api.min.js';
-      script.onload = doCreate;
-      document.head.appendChild(script);
-    } else {
-      doCreate();
-    }
-  }
-
-  function disconnectJitsi() {
-    if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
-    jitsiContainer.innerHTML = '';
-    jitsiArea.classList.remove('show');
-    isConnected = false;
-    pttActive = false;
-    currentRoom = '';
-    updatePublicUI();
-  }
-
-  function updatePublicUI() {
-    if (isConnected && currentRoom.indexOf('elder-radio-') === 0) {
-      btnPublicJoin.style.display = 'none';
-      btnPublicLeave.style.display = '';
-      publicStatus.textContent = '已连接 · 在线';
-      publicStatus.className = 'voice-status connected';
-      publicRoomInput.disabled = true;
-    } else {
-      btnPublicJoin.style.display = '';
-      btnPublicLeave.style.display = 'none';
-      publicStatus.textContent = '未连接';
-      publicStatus.className = 'voice-status';
-      publicRoomInput.disabled = false;
-    }
-  }
-
-  // ==================== PTT 按钮交互 ====================
-  function pttStart() {
-    if (!isConnected || !jitsiApi) return;
-    if (pttActive) return;
-    pttActive = true;
-    jitsiApi.executeCommand('toggleAudio');
-    document.getElementById('pttButton').classList.add('pressed');
-    document.getElementById('pttLabel').textContent = '正在发言...';
-  }
-
-  function pttStop() {
-    if (!isConnected || !jitsiApi) return;
-    if (!pttActive) return;
-    pttActive = false;
-    jitsiApi.executeCommand('toggleAudio');
-    document.getElementById('pttButton').classList.remove('pressed');
-    document.getElementById('pttLabel').textContent = '按住说话';
-  }
-
-  document.getElementById('pttButton').addEventListener('mousedown', function(e) {
-    e.preventDefault();
-    pttStart();
-  });
-  document.getElementById('pttButton').addEventListener('mouseup', function(e) {
-    e.preventDefault();
-    pttStop();
-  });
-  document.getElementById('pttButton').addEventListener('mouseleave', function(e) {
-    if (pttActive) pttStop();
-  });
-  document.getElementById('pttButton').addEventListener('touchstart', function(e) {
-    e.preventDefault();
-    pttStart();
-  });
-  document.getElementById('pttButton').addEventListener('touchend', function(e) {
-    e.preventDefault();
-    pttStop();
-  });
-  document.getElementById('pttButton').addEventListener('touchcancel', function(e) {
-    pttStop();
-  });
-
-  document.getElementById('pttDisconnectBtn').addEventListener('click', function() {
-    disconnectJitsi();
-  });
-
-  // ==================== 公共聊天室 ====================
-  btnPublicJoin.addEventListener('click', function() {
-    var room = publicRoomInput.value.trim();
-    if (!room) return;
-    initJitsi(room);
-  });
-
-  btnPublicLeave.addEventListener('click', function() {
-    disconnectJitsi();
-  });
-
-  publicRoomInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') btnPublicJoin.click();
-  });
-
-  // ==================== Jitsi 关闭 ====================
-  btnJitsiClose.addEventListener('click', function() {
-    disconnectJitsi();
-  });
-
-  // ==================== 群组存储 ====================
+  // ==================== 存储 ====================
   function loadGroups() {
     try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
     catch(e) { return []; }
   }
-
   function saveGroups(groups) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
   }
-
+  function getActiveGroupId() {
+    return localStorage.getItem(ACTIVE_KEY) || null;
+  }
+  function setActiveGroupId(id) {
+    if (id) {
+      localStorage.setItem(ACTIVE_KEY, id);
+    } else {
+      localStorage.removeItem(ACTIVE_KEY);
+    }
+  }
+  function getActiveGroup() {
+    var activeId = getActiveGroupId();
+    if (!activeId) return null;
+    var groups = loadGroups();
+    return groups.find(function(g) { return g.id === activeId; }) || null;
+  }
   function generateShareCode() {
     return 'MD' + Date.now().toString(36).toUpperCase();
+  }
+
+  // ==================== 确认弹窗 ====================
+  function showConfirm(msg, onOk) {
+    confirmMsg.textContent = msg;
+    pendingAction = onOk;
+    confirmOverlay.style.display = 'flex';
+  }
+  function hideConfirm() {
+    confirmOverlay.style.display = 'none';
+    pendingAction = null;
+  }
+  btnConfirmOk.addEventListener('click', function() {
+    hideConfirm();
+    if (pendingAction) pendingAction();
+  });
+  btnConfirmCancel.addEventListener('click', hideConfirm);
+
+  // ==================== 设置活跃群组 ====================
+  function switchActiveGroup(groupId, groupName) {
+    var current = getActiveGroup();
+    if (current && current.id !== groupId) {
+      // 已有活跃群组，需要确认断开
+      showConfirm('当前已加入「' + current.name + '」，\n是否断开并切换到「' + groupName + '」？', function() {
+        doSwitch(groupId);
+      });
+    } else if (!current) {
+      doSwitch(groupId);
+    }
+    // 如果点击的是同一个群组，什么都不做（或可以断开）
+  }
+
+  function doSwitch(groupId) {
+    var groups = loadGroups();
+    var g = groups.find(function(x) { return x.id === groupId; });
+    if (!g) return;
+    setActiveGroupId(groupId);
+    renderAll();
+  }
+
+  function disconnectActiveGroup() {
+    showConfirm('确定要退出当前群组吗？', function() {
+      setActiveGroupId(null);
+      renderAll();
+    });
   }
 
   // ==================== 创建群组 ====================
@@ -474,7 +416,6 @@
       name = '语音群组';
       createNameInput.value = name;
     }
-
     var groups = loadGroups();
     var groupId = generateShareCode();
     var group = {
@@ -483,25 +424,25 @@
       created: new Date().toISOString(),
       members: 1
     };
-
     groups.unshift(group);
     saveGroups(groups);
 
     var shareLink = window.location.origin + '/voice?join=' + groupId;
     createResult.style.display = '';
     createResult.innerHTML =
-      '<p style="color:#4CAF50;font-size:13px;margin:0 0 8px;">群组「' + name + '」已创建</p>' +
+      '<p style="color:#4CAF50;font-size:13px;margin:0 0 8px;">群组「' + name + '」创建成功</p>' +
       '<p class="code">' + groupId + '</p>' +
       '<p class="hint">' + shareLink + '</p>' +
       '<button class="voice-btn small" style="margin-top:8px;" id="btnCopyCode">复制分享码</button>';
-
     document.getElementById('btnCopyCode').addEventListener('click', function() {
       navigator.clipboard.writeText(groupId).then(function() {
         alert('分享码已复制: ' + groupId);
       });
     });
+    createNameInput.value = '';
 
-    renderGroupList();
+    // 新创建的群组自动设为活跃
+    switchActiveGroup(groupId, name);
   });
 
   // ==================== 加入群组 ====================
@@ -515,45 +456,91 @@
     if (g) {
       g.members = (g.members || 1) + 1;
       saveGroups(groups);
-      renderGroupList();
-      initJitsi('elder-group-' + g.id);
+      joinCodeInput.value = '';
+      switchActiveGroup(g.id, g.name);
     } else {
       joinError.classList.add('show');
     }
   });
-
   joinCodeInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') btnJoinGroup.click();
   });
 
-  // ==================== 群组列表 ====================
+  // ==================== 渲染活跃群组卡片 ====================
+  function renderActiveCard() {
+    var active = getActiveGroup();
+    if (!active) {
+      activeContent.innerHTML = '<div class="active-empty">未加入任何群组，请创建或搜索加入</div>';
+      return;
+    }
+    var shareLink = window.location.origin + '/voice?join=' + active.id;
+    activeContent.innerHTML =
+      '<div class="active-group-info">' +
+        '<div>' +
+          '<div class="active-group-name">' + active.name + '</div>' +
+          '<div class="active-group-code">' + active.id + '</div>' +
+          '<div class="active-group-share">分享链接：' + shareLink + '</div>' +
+        '</div>' +
+        '<div class="active-group-actions">' +
+          '<button class="voice-btn small" id="btnCopyActive">复制分享码</button>' +
+          '<button class="voice-btn small danger" id="btnDisconnect">退出群组</button>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('btnCopyActive').addEventListener('click', function() {
+      navigator.clipboard.writeText(active.id).then(function() {
+        alert('分享码已复制: ' + active.id);
+      });
+    });
+    document.getElementById('btnDisconnect').addEventListener('click', disconnectActiveGroup);
+  }
+
+  // ==================== 渲染群组列表 ====================
   function renderGroupList() {
     var groups = loadGroups();
+    var activeId = getActiveGroupId();
+
     if (groups.length === 0) {
       groupListEl.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">暂无群组</p>';
       return;
     }
 
     groupListEl.innerHTML = groups.map(function(g) {
-      return '<div class="group-item">' +
-        '<div><span class="gname">' + g.name + '</span><span class="gcode">' + g.id + '</span></div>' +
-        '<button class="voice-btn small" data-gid="' + g.id + '">对讲</button>' +
+      var isActive = (g.id === activeId);
+      return '<div class="group-item' + (isActive ? ' active' : '') + '">' +
+        '<div>' +
+          '<span class="gname">' + g.name + '</span>' +
+          (isActive ? '<span class="gstatus">● 当前</span>' : '') +
+          '<span class="gcode">' + g.id + '</span>' +
+        '</div>' +
+        (isActive
+          ? '<button class="voice-btn small danger" data-gid="' + g.id + '">退出</button>'
+          : '<button class="voice-btn small outline" data-gid="' + g.id + '">加入</button>'
+        ) +
         '</div>';
     }).join('');
 
+    // 绑定按钮事件
     groupListEl.querySelectorAll('.voice-btn.small').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var gid = this.dataset.gid;
         var gs = loadGroups();
         var g = gs.find(function(x) { return x.id === gid; });
-        if (g) {
-          g.members = (g.members || 1) + 1;
-          saveGroups(gs);
-          renderGroupList();
-          initJitsi('elder-group-' + g.id);
+        if (!g) return;
+
+        if (this.classList.contains('danger')) {
+          // 退出按钮
+          disconnectActiveGroup();
+        } else if (this.classList.contains('outline')) {
+          // 加入按钮
+          switchActiveGroup(gid, g.name);
         }
       });
     });
+  }
+
+  function renderAll() {
+    renderActiveCard();
+    renderGroupList();
   }
 
   // ==================== URL 参数 ====================
@@ -568,17 +555,23 @@
         if (g) {
           g.members = (g.members || 1) + 1;
           saveGroups(groups);
-          renderGroupList();
-          initJitsi('elder-group-' + g.id);
+          // 通过分享链接进入，直接设为活跃（无需确认）
+          var current = getActiveGroup();
+          if (current && current.id !== joinId) {
+            showConfirm('当前已加入「' + current.name + '」，\n是否断开并切换到「' + g.name + '」？', function() {
+              doSwitch(joinId);
+            });
+          } else {
+            doSwitch(joinId);
+          }
         }
-      }, 400);
+      }, 300);
     }
   }
 
   // ==================== 初始化 ====================
-  renderGroupList();
+  renderAll();
   loadFromURL();
-  updatePublicUI();
 
 })();
 </script>
