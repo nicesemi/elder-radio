@@ -822,9 +822,9 @@
       if (cache && cache.loaded) { card.classList.toggle('open'); return; }
       card.classList.add('open');
       body.innerHTML = '<div class="loading-inline">加载中...</div>';
-      fetch('/cntv/' + year + '.json').then(function(resp) {
+      fetch('/cntv/' + year + '.json.gz').then(function(resp) {
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return resp.json();
+        return new Response(resp.body.pipeThrough(new DecompressionStream('gzip'))).json();
       }).then(function(programs) {
         yearCache[year] = { loaded: true, programs: programs };
         body.innerHTML = buildDateListHtml(year, programs);
