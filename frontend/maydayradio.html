@@ -239,14 +239,43 @@
     .toast.error { background:#e94560; }
 
     .intercom-sep { color:#555; margin:0 4px; font-size:10px; }
-    .intercom-btn {
-      background:#1a1a1a; color:#aaa; border:1px solid #444;
-      padding:3px 10px; border-radius:12px; font-size:10px; cursor:pointer;
+    .intercom-status { font-size:9px; color:#666; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .intercom-status.connected { color:#4CAF50; }
+
+    /* PTT 状态指示灯 */
+    .ptt-status-dot {
+      display:inline-block; width:8px; height:8px; border-radius:50%;
+      vertical-align:middle; transition: background 0.3s, box-shadow 0.3s;
+    }
+    .ptt-status-dot.off { background:#3a3a3a; box-shadow:none; }
+    .ptt-status-dot.on { background:#4CAF50; box-shadow:0 0 6px #4CAF50; }
+
+    /* PTT 大按钮 */
+    .ptt-button {
+      width:140px; height:140px; border-radius:50%;
+      border:4px solid #FF8C00;
+      background: radial-gradient(circle at 40% 35%, #FF8C00, #E65100 60%, #BF360C);
+      color:#fff; font-size:16px; font-weight:700; cursor:pointer;
+      box-shadow: 0 0 30px rgba(255,140,0,0.3), 0 4px 15px rgba(0,0,0,0.4);
+      transition: all 0.15s ease;
+      user-select: none; -webkit-user-select: none;
+      outline:none; -webkit-tap-highlight-color: transparent;
+    }
+    .ptt-button:active, .ptt-button.pressed {
+      border-color:#FFD700;
+      background: radial-gradient(circle at 40% 35%, #FFD700, #FF8C00 60%, #E65100);
+      box-shadow: 0 0 50px rgba(255,215,0,0.6), 0 2px 8px rgba(0,0,0,0.5);
+      transform: scale(0.95);
+    }
+    .ptt-button .ptt-icon {
+      display:block; font-size:28px; margin-bottom:4px;
+    }
+    .ptt-disconnect-btn {
+      background:transparent; color:#888; border:1px solid #444;
+      padding:4px 16px; border-radius:14px; font-size:11px; cursor:pointer;
       transition: all 0.25s;
     }
-    .intercom-btn:hover { border-color:#FF8C00; color:#FF8C00; }
-    .intercom-btn.intercom-active { background:#c0392b; color:#fff; border-color:#e74c3c; }
-    .intercom-status { font-size:9px; color:#666; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .ptt-disconnect-btn:hover { border-color:#e94560; color:#e94560; }
 
     #audioPlayer { display:none; }
 
@@ -290,7 +319,7 @@
     <span id="modeIndicator">五月天</span>
     <span class="led-orange" id="playLed"></span>
     <span class="intercom-sep">|</span>
-    <button id="intercomBtn" class="intercom-btn" title="对讲">对讲</button>
+    <span id="pttStatusDot" class="ptt-status-dot off" title="对讲状态"></span>
     <span id="intercomStatus" class="intercom-status">未连接</span>
   </div>
   <div class="era-scroll" id="eraScroll"></div>
@@ -356,8 +385,18 @@
   </div>
 </div>
 
-<div id="jitsiContainer" style="display:none; width:100%; max-width:860px; margin:8px auto 0;">
-  <div id="jitsiMeet" style="height:300px; border-radius:8px; overflow:hidden;"></div>
+<!-- PTT 对讲区域 -->
+<div id="pttArea" style="display:none; text-align:center; margin:16px auto 0; max-width:860px;">
+  <button id="pttButton" class="ptt-button">
+    <span id="pttLabel">按住说话</span>
+  </button>
+  <div style="margin-top:10px;">
+    <button id="pttDisconnectBtn" class="ptt-disconnect-btn">断开对讲</button>
+  </div>
+</div>
+
+<div id="jitsiContainer" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">
+  <div id="jitsiMeet" style="width:1px;height:1px;"></div>
 </div>
 
 <div class="toast" id="toast"></div>
