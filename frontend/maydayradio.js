@@ -1,6 +1,6 @@
 /* =============================================
-   maydayradio.js — 五月天胡萝卜收音机 v2
-   修复：浏览器自动播放策略 → 点击播放大按钮
+   maydayradio.js — 五月天胡萝卜收音机 v3
+   Jitsi Meet 五迷对讲机集成
    ============================================= */
 
 (function() {
@@ -16,7 +16,6 @@
   let volume = 0.7;
   let isPlaying = false;
   let isConnected = false;
-  let connectionTimer = null;
   let userInteracted = false;
 
   AUDIO.volume = volume;
@@ -165,7 +164,7 @@
     var el = document.getElementById('nowPlaying');
     if (songs[songIdx]) {
       var s = songs[songIdx];
-      var icon = s.stream_url ? '🎵' : '📻';
+      var icon = s.stream_url ? '\u{1F3B5}' : '\u{1F4FB}';
       el.textContent = icon + ' [' + year + '] ' + s.title;
     } else {
       el.textContent = '等待信号...';
@@ -173,15 +172,14 @@
   }
 
   // ============ 播放控制 ============
-
-  var fetchingStream = {};  // 防并发
+  var fetchingStream = {};
 
   function fetchStreamUrl(song, callback) {
     var key = song.title;
-    if (fetchingStream[key]) return;  // 正在获取中
+    if (fetchingStream[key]) return;
     fetchingStream[key] = true;
 
-    var url = '/api/stream?name=' + encodeURIComponent(song.title) + '&artist=五月天';
+    var url = '/api/stream?name=' + encodeURIComponent(song.title) + '&artist=%E4%BA%94%E6%9C%88%E5%A4%A9';
     fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -211,7 +209,7 @@
         updatePlayUI(true);
         saveRecent();
       }).catch(function(e) {
-        console.log('播放失败:', e.message);
+        console.log('Play failed:', e.message);
         isPlaying = false;
         updatePlayUI(false);
         showToast('播放失败，请重试', 'error');
@@ -224,13 +222,11 @@
     if (!s) return;
     userInteracted = true;
 
-    // 有缓存流链接 → 直接播放
     if (s.stream_url) {
       doPlay(s.stream_url);
       return;
     }
 
-    // 无链接 → 实时获取
     showToast('正在获取音频源...', '');
     fetchStreamUrl(s, function(url) {
       if (url) {
@@ -261,33 +257,25 @@
     }
   }
 
-  // 播放按钮点击
   document.getElementById('playOverlay').addEventListener('click', function(e) {
     e.stopPropagation();
     startPlayback();
   });
 
-  // 点击萝卜身体也可以播放/暂停
   document.querySelector('.carrot-character').addEventListener('click', function(e) {
     e.stopPropagation();
-    if (isPlaying) {
-      stopPlayback();
-    } else {
-      startPlayback();
-    }
+    if (isPlaying) { stopPlayback(); } else { startPlayback(); }
   });
-  // 让萝卜可点击
   document.querySelector('.carrot-character').style.pointerEvents = 'auto';
   document.querySelector('.carrot-character').style.cursor = 'pointer';
 
-  // 音频事件
   AUDIO.addEventListener('ended', function() {
     isPlaying = false;
     updatePlayUI(false);
   });
 
   AUDIO.addEventListener('error', function() {
-    console.log('音频加载错误:', AUDIO.error);
+    console.log('Audio error:', AUDIO.error);
     isPlaying = false;
     updatePlayUI(false);
     showToast('音频源不可用，请切换其他歌曲', 'error');
@@ -317,9 +305,14 @@
     localStorage.setItem('maydayradio_recents', JSON.stringify(recents));
   }
 
-  // ============ 对讲机 ============
+  // ========================================================
+  //  五迷对讲机 — Jitsi Meet 集成 + 群组管理
+  // ========================================================
+
   var walkieOverlay = document.getElementById('walkieOverlay');
   var btnWalkie = document.getElementById('btnWalkie');
+  var jitsiApi = null;
+  var jitsiContainer = null;
 
   btnWalkie.addEventListener('click', function() {
     walkieOverlay.classList.add('show');
@@ -345,26 +338,109 @@
     document.getElementById('connectStatus').textContent = isConnected ? '已连接 · 在线' : '未连接';
   }
 
+  // ---- Jitsi Meet 核心集成 ----
+
+  function ensureJitsiContainer() {
+    if (jitsiContainer) return jitsiContainer;
+    jitsiContainer = document.createElement('div');
+    jitsiContainer.id = 'jitsiMeetContainer';
+    jitsiContainer.style.cssText = 'width:100%;height:300px;border-radius:8px;overflow:hidden;margin:8px 0;display:none;';
+    var panel = document.querySelector('.walkie-panel');
+    var h3 = panel.querySelector('h3');
+    h3.parentNode.insertBefore(jitsiContainer, h3.nextSibling);
+    return jitsiContainer;
+  }
+
+  function connectJitsi(roomName, label) {
+    ensureJitsiContainer();
+    jitsiContainer.style.display = '';
+
+    if (typeof JitsiMeetExternalAPI === 'undefined') {
+      var script = document.createElement('script');
+      script.src = 'https://meet.jit.si/external_api.js';
+      script.onload = function() { createJitsiRoom(roomName); };
+      document.head.appendChild(script);
+    } else {
+      createJitsiRoom(roomName);
+    }
+  }
+
+  function createJitsiRoom(roomName) {
+    if (jitsiApi) jitsiApi.dispose();
+    var container = ensureJitsiContainer();
+    container.innerHTML = '';
+    jitsiApi = new JitsiMeetExternalAPI('meet.jit.si', {
+      roomName: roomName,
+      parentNode: container,
+      configOverwrite: {
+        prejoinPageEnabled: false,
+        startWithAudioMuted: false,
+        startWithVideoMuted: true,
+        disableDeepLinking: true,
+        toolbarButtons: ['microphone', 'camera', 'desktop', 'raisehand', 'chat', 'tileview']
+      },
+      interfaceConfigOverwrite: {
+        SHOW_JITSI_WATERMARK: false,
+        SHOW_WATERMARK_FOR_GUESTS: false,
+        TOOLBAR_ALWAYS_VISIBLE: true,
+        DISABLE_JOIN_LEAVE_NOTIFICATIONS: true
+      }
+    });
+  }
+
+  function disconnectJitsi() {
+    if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
+    if (jitsiContainer) { jitsiContainer.style.display = 'none'; jitsiContainer.innerHTML = ''; }
+  }
+
+  function joinGroupJitsi(group) {
+    disconnectJitsi();
+    isConnected = true;
+    var btn = document.getElementById('btnConnectFans');
+    btn.textContent = '已连接 · 点击断开';
+    document.getElementById('connectStatus').textContent = '群组「' + group.name + '」· 对讲中';
+    connectJitsi('mayday-group-' + group.id, group.name);
+  }
+
+  // ---- 连接五迷年代聊天室 ----
+
   document.getElementById('btnConnectFans').addEventListener('click', function() {
     var btn = this;
     if (isConnected) {
       isConnected = false;
+      disconnectJitsi();
       btn.textContent = '连接「' + year + '年代」聊天室';
       document.getElementById('connectStatus').textContent = '未连接';
-      if (connectionTimer) { clearInterval(connectionTimer); connectionTimer = null; }
       showToast('已断开连接');
     } else {
       isConnected = true;
+      connectJitsi('mayday-' + year + 'era', year + '年代聊天室');
       btn.textContent = '已连接 · 点击断开';
-      document.getElementById('connectStatus').textContent = '已连接 · 在线 · ' + year + '年代';
+      document.getElementById('connectStatus').textContent = '已连接「' + year + '年代」· 对讲中';
       showToast('已连接「' + year + '年代」聊天室');
-
-      connectionTimer = setInterval(function() {
-        var count = Math.floor(Math.random() * 50) + 10;
-        document.getElementById('connectStatus').textContent = '已连接 · 在线 ' + count + ' 人 · ' + year + '年代';
-      }, 10000);
     }
   });
+
+  // ---- 搜索加入群组 ----
+
+  document.getElementById('btnSearchGroup').addEventListener('click', function() {
+    var code = document.getElementById('groupSearchInput').value.trim().toUpperCase();
+    if (!code) { showToast('请输入分享码', 'error'); return; }
+    var groups = [];
+    try { groups = JSON.parse(localStorage.getItem('maydayradio_groups') || '[]'); } catch(e) {}
+    var g = groups.find(function(x) { return x.id === code; });
+    if (g) {
+      g.members = (g.members || 1) + 1;
+      localStorage.setItem('maydayradio_groups', JSON.stringify(groups));
+      renderGroupList();
+      joinGroupJitsi(g);
+      showToast('已加入「' + g.name + '」');
+    } else {
+      showToast('未找到该群组，请检查分享码', 'error');
+    }
+  });
+
+  // ---- 创建群组 ----
 
   document.getElementById('btnCreateGroup').addEventListener('click', function() {
     var nameInput = document.getElementById('groupNameInput');
@@ -394,13 +470,16 @@
     resultDiv.innerHTML =
       '<div style="background:rgba(76,175,80,0.1);border-radius:8px;padding:12px;text-align:center;">' +
       '<p style="color:#4CAF50;font-size:12px;margin:0 0 8px;">群组「' + name + '」已创建</p>' +
-      '<p style="color:#666;font-size:10px;margin:8px 0 0;">分享码: <b style="color:#4CAF50;">' + groupId + '</b></p>' +
-      '<p style="color:#888;font-size:9px;margin:4px 0 0;">在手机上打开链接或输入分享码加入群组</p>' +
+      '<button style="background:#4CAF50;color:#fff;border:none;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:11px;margin:4px;" ' +
+      'onclick="navigator.clipboard.writeText(\'' + groupId + '\');alert(\'分享码已复制: ' + groupId + '\')">复制分享码</button>' +
+      '<p style="color:#888;font-size:9px;margin:6px 0 0;">分享码: <b style="color:#4CAF50;font-size:12px;">' + groupId + '</b></p>' +
       '</div>';
 
     renderGroupList();
     showToast('群组「' + name + '」创建成功');
   });
+
+  // ---- 群组列表渲染 ----
 
   function renderGroupList() {
     var groups = [];
@@ -414,8 +493,8 @@
 
     listEl.innerHTML = groups.map(function(g) {
       return '<div class="group-item">' +
-        '<div><b>' + g.name + '</b><br><span style="color:#888;font-size:9px;">' + g.id + ' · ' + g.members + '人</span></div>' +
-        '<button class="join-btn" data-gid="' + g.id + '">加入</button>' +
+        '<div><b>' + g.name + '</b><br><span style="color:#888;font-size:9px;">' + g.id + '</span></div>' +
+        '<button class="join-btn" data-gid="' + g.id + '">对讲</button>' +
         '</div>';
     }).join('');
 
@@ -427,7 +506,8 @@
           g.members = (g.members || 1) + 1;
           localStorage.setItem('maydayradio_groups', JSON.stringify(groups));
           renderGroupList();
-          showToast('已加入「' + g.name + '」');
+          joinGroupJitsi(g);
+          showToast('已加入「' + g.name + '」· 对讲中');
         }
       });
     });
@@ -476,6 +556,7 @@
         if (g) {
           g.members = (g.members || 1) + 1;
           localStorage.setItem('maydayradio_groups', JSON.stringify(groups));
+          joinGroupJitsi(g);
           showToast('欢迎加入「' + g.name + '」！');
         }
         renderGroupList();
@@ -487,16 +568,16 @@
   function init() {
     fetch('/frontend/singer_data.json')
       .then(function(r) {
-        if (!r.ok) throw new Error('数据加载失败 ' + r.status);
+        if (!r.ok) throw new Error('Failed to load data ' + r.status);
         return r.json();
       })
       .then(function(data) {
         var mayday = null;
         for (var i = 0; i < data.singers.length; i++) {
-          if (data.singers[i].name === '五月天') { mayday = data.singers[i]; break; }
+          if (data.singers[i].name === '\u4E94\u6708\u5929') { mayday = data.singers[i]; break; }
         }
         if (!mayday) {
-          document.getElementById('nowPlaying').textContent = '❌ 五月天数据未找到';
+          document.getElementById('nowPlaying').textContent = '\u274C \u4E94\u6708\u5929\u6570\u636E\u672A\u627E\u5230';
           return;
         }
 
@@ -521,13 +602,12 @@
         updateEraScroll();
         updatePlayUI(false);
 
-        // 显示总览
         document.getElementById('nowPlaying').textContent =
-          '🎵 五月天 · ' + allSongs.length + '首 · 点击萝卜播放';
+          '\u{1F3B5} \u4E94\u6708\u5929 \u00B7 ' + allSongs.length + '\u9996 \u00B7 \u70B9\u51FB\u841D\u535C\u64AD\u653E';
       })
       .catch(function(e) {
-        console.error('初始化失败:', e);
-        document.getElementById('nowPlaying').textContent = '❌ 加载失败: ' + e.message;
+        console.error('Init failed:', e);
+        document.getElementById('nowPlaying').textContent = '\u274C \u52A0\u8F7D\u5931\u8D25: ' + e.message;
       });
   }
 

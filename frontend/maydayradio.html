@@ -426,10 +426,18 @@
     </div>
     <div class="walkie-section">
       <h4>👥 创建群组</h4>
-      <p>创建专属群组分享给好友（需在手机上打开链接加入）。</p>
+      <p>创建专属群组，分享码给好友即可加入（需在手机上打开链接加入）。</p>
       <input class="walkie-input" id="groupNameInput" placeholder="输入群组名称：2000年代五迷">
       <button class="walkie-btn-green" id="btnCreateGroup">创建群组</button>
       <div id="groupCreateResult" style="margin-top:8px;"></div>
+    </div>
+    <div class="walkie-section">
+      <h4>🔍 搜索加入群组</h4>
+      <p>输入好友分享的群组码，立即加入对讲。</p>
+      <div style="display:flex;gap:8px;">
+        <input class="walkie-input" id="groupSearchInput" placeholder="输入分享码：MDxxxx" style="margin-bottom:0;flex:1;">
+        <button class="walkie-btn-green" id="btnSearchGroup" style="width:auto;margin-top:0;padding:8px 16px;">加入</button>
+      </div>
     </div>
     <div class="walkie-section" id="groupListSection">
       <h4>📋 已有群组</h4>
