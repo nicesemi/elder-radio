@@ -265,6 +265,68 @@
       white-space: nowrap;
     }
 
+    /* 历史广播 — 月份分组 */
+    .history-month-group {
+      margin-bottom: 4px;
+    }
+    .history-month-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--accent);
+      padding: 8px 0 4px;
+      border-bottom: 1px solid rgba(233,69,96,0.15);
+      margin-bottom: 6px;
+    }
+    .history-date-block {
+      padding: 4px 0;
+    }
+    .history-date-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      padding: 6px 0 2px;
+    }
+    .history-date-count {
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      margin-left: 4px;
+    }
+    .history-program-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .history-program-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      transition: background var(--transition), color var(--transition);
+    }
+    .history-program-row:hover {
+      background: rgba(233,69,96,0.08);
+      color: var(--text-primary);
+    }
+    .history-program-row .hp-time {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      min-width: 48px;
+      white-space: nowrap;
+    }
+    .history-program-row .hp-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     /* =============================================
        区域三：1949-2019 年代档案（双频道卡片）
        ============================================= */
@@ -691,15 +753,44 @@
         totalDays += info.days || 0;
         totalProgs += info.total_programs || 0;
 
-        var samples = (info.sample || []).slice(0, 5);
-        var sampleHtml = samples.length > 0
-          ? samples.map(function(s) {
-              return '<span class="sample-tag">' + escHtml(s.name) + '</span>';
-            }).join('')
-          : '<span style="opacity:0.5;font-size:0.82rem;">暂无样本</span>';
+        // 构建展开内容：按日期倒序，每月一组
+        var dates = info.dates || {};
+        var dateKeys = Object.keys(dates).sort().reverse();
+        var bodyHtml = '';
+
+        if (dateKeys.length > 0) {
+          var currentMonth = '';
+          for (var i = 0; i < dateKeys.length; i++) {
+            var dateStr = dateKeys[i];
+            var parts = dateStr.split('-');
+            var monthLabel = parts[0] + '年' + parseInt(parts[1], 10) + '月';
+            if (monthLabel !== currentMonth) {
+              if (currentMonth) bodyHtml += '</div>';
+              currentMonth = monthLabel;
+              bodyHtml += '<div class="history-month-group"><div class="history-month-label">' + monthLabel + '</div>';
+            }
+
+            var programs = dates[dateStr];
+            bodyHtml += '<div class="history-date-block">';
+            bodyHtml += '<div class="history-date-title">' + dateStr + '<span class="history-date-count"> ' + programs.length + ' 档</span></div>';
+            bodyHtml += '<div class="history-program-list">';
+            for (var j = 0; j < programs.length; j++) {
+              var p = programs[j];
+              bodyHtml += '<a href="/radio?year=' + year + '&date=' + dateStr + '" class="history-program-row">';
+              bodyHtml += '<span class="hp-time">' + escHtml(p.start) + '</span>';
+              bodyHtml += '<span class="hp-name">' + escHtml(p.name) + '</span>';
+              bodyHtml += '</a>';
+            }
+            bodyHtml += '</div></div>';
+          }
+          if (currentMonth) bodyHtml += '</div>';
+        } else {
+          bodyHtml = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">暂无节目数据</div>';
+        }
 
         var card = document.createElement('div');
         card.className = 'history-year-card';
+        if (year === '2025') card.classList.add('open');
         card.innerHTML =
           '<div class="history-year-header">' +
             '<div class="year-left">' +
@@ -708,13 +799,9 @@
             '</div>' +
             '<span class="expand-icon">▼</span>' +
           '</div>' +
-          '<div class="history-year-body">' +
-            '<div class="sample-row">' + sampleHtml + '</div>' +
-            '<a href="/radio?year=' + year + '" class="btn btn-accent btn-sm" style="display:inline-block;margin-top:8px;">收听 ' + year + ' 年广播</a>' +
-          '</div>';
+          '<div class="history-year-body">' + bodyHtml + '</div>';
         container.appendChild(card);
 
-        // 点击展开/折叠
         card.querySelector('.history-year-header').addEventListener('click', function() {
           card.classList.toggle('open');
         });
