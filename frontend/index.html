@@ -824,7 +824,13 @@
       body.innerHTML = '<div class="loading-inline">加载中...</div>';
       fetch('/cntv/' + year + '.json.gz').then(function(resp) {
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return new Response(resp.body.pipeThrough(new DecompressionStream('gzip'))).json();
+        return resp.arrayBuffer();
+      }).then(function(buf) {
+        var arr = new Uint8Array(buf);
+        if (arr[0] === 0x1f && arr[1] === 0x8b) {
+          return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
+        }
+        return JSON.parse(new TextDecoder().decode(buf));
       }).then(function(programs) {
         yearCache[year] = { loaded: true, programs: programs };
         body.innerHTML = buildDateListHtml(year, programs);
