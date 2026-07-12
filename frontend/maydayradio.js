@@ -435,12 +435,14 @@
 
   function connectJitsi() {
     if (isConnected || pttConnecting) return;
+    AgnesLog('Jitsi 开始连接...');
     pttConnecting = true;
     // 15 秒连接超时，防止 Jitsi 无响应导致按钮永久死锁
     clearTimeout(pttConnectTimeout);
     pttConnectTimeout = setTimeout(function() {
       if (pttConnecting && !isConnected) {
         pttConnecting = false;
+        AgnesLog('Jitsi 连接失败或超时', 'error');
         showToast('连接超时，请重试', 'error');
       }
     }, 15000);
@@ -475,11 +477,13 @@
           clearTimeout(pttConnectTimeout);
           pttConnecting = false;
           isConnected = true;
+          AgnesLog('Jitsi 连接成功');
           updatePTTUI(true);
           AgnesRobot.updateContext();
           // 首次触摸连接完成后自动进入发言状态，实现按住→连接→说话无缝衔接
           if (_pendingPTTCycle) {
             _pendingPTTCycle = false;
+            AgnesLog('自动 pttStart — 进入发言状态');
             pttStart();
           }
         },
@@ -536,6 +540,7 @@
   function pttStart() {
     if (!isConnected || !jitsiApi) return;
     if (pttActive) return;
+    AgnesLog('pttStart — 开始发言');
     AgnesRobot.cancel();  // 用户再次讲话，取消 Agnes 倒计时
     pttActive = true;
     jitsiApi.executeCommand('toggleAudio');
@@ -565,17 +570,19 @@
     // 忽略触摸释放后 500ms 内的合成 click，避免刚连上就断开
     if (Date.now() - lastTouchTime < 500) return;
     // 短点击 → 断开（仅已连接时生效）
-    if (isConnected) { disconnectJitsi(); }
+    if (isConnected) { AgnesLog('PTT 单击 — 断开连接'); disconnectJitsi(); }
   });
   pttBtn.addEventListener('mousedown', function(e) {
     // 忽略触摸触发的合成 mousedown，避免重复连接
     if (Date.now() - lastTouchTime < 500) return;
     e.preventDefault();
+    AgnesLog('PTT 按钮按下 (mousedown)');
     if (!isConnected) { connectJitsi(); return; }
     pttStart();
   });
   pttBtn.addEventListener('mouseup', function(e) {
     e.preventDefault();
+    AgnesLog('PTT 按钮松手 (mouseup)');
     if (pttActive) pttStop();
   });
   pttBtn.addEventListener('mouseleave', function(e) {
@@ -584,16 +591,19 @@
   pttBtn.addEventListener('touchstart', function(e) {
     e.preventDefault();
     lastTouchTime = Date.now();
-    if (!isConnected) { _pendingPTTCycle = true; connectJitsi(); return; }
+    AgnesLog('PTT 按钮按下 (touchstart)');
+    if (!isConnected) { _pendingPTTCycle = true; AgnesLog('等待 Jitsi 连接，完成后自动发言'); connectJitsi(); return; }
     pttStart();
   }, { passive: false });
   pttBtn.addEventListener('touchend', function(e) {
     e.preventDefault();
     lastTouchTime = Date.now();
+    AgnesLog('PTT 按钮松手 (touchend)');
     if (pttActive) pttStop();
   }, { passive: false });
   pttBtn.addEventListener('touchcancel', function(e) {
     lastTouchTime = Date.now();
+    AgnesLog('PTT 按钮松手 (touchcancel)');
     pttStop();
   });
 
