@@ -67,11 +67,17 @@
   // ============ 年代旋钮 ============
   function getYear() { return year; }
   function setYear(y) {
+    var prevYear = year;
     year = Math.max(ERA_MIN, Math.min(ERA_MAX, y));
     document.getElementById('nixieYear').textContent = year;
     setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
     filterSongs();
     updateEraScroll();
+    // 年代切换时，如果正在对讲中，自动切换到新房间
+    if (isConnected && year !== prevYear) {
+      disconnectJitsi();
+      setTimeout(function() { connectJitsi(); }, 600);
+    }
   }
 
   makeKnobDraggable(
@@ -335,6 +341,92 @@
       }
     }
   }
+
+  // ============ 对讲系统 ============
+  var jitsiApi = null;
+  var jitsiLoaded = false;
+  var isConnected = false;
+
+  function loadJitsiAPI(callback) {
+    if (jitsiLoaded) { callback(); return; }
+    if (window.JitsiMeetExternalAPI) { jitsiLoaded = true; callback(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://meet.jit.si/libs/external_api.min.js';
+    s.onload = function() { jitsiLoaded = true; callback(); };
+    s.onerror = function() { showToast('对讲服务加载失败', 'error'); };
+    document.head.appendChild(s);
+  }
+
+  function connectJitsi() {
+    if (isConnected) return;
+    loadJitsiAPI(function() {
+      var room = 'mayday-' + year + 'era';
+      var ctr = document.getElementById('jitsiContainer');
+      var meet = document.getElementById('jitsiMeet');
+      meet.innerHTML = '';
+      ctr.style.display = 'block';
+      var opts = {
+        roomName: room,
+        width: '100%',
+        height: 300,
+        parentNode: meet,
+        configOverwrite: {
+          prejoinPageEnabled: false,
+          startWithVideoMuted: true,
+          startWithAudioMuted: false
+        },
+        interfaceConfigOverwrite: {
+          TOOLBAR_BUTTONS: ['microphone', 'hangup'],
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false
+        }
+      };
+      jitsiApi = new window.JitsiMeetExternalAPI('meet.jit.si', opts);
+      jitsiApi.addEventListeners({
+        videoConferenceJoined: function() {
+          isConnected = true;
+          updateIntercomUI(true);
+        },
+        videoConferenceLeft: function() {
+          isConnected = false;
+          updateIntercomUI(false);
+          document.getElementById('jitsiContainer').style.display = 'none';
+        },
+        readyToClose: function() {
+          disconnectJitsi();
+        }
+      });
+    });
+  }
+
+  function disconnectJitsi() {
+    if (jitsiApi) {
+      jitsiApi.dispose();
+      jitsiApi = null;
+    }
+    isConnected = false;
+    document.getElementById('jitsiContainer').style.display = 'none';
+    document.getElementById('jitsiMeet').innerHTML = '';
+    updateIntercomUI(false);
+  }
+
+  function updateIntercomUI(connected) {
+    var btn = document.getElementById('intercomBtn');
+    var st = document.getElementById('intercomStatus');
+    if (connected) {
+      btn.textContent = '挂断';
+      btn.classList.add('intercom-active');
+      st.textContent = '已连接 · 在线';
+    } else {
+      btn.textContent = '对讲';
+      btn.classList.remove('intercom-active');
+      st.textContent = '未连接';
+    }
+  }
+
+  document.getElementById('intercomBtn').addEventListener('click', function() {
+    if (isConnected) { disconnectJitsi(); } else { connectJitsi(); }
+  });
 
   // ============ 初始化 ============
   function init() {

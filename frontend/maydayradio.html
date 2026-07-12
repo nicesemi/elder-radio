@@ -238,6 +238,16 @@
     .toast.show { opacity:1; }
     .toast.error { background:#e94560; }
 
+    .intercom-sep { color:#555; margin:0 4px; font-size:10px; }
+    .intercom-btn {
+      background:#1a1a1a; color:#aaa; border:1px solid #444;
+      padding:3px 10px; border-radius:12px; font-size:10px; cursor:pointer;
+      transition: all 0.25s;
+    }
+    .intercom-btn:hover { border-color:#FF8C00; color:#FF8C00; }
+    .intercom-btn.intercom-active { background:#c0392b; color:#fff; border-color:#e74c3c; }
+    .intercom-status { font-size:9px; color:#666; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
     #audioPlayer { display:none; }
 
     @media (max-width:860px) {
@@ -279,6 +289,9 @@
   <div class="radio-status">
     <span id="modeIndicator">五月天</span>
     <span class="led-orange" id="playLed"></span>
+    <span class="intercom-sep">|</span>
+    <button id="intercomBtn" class="intercom-btn" title="对讲">对讲</button>
+    <span id="intercomStatus" class="intercom-status">未连接</span>
   </div>
   <div class="era-scroll" id="eraScroll"></div>
 
@@ -341,6 +354,10 @@
       </div>
     </div>
   </div>
+</div>
+
+<div id="jitsiContainer" style="display:none; width:100%; max-width:860px; margin:8px auto 0;">
+  <div id="jitsiMeet" style="height:300px; border-radius:8px; overflow:hidden;"></div>
 </div>
 
 <div class="toast" id="toast"></div>
