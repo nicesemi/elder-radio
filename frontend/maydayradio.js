@@ -26,8 +26,27 @@
   function makeKnobDraggable(el, getVal, setVal, opts) {
     const { min, max, step, onChange } = opts;
     let dragging = false, startY, startVal;
+    let lastTouchTime = 0;
 
+    // --- 拖拽值计算 ---
+    function handleMove(clientY) {
+      if (!dragging) return;
+      const dy = startY - clientY;
+      const sens = (max - min) / 200;
+      let newVal = startVal + dy * sens;
+      if (step) newVal = Math.round(newVal / step) * step;
+      newVal = Math.max(min, Math.min(max, newVal));
+      setVal(newVal);
+      if (onChange) onChange(newVal);
+    }
+
+    function handleEnd() {
+      if (dragging) { dragging = false; el.style.cursor = 'grab'; }
+    }
+
+    // --- 鼠标事件（桌面端） ---
     el.addEventListener('mousedown', function(e) {
+      if (Date.now() - lastTouchTime < 500) return; // 跳过触摸触发的合成 mousedown
       e.preventDefault();
       dragging = true;
       startY = e.clientY;
@@ -36,20 +55,39 @@
     });
 
     window.addEventListener('mousemove', function(e) {
-      if (!dragging) return;
-      const dy = startY - e.clientY;
-      const sens = (max - min) / 200;
-      let newVal = startVal + dy * sens;
-      if (step) newVal = Math.round(newVal / step) * step;
-      newVal = Math.max(min, Math.min(max, newVal));
-      setVal(newVal);
-      if (onChange) onChange(newVal);
+      handleMove(e.clientY);
     });
 
     window.addEventListener('mouseup', function() {
-      if (dragging) { dragging = false; el.style.cursor = 'grab'; }
+      handleEnd();
     });
 
+    // --- 触摸事件（移动端） ---
+    el.addEventListener('touchstart', function(e) {
+      e.preventDefault();
+      lastTouchTime = Date.now();
+      dragging = true;
+      startY = e.touches[0].clientY;
+      startVal = getVal();
+    }, { passive: false });
+
+    window.addEventListener('touchmove', function(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      handleMove(e.touches[0].clientY);
+    }, { passive: false });
+
+    window.addEventListener('touchend', function() {
+      lastTouchTime = Date.now();
+      handleEnd();
+    });
+
+    window.addEventListener('touchcancel', function() {
+      lastTouchTime = Date.now();
+      handleEnd();
+    });
+
+    // --- 滚轮事件（桌面端微调） ---
     el.addEventListener('wheel', function(e) {
       e.preventDefault();
       const dir = e.deltaY > 0 ? -1 : 1;
