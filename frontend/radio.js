@@ -716,6 +716,7 @@
           renderChannelList();
           updateEraScroll();
           updateNowPlaying();
+          playCurrent();
           return;
         }
       }
@@ -894,6 +895,7 @@
           updateEraScroll();
           document.getElementById('nowPlaying').textContent =
             '[' + dateStr + '] 中国之声 · ' + data.programs.length + ' 档节目';
+          playCurrent();
           return;
         }
         if (year <= 2019) {
@@ -945,6 +947,7 @@
           updateEraScroll();
           document.getElementById('nowPlaying').textContent =
             '[' + y + '] Internet Archive · ' + archiveStations.length + ' 个录音';
+          playCurrent();
         } else {
           document.getElementById('nowPlaying').textContent =
             y + '年 — 无历史录音';
