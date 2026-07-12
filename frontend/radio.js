@@ -782,6 +782,11 @@
 
   // ============ AM 历史存档电台获取 ============
   function fetchHistoryStations(y) {
+    // 2020-2025 年份 archive 无数据，直接走 CNTV 云听回听
+    if (y >= 2020 && y <= 2025) {
+      generateDateBroadcast();
+      return;
+    }
     var url = '/api/broadcast/history/' + y;
 
     fetch(url).then(function(r) {
