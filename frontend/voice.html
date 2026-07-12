@@ -7,24 +7,55 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nav.css">
   <style>
-    .voice-container {
+    .voice-wrapper {
       position: fixed;
       top: 52px;
       left: 0;
       right: 0;
       bottom: 0;
-      border: none;
+      display: flex;
+      flex-direction: column;
     }
-    .voice-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+    .room-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
-    .setup-hint {
-      display: none;
-      padding: 40px 20px;
-      text-align: center;
+    .room-bar label {
+      font-size: 0.82rem;
       color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .room-bar input {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+    }
+    .room-bar button {
+      padding: 6px 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.82rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .room-bar button:hover {
+      opacity: 0.85;
+    }
+    .jitsi-frame {
+      flex: 1;
+      border: none;
     }
   </style>
 </head>
@@ -44,52 +75,42 @@
   </ul>
 </nav>
 
-<div class="voice-container" id="voiceFrame">
-  <iframe id="wespeekIframe" allow="microphone; camera"
-          title="群组语音聊天"></iframe>
-</div>
-
-<div class="setup-hint" id="setupHint">
-  <h2>WeSpeek 语音服务未运行</h2>
-  <p>群组语音功能基于 <a href="https://github.com/newton-miku/WeSpeek" target="_blank">WeSpeek</a>（Golang + WebRTC），需要 Docker 部署。</p>
-  <pre style="text-align:left; display:inline-block; margin-top:16px;">
-# 一键启动（在项目根目录）
-docker-compose up -d
-
-# 然后访问 http://your-server/voice
-  </pre>
-  <p style="margin-top:16px;">详细部署指南见项目 <a href="https://github.com/nicesemi/elder-radio" target="_blank">README</a></p>
+<div class="voice-wrapper">
+  <div class="room-bar">
+    <label for="roomName">房间名：</label>
+    <input type="text" id="roomName" placeholder="输入房间名后点击加入">
+    <button id="joinBtn">加入 / 创建</button>
+  </div>
+  <iframe id="jitsiFrame" class="jitsi-frame"
+          allow="camera; microphone; fullscreen; display-capture"
+          style="display:none"></iframe>
 </div>
 
 <script>
 (function() {
-  var iframe = document.getElementById('wespeekIframe');
-  var hint   = document.getElementById('setupHint');
-  var frame  = document.getElementById('voiceFrame');
+  var input   = document.getElementById('roomName');
+  var btn     = document.getElementById('joinBtn');
+  var iframe  = document.getElementById('jitsiFrame');
 
-  // 检测 WeSpeek 服务的 URL
-  // 优先用当前 host 反代路径，fallback 到 7000 端口
-  var wsUrl = window.location.origin + '/voice/';
-  
-  // 加载 WeSpeek 客户端
-  iframe.src = wsUrl;
+  // 默认房间名（包含日期，每天自动换房）
+  var today = new Date().toISOString().slice(0, 10);
+  var defaultRoom = 'elder-radio-' + today;
+  input.value = defaultRoom;
 
-  // 5 秒后检测 iframe 是否加载失败
-  setTimeout(function() {
-    try {
-      var doc = iframe.contentDocument || iframe.contentWindow.document;
-      // 如果能访问且非空白，说明加载成功
-      if (doc && doc.body && doc.body.innerHTML.trim() !== '') {
-        return; // 加载成功
-      }
-    } catch(e) {
-      // 跨域无法访问，说明 WeSpeek 在运行
-      return;
-    }
-    // 加载失败，显示提示
-    frame.style.display = 'none';
-    hint.style.display = 'block';
-  }, 5000);
+  function joinRoom() {
+    var room = input.value.trim();
+    if (!room) return;
+    // Jitsi Meet 公共实例，免费零配置
+    iframe.src = 'https://meet.jit.si/' + encodeURIComponent(room) + '#config.prejoinPageEnabled=false';
+    iframe.style.display = '';
+    input.disabled = true;
+    btn.textContent = '已加入';
+  }
+
+  btn.addEventListener('click', joinRoom);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') joinRoom();
+  });
 })();
 </script>
 </body>
