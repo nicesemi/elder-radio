@@ -139,32 +139,63 @@
     }
     .jitsi-area {
       margin-top: 16px;
-      border-radius: 10px;
-      overflow: hidden;
-      background: #000;
       display: none;
+      text-align: center;
     }
     .jitsi-area.show {
       display: block;
     }
     .jitsi-area-inner {
-      width: 100%;
-      height: 350px;
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
     }
     .jitsi-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px 14px;
-      background: rgba(0,0,0,0.85);
-      color: #fff;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-primary);
       font-size: 12px;
-      border-radius: 10px 10px 0 0;
     }
     .jitsi-bar .room-label {
       color: #4CAF50;
       font-weight: 500;
     }
+
+    /* PTT 按钮 */
+    .ptt-button {
+      width: 130px; height: 130px; border-radius: 50%;
+      border: 4px solid var(--accent);
+      background: radial-gradient(circle at 40% 35%, var(--accent), #0066cc 60%, #004499);
+      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 0 25px rgba(0,123,255,0.3), 0 4px 12px rgba(0,0,0,0.4);
+      transition: all 0.15s ease;
+      user-select: none; -webkit-user-select: none;
+      outline: none; -webkit-tap-highlight-color: transparent;
+      margin: 12px 0;
+    }
+    .ptt-button:active, .ptt-button.pressed {
+      border-color: #66b3ff;
+      background: radial-gradient(circle at 40% 35%, #66b3ff, #007bff 60%, #0055cc);
+      box-shadow: 0 0 40px rgba(0,123,255,0.6), 0 2px 8px rgba(0,0,0,0.5);
+      transform: scale(0.95);
+    }
+    .ptt-btn-row {
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .ptt-disconnect-btn {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid var(--border); padding: 4px 16px;
+      border-radius: 14px; font-size: 11px; cursor: pointer;
+      transition: all 0.25s;
+    }
+    .ptt-disconnect-btn:hover { border-color: #e94560; color: #e94560; }
   </style>
 </head>
 <body class="has-nav">
@@ -228,13 +259,19 @@
 
   </div>
 
-  <!-- Jitsi 嵌入区域 -->
+  <!-- Jitsi 嵌入区域（隐藏）+ PTT 按钮 -->
   <div class="jitsi-area" id="jitsiArea">
     <div class="jitsi-bar">
-      <span>Jitsi Meet · <span class="room-label" id="jitsiRoomLabel"></span></span>
+      <span>对讲 · <span class="room-label" id="jitsiRoomLabel"></span></span>
       <button class="voice-btn small danger" id="btnJitsiClose">关闭</button>
     </div>
     <div class="jitsi-area-inner" id="jitsiContainer"></div>
+    <div class="ptt-btn-row">
+      <button id="pttButton" class="ptt-button">
+        <span id="pttLabel">按住说话</span>
+      </button>
+      <button id="pttDisconnectBtn" class="ptt-disconnect-btn">断开对讲</button>
+    </div>
   </div>
 
 </div>
@@ -266,12 +303,13 @@
   var jitsiApi     = null;
   var isConnected  = false;
   var currentRoom  = '';
+  var pttActive    = false;
   var STORAGE_KEY  = 'elderradio_groups';
 
   var today = new Date().toISOString().slice(0, 10);
   publicRoomInput.value = 'elder-radio-' + today;
 
-  // ==================== Jitsi 核心 ====================
+  // ==================== Jitsi 核心（PTT 模式）====================
   function initJitsi(roomName) {
     disconnectJitsi();
     jitsiArea.classList.add('show');
@@ -286,19 +324,31 @@
         parentNode: jitsiContainer,
         configOverwrite: {
           prejoinPageEnabled: false,
-          startWithAudioMuted: false,
+          startWithAudioMuted: true,
           startWithVideoMuted: true,
-          disableDeepLinking: true,
-          toolbarButtons: ['microphone', 'camera', 'desktop', 'raisehand', 'chat', 'tileview']
+          disableDeepLinking: true
         },
         interfaceConfigOverwrite: {
+          TOOLBAR_BUTTONS: [],
+          SHOW_PROMOTIONAL_CLOSE_PAGE: false,
           SHOW_JITSI_WATERMARK: false,
           SHOW_WATERMARK_FOR_GUESTS: false,
-          TOOLBAR_ALWAYS_VISIBLE: true,
-          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true
+          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+          FILM_STRIP_MAX_HEIGHT: 0,
+          VIDEO_LAYOUT_FIT: 'both'
         }
       });
-      updatePublicUI();
+      jitsiApi.addEventListeners({
+        videoConferenceJoined: function() {
+          updatePublicUI();
+        },
+        videoConferenceLeft: function() {
+          disconnectJitsi();
+        },
+        readyToClose: function() {
+          disconnectJitsi();
+        }
+      });
     };
 
     if (typeof JitsiMeetExternalAPI === 'undefined') {
@@ -316,6 +366,7 @@
     jitsiContainer.innerHTML = '';
     jitsiArea.classList.remove('show');
     isConnected = false;
+    pttActive = false;
     currentRoom = '';
     updatePublicUI();
   }
@@ -335,6 +386,52 @@
       publicRoomInput.disabled = false;
     }
   }
+
+  // ==================== PTT 按钮交互 ====================
+  function pttStart() {
+    if (!isConnected || !jitsiApi) return;
+    if (pttActive) return;
+    pttActive = true;
+    jitsiApi.executeCommand('toggleAudio');
+    document.getElementById('pttButton').classList.add('pressed');
+    document.getElementById('pttLabel').textContent = '正在发言...';
+  }
+
+  function pttStop() {
+    if (!isConnected || !jitsiApi) return;
+    if (!pttActive) return;
+    pttActive = false;
+    jitsiApi.executeCommand('toggleAudio');
+    document.getElementById('pttButton').classList.remove('pressed');
+    document.getElementById('pttLabel').textContent = '按住说话';
+  }
+
+  document.getElementById('pttButton').addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    pttStart();
+  });
+  document.getElementById('pttButton').addEventListener('mouseup', function(e) {
+    e.preventDefault();
+    pttStop();
+  });
+  document.getElementById('pttButton').addEventListener('mouseleave', function(e) {
+    if (pttActive) pttStop();
+  });
+  document.getElementById('pttButton').addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    pttStart();
+  });
+  document.getElementById('pttButton').addEventListener('touchend', function(e) {
+    e.preventDefault();
+    pttStop();
+  });
+  document.getElementById('pttButton').addEventListener('touchcancel', function(e) {
+    pttStop();
+  });
+
+  document.getElementById('pttDisconnectBtn').addEventListener('click', function() {
+    disconnectJitsi();
+  });
 
   // ==================== 公共聊天室 ====================
   btnPublicJoin.addEventListener('click', function() {
