@@ -279,12 +279,26 @@
     }
     .history-date-block {
       padding: 4px 0;
+      cursor: pointer;
+      user-select: none;
     }
     .history-date-title {
       font-size: 0.82rem;
       font-weight: 600;
       color: var(--text-primary);
       padding: 6px 0 2px;
+      transition: color var(--transition);
+    }
+    .history-date-block:hover .history-date-title {
+      color: var(--accent);
+    }
+    .date-arrow {
+      font-size: 0.65rem;
+      margin-right: 2px;
+      color: var(--text-muted);
+      display: inline-block;
+      transition: transform 0.15s;
+      vertical-align: middle;
     }
     .history-date-count {
       font-size: 0.72rem;
@@ -741,7 +755,7 @@
     // 内嵌摘要（~550B）— 页面秒出，年份卡片零等待
     var SUMMARY = {"2020":{"days":246,"total_programs":5174,"date_range":["2020-04-30","2020-12-31"]},"2021":{"days":365,"total_programs":7836,"date_range":["2021-01-01","2021-12-31"]},"2022":{"days":365,"total_programs":8067,"date_range":["2022-01-01","2022-12-31"]},"2023":{"days":365,"total_programs":7801,"date_range":["2023-01-01","2023-12-31"]},"2024":{"days":366,"total_programs":7858,"date_range":["2024-01-01","2024-12-31"]},"2025":{"days":365,"total_programs":7921,"date_range":["2025-01-01","2025-12-31"]}};
 
-    function buildProgramsHtml(year, programs) {
+    function buildDateListHtml(year, programs) {
       var dateKeys = Object.keys(programs).sort().reverse();
       if (dateKeys.length === 0) return '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">暂无节目数据</div>';
       var html = '', currentMonth = '';
@@ -754,15 +768,52 @@
           html += '<div class="history-month-group"><div class="history-month-label">' + monthLabel + '</div>';
         }
         var progs = programs[dateStr];
-        html += '<div class="history-date-block"><div class="history-date-title">' + dateStr + '<span class="history-date-count"> ' + progs.length + ' 档</span></div><div class="history-program-list">';
-        for (var j = 0; j < progs.length; j++) {
-          var p = progs[j];
-          html += '<a href="/radio?year=' + year + '&date=' + dateStr + '" class="history-program-row"><span class="hp-time">' + escHtml(p[0]) + '</span><span class="hp-name">' + escHtml(p[2]) + '</span></a>';
-        }
-        html += '</div></div>';
+        html += '<div class="history-date-block" data-date="' + dateStr + '" data-year="' + year + '"><div class="history-date-title"><span class="date-arrow">▶</span> ' + dateStr + '<span class="history-date-count"> ' + progs.length + ' 档</span></div><div class="history-program-list" style="display:none"></div></div>';
       }
       if (currentMonth) html += '</div>';
       return html;
+    }
+
+    function buildDateProgramsHtml(programs) {
+      var html = '';
+      for (var j = 0; j < programs.length; j++) {
+        var p = programs[j];
+        html += '<a href="/radio?year=' + (p._year || '') + '&date=' + (p._date || '') + '" class="history-program-row"><span class="hp-time">' + escHtml(p[0]) + '</span><span class="hp-name">' + escHtml(p[2]) + '</span></a>';
+      }
+      return html;
+    }
+
+    function toggleDate(el) {
+      var list = el.querySelector('.history-program-list');
+      var arrow = el.querySelector('.date-arrow');
+      if (list.style.display === 'none') {
+        list.style.display = '';
+        arrow.textContent = '▼';
+      } else {
+        list.style.display = 'none';
+        arrow.textContent = '▶';
+      }
+    }
+
+    function attachDateClicks(year, programs, container) {
+      container.querySelectorAll('.history-date-block').forEach(function(block) {
+        block.addEventListener('click', function(e) {
+          // 防止点到节目链接时触发
+          if (e.target.tagName === 'A') return;
+          var dateStr = block.getAttribute('data-date');
+          var list = block.querySelector('.history-program-list');
+          // 首次点击：填充节目数据
+          if (list.children.length === 0 && programs[dateStr]) {
+            // 给每个节目附加 year/date 信息供链接使用
+            programs[dateStr].forEach(function(p) {
+              p._year = year;
+              p._date = dateStr;
+            });
+            list.innerHTML = buildDateProgramsHtml(programs[dateStr]);
+          }
+          toggleDate(block);
+        });
+      });
     }
 
     function loadAndExpand(card, year) {
@@ -776,7 +827,8 @@
         return new Response(resp.body.pipeThrough(new DecompressionStream('gzip'))).json();
       }).then(function(programs) {
         yearCache[year] = { loaded: true, programs: programs };
-        body.innerHTML = buildProgramsHtml(year, programs);
+        body.innerHTML = buildDateListHtml(year, programs);
+        attachDateClicks(year, programs, body);
       }).catch(function(e) {
         body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败 — ' + (e.message || '网络错误') + '</div>';
       });
