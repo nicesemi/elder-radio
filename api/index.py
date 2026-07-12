@@ -12,6 +12,7 @@ import ast
 import uuid
 import time
 import re
+import gzip
 import urllib.request
 import urllib.parse
 from datetime import datetime
@@ -476,100 +477,64 @@ async def archive_play(identifier: str):
 
 # ============ 云听 CNR 回听节目 API ============
 
-# ==================== CNTV 云听回听（直读 R2 公开 HTTP，不依赖 r2_broadcast） ====================
+# ==================== CNTV 云听回听（数据嵌入代码目录，零 HTTP 依赖） ====================
 
-CNTV_PUBLIC_BASE = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"
+_API_DIR = os.path.dirname(os.path.abspath(__file__))
 
-@app.get("/api/debug/cntv")
-async def debug_cntv():
-    """诊断端点：测试 CNTV 数据链路"""
-    import httpx, time
-    results = {"ts": time.time(), "tests": {}}
-    
-    # Test 1: httpx import
-    results["tests"]["httpx"] = "ok"
-    
-    # Test 2: _index.json
-    url = f"{CNTV_PUBLIC_BASE}/cntv/_index.json"
-    try:
-        r = httpx.get(url, timeout=15.0)
-        results["tests"]["index_json"] = {
-            "status": r.status_code,
-            "body_preview": str(r.json())[:200]
-        }
-    except Exception as e:
-        results["tests"]["index_json"] = {"error": str(e)}
-    
-    # Test 3: year JSON
-    try:
-        r2 = httpx.get(f"{CNTV_PUBLIC_BASE}/cntv/cntv_zhisheng_2025.json", timeout=15.0)
-        data = r2.json()
-        results["tests"]["year_json"] = {
-            "status": r2.status_code,
-            "dates_count": len(data),
-            "sample_date": list(data.keys())[:1]
-        }
-    except Exception as e:
-        results["tests"]["year_json"] = {"error": str(e)}
-    
-    return results
-
-# 内存缓存（Vercel 冷启动不共享，但在单次请求内节省重复 HTTP 调用）
+# 内存缓存
 _cntv_index_cache = None
+_cntv_summary_cache = None
 _cntv_year_cache = {}
 
-def _cntv_http_json(path: str):
-    """从 R2 公开 URL 读取 JSON，优先 httpx 降级 urllib。"""
-    url = f"{CNTV_PUBLIC_BASE}/{path}"
-    try:
-        import httpx
-        r = httpx.get(url, timeout=5.0, follow_redirects=True)
-        if r.status_code == 200:
-            return r.json()
-    except Exception:
-        pass
-    # 降级：使用标准库 urllib（带 SSL 容错）
-    try:
-        import ssl
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
-        with urllib.request.urlopen(req, timeout=5, context=ctx) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        print(f"[CNTV HTTP] {path} failed: {e}")
-    # 最后降级：不使用 SSL context
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except Exception as e:
-        print(f"[CNTV HTTP fallback] {path} failed: {e}")
-    return None
+def _cntv_load_json(path: str):
+    """从同目录读取 JSON 文件（支持 .json.gz 自动解压）。"""
+    if path.endswith(".gz"):
+        with open(os.path.join(_API_DIR, path), "rb") as f:
+            return json.loads(gzip.decompress(f.read()).decode())
+    with open(os.path.join(_API_DIR, path), "r") as f:
+        return json.load(f)
 
 def _cntv_get_years():
     """返回有数据的年份列表。"""
     global _cntv_index_cache
-    if _cntv_index_cache is not None:
-        return _cntv_index_cache
-    data = _cntv_http_json("cntv/_index.json")
-    _cntv_index_cache = (data or {}).get("years", [])
+    if _cntv_index_cache is None:
+        _cntv_index_cache = _cntv_load_json("cntv_index.json")["years"]
     return _cntv_index_cache
 
+def _cntv_get_summary():
+    """返回预计算的年份摘要统计。"""
+    global _cntv_summary_cache
+    if _cntv_summary_cache is None:
+        _cntv_summary_cache = _cntv_load_json("cntv_summary.json")
+    return _cntv_summary_cache
+
 def _cntv_get_year(year: str):
-    """返回指定年份的节目索引。"""
+    """返回指定年份的节目索引（从压缩文件按需加载）。"""
     if year in _cntv_year_cache:
         return _cntv_year_cache[year]
-    data = _cntv_http_json(f"cntv/cntv_zhisheng_{year}.json")
-    _cntv_year_cache[year] = data or {}
-    return _cntv_year_cache[year]
+    data = _cntv_load_json(f"cntv_data/{year}.json.gz")
+    _cntv_year_cache[year] = data
+    return data
 
 def _cntv_get_date(date: str):
     """返回指定日期的节目列表。"""
     year = date[:4]
     year_data = _cntv_get_year(year)
     return year_data.get(date, [])
+
+
+@app.get("/api/debug/cntv")
+async def debug_cntv():
+    """诊断端点：验证本地 CNTV 数据完整性。"""
+    years = _cntv_get_years()
+    summary = _cntv_get_summary()
+    year_data = _cntv_get_year("2025")
+    return {
+        "source": "embedded",
+        "years": years,
+        "summary_sample": {y: summary[y] for y in list(years)[:3]},
+        "year_2025_dates": len(year_data),
+    }
 
 
 @app.get("/api/cntv/years")
@@ -581,8 +546,10 @@ async def cntv_years():
 @app.get("/api/cntv/{year}")
 async def cntv_year_programs(year: str):
     programs = _cntv_get_year(year)
-    dates = sorted(programs.keys()) if programs else []
-    total = sum(len(v) for v in programs.values()) if programs else 0
+    if not programs:
+        return {"year": year, "dates": [], "total_days": 0, "total_programs": 0, "programs": {}, "source": "ytapi.radio.cn", "station": "中国之声"}
+    dates = sorted(programs.keys())
+    total = sum(len(v) for v in programs.values())
     return {
         "year": year,
         "dates": dates,
@@ -615,45 +582,22 @@ async def cntv_date_programs(date: str):
 
 @app.get("/api/cntv/summary")
 async def cntv_summary():
-    import traceback
+    """返回各年份 CNTV 节目统计（从嵌入数据直接读取，无 HTTP 依赖）。"""
     try:
+        summary = _cntv_get_summary()
         years = _cntv_get_years()
         result = {}
-        diag = {"years_found": len(years), "base_url": CNTV_PUBLIC_BASE}
-        
-        # 测试直接 HTTP 访问
-        try:
-            import httpx
-            test_r = httpx.get(f"{CNTV_PUBLIC_BASE}/cntv/_index.json", timeout=5.0)
-            diag["test_httpx"] = f"status={test_r.status_code}"
-        except Exception as e:
-            diag["test_httpx"] = f"error: {e}"
-        
-        try:
-            r2 = urllib.request.Request(f"{CNTV_PUBLIC_BASE}/cntv/_index.json", 
-                headers={"User-Agent": "elder-radio/1.0"})
-            with urllib.request.urlopen(r2, timeout=5) as resp:
-                raw = resp.read().decode("utf-8")
-                diag["test_urllib"] = f"status={resp.status}, len={len(raw)}"
-        except Exception as e:
-            diag["test_urllib"] = f"error: {e}"
-        
         for year in years:
-            try:
-                year_programs = _cntv_get_year(str(year))
-                sorted_dates = sorted(year_programs.keys()) if year_programs else []
-                result[str(year)] = {
-                    "days": len(sorted_dates),
-                    "total_programs": sum(len(v) for v in year_programs.values()) if year_programs else 0,
-                    "date_range": [sorted_dates[0], sorted_dates[-1]] if sorted_dates else [],
-                }
-            except Exception as e:
-                result[str(year)] = {"days": 0, "total_programs": 0, "date_range": [], "error": str(e)}
-
-        return {"years": result, "source": "cntv", "_diag": diag}
+            s = summary.get(year, {})
+            result[year] = {
+                "days": s.get("days", 0),
+                "total_programs": s.get("total_programs", 0),
+                "date_range": s.get("date_range", []),
+            }
+        return {"years": result, "source": "cntv_embedded"}
     except Exception as e:
-        return {"years": {}, "source": "cntv", "_diag": {"error": str(e), "traceback": traceback.format_exc()}}
-
+        import traceback
+        return {"years": {}, "source": "cntv_embedded", "_error": str(e), "_traceback": traceback.format_exc()}
 
 @app.get("/api/audio/{filename}")
 async def get_audio(filename: str):
