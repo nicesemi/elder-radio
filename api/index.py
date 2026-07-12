@@ -528,13 +528,24 @@ def _cntv_http_json(path: str):
             return r.json()
     except Exception:
         pass
-    # 降级：使用标准库 urllib
+    # 降级：使用标准库 urllib（带 SSL 容错）
+    try:
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"[CNTV HTTP] {path} failed: {e}")
+    # 最后降级：不使用 SSL context
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        print(f"[CNTV HTTP] {path} failed: {e}")
+        print(f"[CNTV HTTP fallback] {path} failed: {e}")
     return None
 
 def _cntv_get_years():
@@ -606,6 +617,25 @@ async def cntv_date_programs(date: str):
 async def cntv_summary():
     years = _cntv_get_years()
     result = {}
+    diag = {"years_found": len(years), "base_url": CNTV_PUBLIC_BASE}
+    
+    # 测试直接 HTTP 访问
+    try:
+        import httpx
+        test_r = httpx.get(f"{CNTV_PUBLIC_BASE}/cntv/_index.json", timeout=10.0)
+        diag["test_httpx"] = f"status={test_r.status_code}"
+    except Exception as e:
+        diag["test_httpx"] = f"error: {e}"
+    
+    try:
+        r2 = urllib.request.Request(f"{CNTV_PUBLIC_BASE}/cntv/_index.json", 
+            headers={"User-Agent": "elder-radio/1.0"})
+        with urllib.request.urlopen(r2, timeout=10) as resp:
+            raw = resp.read().decode("utf-8")
+            diag["test_urllib"] = f"status={resp.status}, len={len(raw)}"
+    except Exception as e:
+        diag["test_urllib"] = f"error: {e}"
+    
     for year in years:
         try:
             year_programs = _cntv_get_year(str(year))
@@ -618,7 +648,7 @@ async def cntv_summary():
         except Exception as e:
             result[str(year)] = {"days": 0, "total_programs": 0, "date_range": [], "error": str(e)}
 
-    return {"years": result, "source": "cntv"}
+    return {"years": result, "source": "cntv", "_diag": diag}
 
 
 @app.get("/api/audio/{filename}")
