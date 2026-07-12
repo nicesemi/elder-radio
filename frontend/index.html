@@ -249,6 +249,22 @@
     }
     .history-broadcast-item .bc-play:hover { background: var(--accent-hover); }
 
+    /* 样本节目标签 */
+    .sample-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .sample-tag {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
     /* =============================================
        区域三：1949-2019 年代档案（双频道卡片）
        ============================================= */
@@ -652,119 +668,63 @@
 
 
   // ====================================================
-  //  区域二：2020-2025 历史广播
+  //  区域二：2020-2025 历史广播（CNTV 回听）
   // ====================================================
   (function initRegion2() {
     var container = document.getElementById('historyYearCards');
     var countEl   = document.getElementById('historyCount');
-    var YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
 
-    // 为每一年创建卡片骨架
-    YEARS.forEach(function(year) {
-      var card = document.createElement('div');
-      card.className = 'history-year-card';
-      card.id = 'hist-card-' + year;
-      card.innerHTML =
-        '<div class="history-year-header" data-year="' + year + '">' +
-          '<div class="year-left">' +
-            '<span class="year-num">' + year + '</span>' +
-            '<span class="year-stat" id="hist-stat-' + year + '">加载中...</span>' +
+    safeFetch('/api/cntv/summary').then(function(data) {
+      if (!data || !data.years || Object.keys(data.years).length === 0) {
+        container.innerHTML = '<div class="region-empty">暂无历史广播数据</div>';
+        countEl.textContent = '—';
+        return;
+      }
+
+      var years = data.years;
+      var yearKeys = Object.keys(years).sort();
+      var totalDays = 0;
+      var totalProgs = 0;
+
+      yearKeys.forEach(function(year) {
+        var info = years[year];
+        totalDays += info.days || 0;
+        totalProgs += info.total_programs || 0;
+
+        var samples = (info.sample || []).slice(0, 5);
+        var sampleHtml = samples.length > 0
+          ? samples.map(function(s) {
+              return '<span class="sample-tag">' + escHtml(s.name) + '</span>';
+            }).join('')
+          : '<span style="opacity:0.5;font-size:0.82rem;">暂无样本</span>';
+
+        var card = document.createElement('div');
+        card.className = 'history-year-card';
+        card.innerHTML =
+          '<div class="history-year-header">' +
+            '<div class="year-left">' +
+              '<span class="year-num">' + year + '</span>' +
+              '<span class="year-stat">' + info.days + ' 天 · ' + info.total_programs + ' 档节目</span>' +
+            '</div>' +
+            '<span class="expand-icon">▼</span>' +
           '</div>' +
-          '<span class="expand-icon">▼</span>' +
-        '</div>' +
-        '<div class="history-year-body" id="hist-body-' + year + '">' +
-          '<div class="loading-inline">点击展开查看</div>' +
-        '</div>';
-      container.appendChild(card);
+          '<div class="history-year-body">' +
+            '<div class="sample-row">' + sampleHtml + '</div>' +
+            '<a href="/radio?year=' + year + '" class="btn btn-accent btn-sm" style="display:inline-block;margin-top:8px;">收听 ' + year + ' 年广播</a>' +
+          '</div>';
+        container.appendChild(card);
 
-      // 点击展开/折叠
-      card.querySelector('.history-year-header').addEventListener('click', function() {
-        if (card.classList.contains('open')) {
-          card.classList.remove('open');
-        } else {
-          card.classList.add('open');
-          loadHistoryYear(year);
-        }
+        // 点击展开/折叠
+        card.querySelector('.history-year-header').addEventListener('click', function() {
+          card.classList.toggle('open');
+        });
       });
+
+      countEl.textContent = totalProgs + ' 档节目（' + totalDays + ' 天）';
+    }).catch(function() {
+      container.innerHTML = '<div class="region-empty">加载失败，请稍后重试</div>';
+      countEl.textContent = '—';
     });
-
-    /** 加载指定年份的历史广播详情 */
-    function loadHistoryYear(year) {
-      var bodyEl = document.getElementById('hist-body-' + year);
-      if (bodyEl.dataset.loaded === 'true') return;
-
-      safeFetch('/api/broadcast/history/' + year).then(function(data) {
-        var stations = (data && data.stations) ? data.stations : [];
-        var statEl = document.getElementById('hist-stat-' + year);
-
-        if (stations.length === 0) {
-          statEl.textContent = '0 条历史广播';
-          bodyEl.innerHTML = '<div class="region-empty">暂无历史广播数据</div>';
-        } else {
-          // 提取广播条目
-          var items = [];
-          stations.forEach(function(st, stIdx) {
-            var urls = st.audio_urls || [];
-            if (urls.length > 0) {
-              urls.forEach(function(u, uIdx) {
-                items.push({
-                  title: (st.station_name || '广播') + ' - ' + (u.filename || '片段' + (uIdx + 1)),
-                  date: u.key || '',
-                  stationIdx: stIdx,
-                  year: year
-                });
-              });
-            } else if (st.station_name) {
-              items.push({
-                title: st.station_name,
-                date: st.category || '',
-                stationIdx: stIdx,
-                year: year
-              });
-            }
-          });
-
-          statEl.textContent = items.length + ' 条历史广播';
-
-          bodyEl.innerHTML = items.map(function(it) {
-            var shortDate = it.date.split('/').pop() || '';
-            return '<div class="history-broadcast-item">' +
-              '<span class="bc-title">' + escHtml(it.title) + '</span>' +
-              '<span class="bc-date">' + escHtml(shortDate) + '</span>' +
-              '<button class="bc-play" data-url="/radio?year=' + it.year + '&station=' + it.stationIdx + '&mode=am">收听</button>' +
-              '</div>';
-          }).join('');
-
-          bodyEl.querySelectorAll('.bc-play').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-              e.stopPropagation();
-              window.location.href = this.dataset.url;
-            });
-          });
-        }
-
-        bodyEl.dataset.loaded = 'true';
-        updateHistoryCount();
-      }).catch(function() {
-        document.getElementById('hist-stat-' + year).textContent = '加载失败';
-        bodyEl.innerHTML = '<div class="region-empty">加载失败</div>';
-        bodyEl.dataset.loaded = 'true';
-        updateHistoryCount();
-      });
-    }
-
-    /** 汇总全年代历史广播总数 */
-    function updateHistoryCount() {
-      var total = 0;
-      YEARS.forEach(function(year) {
-        var statEl = document.getElementById('hist-stat-' + year);
-        if (statEl && statEl.textContent !== '加载中...') {
-          var m = statEl.textContent.match(/(\d+)/);
-          if (m) total += parseInt(m[1]);
-        }
-      });
-      countEl.textContent = total + ' 条';
-    }
   })();
 
 
@@ -857,7 +817,7 @@
 
     // 加载全年代概览
     safeFetch('/api/broadcast/summary').then(function(data) {
-      if (data) yearSummary = data;
+      if (data && data.summary) yearSummary = data.summary;
       renderDecades();
     }).catch(function() {
       // API 不存在时全显示 0

@@ -543,6 +543,44 @@ async def cntv_date_programs(date: str):
     }
 
 
+@app.get("/api/cntv/summary")
+async def cntv_summary():
+    """返回 CNTV 历年数据摘要，供首页展示"""
+    r2 = _get_r2()
+    years = r2.get_cnr_years()
+    result = {}
+
+    for year in years:
+        try:
+            # 取 7 月 1 日作为样本日期
+            sample_programs = r2.get_cnr_programs_by_date(f"{year}-07-01")
+            sample = []
+            if sample_programs:
+                for p in sample_programs[:5]:
+                    sample.append({"name": p[2], "url": p[3]})
+
+            # 统计该年份总天数与节目数
+            year_programs = r2.get_cnr_year_programs(str(year))
+            days = len(year_programs) if year_programs else 0
+            total_programs = sum(len(v) for v in year_programs.values()) if year_programs else 0
+
+            result[str(year)] = {
+                "days": days,
+                "total_programs": total_programs,
+                "sample": sample,
+            }
+        except Exception as e:
+            print(f"[CNTV Summary] Failed for year {year}: {e}")
+            result[str(year)] = {
+                "days": 0,
+                "total_programs": 0,
+                "sample": [],
+                "error": str(e),
+            }
+
+    return {"years": result, "source": "cntv"}
+
+
 @app.get("/api/audio/{filename}")
 async def get_audio(filename: str):
     if AUDIO_STORAGE == "supabase":
