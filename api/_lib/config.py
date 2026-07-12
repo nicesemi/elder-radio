@@ -4,6 +4,16 @@ API Key 通过环境变量 AGNES_API_KEY 设置，请勿硬编码在代码中。
 """
 
 import os
+from pathlib import Path
+
+# 自动加载项目根目录 .env 文件（本地开发用；Vercel 部署时环境变量由平台注入）
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+    if _env_path.exists():
+        load_dotenv(_env_path)
+except ImportError:
+    pass
 
 # Agnes AI 配置（兼容 OpenAI 接口）
 AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1"
