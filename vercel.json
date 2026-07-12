@@ -8,6 +8,7 @@
     { "source": "/config", "destination": "/frontend/config.html" },
     { "source": "/admin", "destination": "/frontend/admin.html" },
     { "source": "/radio", "destination": "/frontend/radio.html" },
+    { "source": "/voice", "destination": "/frontend/voice.html" },
     { "source": "/maydayradio", "destination": "/frontend/maydayradio.html" },
     { "source": "/singer", "destination": "/frontend/singer.html" },
     { "source": "/", "destination": "/frontend/index.html" },
