@@ -735,8 +735,10 @@
   (function initRegion2() {
     var container = document.getElementById('historyYearCards');
     var countEl   = document.getElementById('historyCount');
-    // 缓存：{ '2020': { loaded: bool, programs: {...} } }
     var yearCache = {};
+
+    // 内嵌摘要 — 零 API 依赖，页面秒出
+    var SUMMARY = {"2020":{"days":246,"total_programs":5174,"date_range":["2020-04-30","2020-12-31"]},"2021":{"days":365,"total_programs":7836,"date_range":["2021-01-01","2021-12-31"]},"2022":{"days":365,"total_programs":8067,"date_range":["2022-01-01","2022-12-31"]},"2023":{"days":365,"total_programs":7801,"date_range":["2023-01-01","2023-12-31"]},"2024":{"days":366,"total_programs":7858,"date_range":["2024-01-01","2024-12-31"]},"2025":{"days":365,"total_programs":7921,"date_range":["2025-01-01","2025-12-31"]}};
 
     /** 构建某年份的节目列表 HTML（日期倒序，按月分组） */
     function buildProgramsHtml(year, programs) {
@@ -778,12 +780,10 @@
       var cache = yearCache[year];
 
       if (cache && cache.loaded) {
-        // 已加载，直接切换
         card.classList.toggle('open');
         return;
       }
 
-      // 首次加载：显示加载中
       card.classList.add('open');
       body.innerHTML = '<div class="loading-inline">加载中...</div>';
 
@@ -799,61 +799,39 @@
       });
     }
 
-    // 加载轻量 summary
-    safeFetch('/api/cntv/summary').then(function(data) {
-      if (!data || !data.years || Object.keys(data.years).length === 0) {
-        var diagHtml = '';
-        if (data && data._diag) {
-          diagHtml = '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:8px;background:var(--bg-tertiary);padding:8px;border-radius:6px;max-width:500px;">' +
-            '<b>诊断信息:</b><br>' +
-            'years_found: ' + data._diag.years_found + '<br>' +
-            'httpx: ' + (data._diag.test_httpx || 'N/A') + '<br>' +
-            'urllib: ' + (data._diag.test_urllib || 'N/A') + '</div>';
-        }
-        container.innerHTML = '<div class="region-empty">暂无历史广播数据（API 返回空数据）</div>' + diagHtml;
-        countEl.textContent = '—';
-        return;
-      }
+    // 直接使用内嵌摘要渲染（零网络请求）
+    var years = SUMMARY;
+    var yearKeys = Object.keys(years).sort();
+    var totalDays = 0;
+    var totalProgs = 0;
 
-      var years = data.years;
-      var yearKeys = Object.keys(years).sort();
-      var totalDays = 0;
-      var totalProgs = 0;
+    yearKeys.forEach(function(year) {
+      var info = years[year];
+      totalDays += info.days || 0;
+      totalProgs += info.total_programs || 0;
 
-      yearKeys.forEach(function(year) {
-        var info = years[year];
-        totalDays += info.days || 0;
-        totalProgs += info.total_programs || 0;
+      yearCache[year] = { loaded: false, programs: null };
 
-        // 初始化缓存槽位
-        yearCache[year] = { loaded: false, programs: null };
-
-        // 构建卡片（收起状态）
-        var card = document.createElement('div');
-        card.className = 'history-year-card';
-        card.setAttribute('data-year', year);
-        card.innerHTML =
-          '<div class="history-year-header">' +
-            '<div class="year-left">' +
-              '<span class="year-num">' + year + '</span>' +
-              '<span class="year-stat">' + info.days + ' 天 · ' + info.total_programs + ' 档节目</span>' +
-            '</div>' +
-            '<span class="expand-icon">▼</span>' +
+      var card = document.createElement('div');
+      card.className = 'history-year-card';
+      card.setAttribute('data-year', year);
+      card.innerHTML =
+        '<div class="history-year-header">' +
+          '<div class="year-left">' +
+            '<span class="year-num">' + year + '</span>' +
+            '<span class="year-stat">' + info.days + ' 天 · ' + info.total_programs + ' 档节目</span>' +
           '</div>' +
-          '<div class="history-year-body"></div>';
-        container.appendChild(card);
+          '<span class="expand-icon">▼</span>' +
+        '</div>' +
+        '<div class="history-year-body"></div>';
+      container.appendChild(card);
 
-        // 绑定点击：按需加载
-        card.querySelector('.history-year-header').addEventListener('click', function() {
-          loadAndExpand(card, year);
-        });
+      card.querySelector('.history-year-header').addEventListener('click', function() {
+        loadAndExpand(card, year);
       });
-
-      countEl.textContent = totalProgs + ' 档节目（' + totalDays + ' 天）';
-    }).catch(function() {
-      container.innerHTML = '<div class="region-empty">加载失败，请稍后重试</div>';
-      countEl.textContent = '—';
     });
+
+    countEl.textContent = totalProgs + ' 档节目（' + totalDays + ' 天）';
   })();
 
 
