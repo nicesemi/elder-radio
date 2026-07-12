@@ -2,9 +2,9 @@
 live_stations.py — 直播电台聚合模块
 
 数据源：
-  1. Radio Browser API (de1.api.radio-browser.info)
+  1. Radio Browser API (de1.api.radio-browser.info) — country/China + tag/news,china
   2. FanMingMing M3U (live.fanmingming.com，多镜像容错)
-  3. 本地内置电台（硬编码兜底）
+  3. CNR 央广官方直链（内置兜底）
 
 聚合去重后返回统一格式电台列表，支持按分类筛选。
 注意：RadioBrowser 返回大量 HLS (.m3u8) 流，前端已集成 HLS.js 支持播放。
@@ -34,7 +34,7 @@ def _normalize_url(url):
     return url.strip().rstrip("/")
 
 
-# ========== 数据源 1：Radio Browser API ==========
+# ========== 分类映射 ==========
 
 # tag → 项目分类映射
 TAG_TO_CATEGORY = {
@@ -108,6 +108,8 @@ def _resolve_category(tags_str):
     return meaningful[0] if meaningful else "综合"
 
 
+# ========== 数据源 1：Radio Browser API ==========
+
 # Radio Browser 多镜像
 _RB_SERVERS = [
     "https://de1.api.radio-browser.info",
@@ -126,52 +128,77 @@ def _try_fetch_json(url, timeout=8):
         return json.loads(resp.read())
 
 
-def fetch_radio_browser_stations(tag=None):
-    """
-    从 Radio Browser API 获取国内电台。
-    tag: 可选过滤（news/music/sports/classical 等），不传则获取全部。
-    返回统一格式列表。
-    """
-    params = []
-    if tag:
-        params.append(f"tag={urllib.parse.quote(tag)}")
-    query = "?" + "&".join(params) if params else ""
+def _map_rb_station(s):
+    """将 Radio Browser 返回条目映射为统一格式。
+    字段映射：url_resolved → stream_url, name → name, tags → 分类解析"""
+    stream_url = s.get("url_resolved", "") or s.get("url", "")
+    name = (s.get("name", "") or "").strip()
+    if not stream_url or not name or len(name) < 2:
+        return None
+    return {
+        "id": f"rb_{s.get('stationuuid', '')[:12]}",
+        "name": name,
+        "stream_url": stream_url,
+        "category": _resolve_category(s.get("tags", "")),
+        "source": "RadioBrowser",
+        "favicon": s.get("favicon", ""),
+        "hls": bool(s.get("hls", 0)),
+        "codec": s.get("codec", "") or "",
+    }
 
+
+def _fetch_rb_endpoint(endpoint, timeout=8):
+    """遍历多镜像请求单个 RB 端点，返回电台列表或空列表。"""
     last_error = None
     for server in _RB_SERVERS:
-        url = f"{server}/json/stations/bycountry/China{query}"
+        url = f"{server}/json/stations/{endpoint}"
         try:
-            raw = _try_fetch_json(url)
+            raw = _try_fetch_json(url, timeout=timeout)
         except Exception as e:
             last_error = e
             continue
 
-        # 成功：映射字段
         stations = []
         for s in raw:
-            stream_url = s.get("url_resolved", "") or s.get("url", "")
-            name = (s.get("name", "") or "").strip()
-            if not stream_url or not name or len(name) < 2:
-                continue
-            stations.append({
-                "id": f"rb_{s.get('stationuuid', '')[:12]}",
-                "name": name,
-                "stream_url": stream_url,
-                "category": _resolve_category(s.get("tags", "")),
-                "source": "RadioBrowser",
-                "favicon": s.get("favicon", ""),
-                "hls": bool(s.get("hls", 0)),
-                "codec": s.get("codec", "") or "",
-            })
+            mapped = _map_rb_station(s)
+            if mapped:
+                stations.append(mapped)
         return stations
 
-    print(f"[live_stations] Radio Browser fetch failed (all mirrors): {last_error}")
+    print(f"[live_stations] RB endpoint '{endpoint}' failed (all mirrors): {last_error}")
     return []
+
+
+def fetch_radio_browser_stations():
+    """
+    从 Radio Browser API 获取国内电台。
+    并行请求两个端点后合并去重：
+      1. /json/stations/country/China  — 国内全部电台
+      2. /json/stations/tag/news,china — 补充新闻分类
+    """
+    endpoints = [
+        "country/China",
+        "tag/news,china",
+    ]
+
+    all_stations = []
+    seen_ids = set()
+
+    for endpoint in endpoints:
+        stations = _fetch_rb_endpoint(endpoint, timeout=8)
+        for s in stations:
+            if s["id"] not in seen_ids:
+                seen_ids.add(s["id"])
+                all_stations.append(s)
+
+    if not all_stations:
+        print("[live_stations] Radio Browser: both endpoints returned empty")
+    return all_stations
 
 
 # ========== 数据源 2：FanMingMing M3U ==========
 
-# FanMingMing 主域名及镜像列表（主域名不稳定时自动降级）
+# FanMingMing 主域名及镜像列表
 _FMM_MIRRORS = [
     "https://live.fanmingming.com/radio/m3u/index.m3u",
     "https://raw.fastgit.org/fanmingming/live/main/radio/m3u/index.m3u",
@@ -235,81 +262,45 @@ def fetch_fanmingming_stations():
     return stations
 
 
-# ========== 内置兜底电台（两个外部数据源均不可用时使用） ==========
+# ========== 数据源 3：CNR 央广官方兜底 ==========
 
-def _get_builtin_stations():
-    """返回一组硬编码的已验证可用电台，作为最终兜底。"""
+def get_cnr_fallback_stations():
+    """
+    返回 CNR 央广官方 M3U8 直链电台。
+    当 Radio Browser 和 FanMingMing 均不可用时作为最终兜底，
+    确保至少 10 个核心电台可用。
+
+    分类规则：
+      中国之声/中华之声/神州之声/华夏之声 → 新闻
+      经济之声 → 经济
+      音乐之声/经典音乐广播/文艺之声 → 音乐
+      民族之声/老年之声 → 综合
+    """
+    cnr_stations = [
+        ("cnr_001", "中国之声",        "http://ngcdn001.cnr.cn/live/zgzs/index.m3u8",  "新闻"),
+        ("cnr_002", "经济之声",        "http://ngcdn002.cnr.cn/live/jjzs/index.m3u8",  "经济"),
+        ("cnr_003", "音乐之声",        "http://ngcdn003.cnr.cn/live/yyzs/index.m3u8",  "音乐"),
+        ("cnr_004", "经典音乐广播",    "http://ngcdn004.cnr.cn/live/jdyl/index.m3u8",  "音乐"),
+        ("cnr_005", "中华之声",        "http://ngcdn005.cnr.cn/live/zhzs/index.m3u8",  "新闻"),
+        ("cnr_006", "神州之声",        "http://ngcdn006.cnr.cn/live/szzs/index.m3u8",  "新闻"),
+        ("cnr_007", "华夏之声",        "http://ngcdn007.cnr.cn/live/hxzs/index.m3u8",  "新闻"),
+        ("cnr_008", "民族之声",        "http://ngcdn008.cnr.cn/live/mzzs/index.m3u8",  "综合"),
+        ("cnr_009", "文艺之声",        "http://ngcdn009.cnr.cn/live/wyzs/index.m3u8",  "音乐"),
+        ("cnr_010", "老年之声",        "http://ngcdn010.cnr.cn/live/lnzs/index.m3u8",  "综合"),
+    ]
+
     return [
         {
-            "id": "builtin_001",
-            "name": "中国之声",
-            "stream_url": "https://lhttp.qtfm.cn/live/486/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_002",
-            "name": "经济之声",
-            "stream_url": "https://lhttp.qtfm.cn/live/487/64k.mp3",
-            "category": "经济", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_003",
-            "name": "音乐之声",
-            "stream_url": "https://lhttp.qtfm.cn/live/488/64k.mp3",
-            "category": "音乐", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_004",
-            "name": "经典音乐广播",
-            "stream_url": "https://lhttp.qtfm.cn/live/489/64k.mp3",
-            "category": "音乐", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_005",
-            "name": "环球资讯广播",
-            "stream_url": "https://lhttp.qtfm.cn/live/490/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_006",
-            "name": "文艺之声",
-            "stream_url": "https://lhttp.qtfm.cn/live/491/64k.mp3",
-            "category": "文艺", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_007",
-            "name": "上海新闻广播",
-            "stream_url": "https://lhttp.qtfm.cn/live/267/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_008",
-            "name": "北京新闻广播",
-            "stream_url": "https://lhttp.qtfm.cn/live/331/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_009",
-            "name": "广东新闻广播",
-            "stream_url": "https://lhttp.qtfm.cn/live/309/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
-        {
-            "id": "builtin_010",
-            "name": "央视台海之声",
-            "stream_url": "http://lhttp.qtfm.cn/live/5022227/64k.mp3",
-            "category": "新闻", "source": "Builtin",
-            "favicon": "", "hls": False, "codec": "MP3",
-        },
+            "id": sid,
+            "name": name,
+            "stream_url": url,
+            "category": category,
+            "source": "CNR",
+            "favicon": "",
+            "hls": True,
+            "codec": "",
+        }
+        for sid, name, url, category in cnr_stations
     ]
 
 
@@ -317,16 +308,20 @@ def _get_builtin_stations():
 
 def get_all_live_stations(category=None):
     """
-    聚合 Radio Browser + FanMingMing，去重后返回统一列表。
-    category: 可选筛选（新闻/音乐/体育/经济/文艺/交通/综合 等）。
+    聚合 Radio Browser（2 端点） + FanMingMing M3U，去重后返回统一列表。
 
-    使用并行请求避免 Vercel Serverless 10s 超时。
+    三层容错：
+      1. 并行拉取 RB + FMM
+      2. 任一返回即使用
+      3. 两个外部源全挂 → 降级到 CNR 央广官方兜底
+
+    category: 可选筛选（新闻/音乐/体育/经济/文艺/交通/综合 等）。
     """
     # 缓存检查
     if _cache_valid():
         all_stations = _cache["stations"]
     else:
-        # 并行拉取两个数据源，超时各自独立（避免网络波动互相拖累）
+        # 并行拉取 RB + FMM
         sources = {}
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             futures = {
@@ -357,9 +352,10 @@ def get_all_live_stations(category=None):
         seen.add(url)
         unique.append(s)
 
-    # 如果两个数据源都挂了，使用内置兜底电台
+    # 两个外部源全挂 → CNR 兜底
     if not unique:
-        unique = _get_builtin_stations()
+        print("[live_stations] Both external sources failed, falling back to CNR")
+        unique = get_cnr_fallback_stations()
 
     # 按分类筛选
     if category:
