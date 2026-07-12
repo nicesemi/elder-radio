@@ -771,15 +771,14 @@
       if (cache && cache.loaded) { card.classList.toggle('open'); return; }
       card.classList.add('open');
       body.innerHTML = '<div class="loading-inline">加载中...</div>';
-      safeFetch('/api/cntv/' + year).then(function(data) {
-        if (!data || !data.programs) {
-          body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败 — API 返回空，可能 Vercel 尚未部署最新代码</div>';
-          return;
-        }
-        yearCache[year] = { loaded: true, programs: data.programs };
-        body.innerHTML = buildProgramsHtml(year, data.programs);
+      fetch('/cntv/' + year + '.json.gz').then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return new Response(resp.body.pipeThrough(new DecompressionStream('gzip'))).json();
+      }).then(function(programs) {
+        yearCache[year] = { loaded: true, programs: programs };
+        body.innerHTML = buildProgramsHtml(year, programs);
       }).catch(function(e) {
-        body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败 — 网络错误或 API 超时</div>';
+        body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败 — ' + (e.message || '网络错误') + '</div>';
       });
     }
 
