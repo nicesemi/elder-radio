@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>群组语音 — elder-radio</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    .voice-container {
+      position: fixed;
+      top: 52px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: none;
+    }
+    .voice-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .setup-hint {
+      display: none;
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body class="has-nav">
+
+<!-- ========== 导航栏 ========== -->
+<nav class="top-nav">
+  <a href="/" class="top-nav-brand">elder-radio</a>
+  <ul class="top-nav-links">
+    <li><a href="/">首页</a></li>
+    <li><a href="/radio">收音机</a></li>
+    <li><a href="/voice" class="active">群组语音</a></li>
+    <li><a href="/maydayradio">五月天</a></li>
+    <li><a href="/singer">歌手频道</a></li>
+    <li><a href="/config">配置</a></li>
+    <li><a href="/admin">管理</a></li>
+  </ul>
+</nav>
+
+<div class="voice-container" id="voiceFrame">
+  <iframe id="wespeekIframe" allow="microphone; camera"
+          title="群组语音聊天"></iframe>
+</div>
+
+<div class="setup-hint" id="setupHint">
+  <h2>WeSpeek 语音服务未运行</h2>
+  <p>群组语音功能基于 <a href="https://github.com/newton-miku/WeSpeek" target="_blank">WeSpeek</a>（Golang + WebRTC），需要 Docker 部署。</p>
+  <pre style="text-align:left; display:inline-block; margin-top:16px;">
+# 一键启动（在项目根目录）
+docker-compose up -d
+
+# 然后访问 http://your-server/voice
+  </pre>
+  <p style="margin-top:16px;">详细部署指南见项目 <a href="https://github.com/nicesemi/elder-radio" target="_blank">README</a></p>
+</div>
+
+<script>
+(function() {
+  var iframe = document.getElementById('wespeekIframe');
+  var hint   = document.getElementById('setupHint');
+  var frame  = document.getElementById('voiceFrame');
+
+  // 检测 WeSpeek 服务的 URL
+  // 优先用当前 host 反代路径，fallback 到 7000 端口
+  var wsUrl = window.location.origin + '/voice/';
+  
+  // 加载 WeSpeek 客户端
+  iframe.src = wsUrl;
+
+  // 5 秒后检测 iframe 是否加载失败
+  setTimeout(function() {
+    try {
+      var doc = iframe.contentDocument || iframe.contentWindow.document;
+      // 如果能访问且非空白，说明加载成功
+      if (doc && doc.body && doc.body.innerHTML.trim() !== '') {
+        return; // 加载成功
+      }
+    } catch(e) {
+      // 跨域无法访问，说明 WeSpeek 在运行
+      return;
+    }
+    // 加载失败，显示提示
+    frame.style.display = 'none';
+    hint.style.display = 'block';
+  }, 5000);
+})();
+</script>
+</body>
+</html>

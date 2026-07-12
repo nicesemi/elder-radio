@@ -1,0 +1,38 @@
+services:
+  wespeek:
+    image: newtonmiku/wespeek:latest
+    container_name: wespeek
+    restart: unless-stopped
+    ports:
+      - "7000:7000" # HTTP/WebSocket API (TCP)
+      - "3478:3478" # TURN (TCP) - Built-in TURN server
+      - "3478:3478/udp" # TURN (UDP) - Built-in TURN server
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - ./data:/data
+    environment:
+      # Server
+      - WSPEEK_ADDR=:7000
+      - WSPEEK_STORE_IMAGES=true
+      - WSPEEK_ALLOW_UPLOAD=true
+      - WSPEEK_UPLOAD_DIR=/data/uploads
+      - TZ=Asia/Shanghai
+      # TURN Configuration (Built-in)
+      - TURN_SERVER_ENABLED=true
+      - TURN_SERVER_PORT=3478
+      - TURN_SERVER_SECRET=wespeek123
+      # Use TURN_SERVER_HOST for custom domain, e.g., turn.example.com
+      # Use TURN_SERVER_EXTERNAL_IP for direct IP (Docker/NAT environments)
+      # - TURN_SERVER_HOST=turn.example.com
+      # - TURN_SERVER_EXTERNAL_IP=203.0.113.1
+    # No health check - minimal alpine image
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+volumes:
+  wespeek_data:
+    driver: local
