@@ -7,61 +7,168 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nav.css">
   <style>
-    .voice-wrapper {
-      position: fixed;
-      top: 52px;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
+    .voice-page {
+      padding: 20px;
+      max-width: 960px;
+      margin: 0 auto;
     }
-    .room-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
+    .voice-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .voice-cards { grid-template-columns: 1fr; }
+    }
+    .voice-card {
       background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
     }
-    .room-bar label {
-      font-size: 0.82rem;
+    .voice-card.full {
+      grid-column: 1 / -1;
+    }
+    .voice-card h3 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      color: var(--text-primary);
+    }
+    .voice-card p {
+      font-size: 12px;
       color: var(--text-muted);
-      white-space: nowrap;
+      margin: 0 0 10px;
+      line-height: 1.5;
     }
-    .room-bar input {
-      flex: 1;
-      min-width: 0;
-      padding: 6px 10px;
+    .voice-input {
+      width: 100%;
+      padding: 8px 12px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--bg);
       color: var(--text-primary);
-      font-size: 0.85rem;
+      font-size: 13px;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+      font-family: inherit;
     }
-    .room-bar button {
-      padding: 6px 14px;
+    .voice-input::placeholder { color: var(--text-muted); }
+    .voice-btn {
+      padding: 8px 18px;
       border: none;
       border-radius: var(--radius-sm);
       background: var(--accent);
       color: #fff;
-      font-size: 0.82rem;
+      font-size: 13px;
       cursor: pointer;
-      white-space: nowrap;
+      font-weight: 500;
+      transition: opacity 0.2s;
     }
-    .room-bar button:hover {
-      opacity: 0.85;
+    .voice-btn:hover { opacity: 0.85; }
+    .voice-btn.small {
+      padding: 4px 12px;
+      font-size: 11px;
     }
-    .jitsi-frame {
+    .voice-btn.danger {
+      background: #e94560;
+    }
+    .voice-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .voice-row .voice-input {
       flex: 1;
-      border: none;
+      margin-bottom: 0;
+    }
+    .voice-status {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+    .voice-status.connected { color: #4CAF50; }
+    .voice-result {
+      margin-top: 10px;
+      padding: 12px;
+      background: rgba(76,175,80,0.08);
+      border: 1px solid rgba(76,175,80,0.2);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .voice-result .code {
+      font-size: 16px;
+      font-weight: bold;
+      color: #4CAF50;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+    .voice-result .hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      word-break: break-all;
+    }
+    .voice-error {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #e94560;
+      display: none;
+    }
+    .voice-error.show { display: block; }
+    .group-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .group-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      margin: 4px 0;
+      background: rgba(128,128,128,0.06);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+    .group-item .gname {
+      color: var(--text-primary);
+    }
+    .group-item .gcode {
+      color: var(--text-muted);
+      font-size: 10px;
+      display: block;
+    }
+    .jitsi-area {
+      margin-top: 16px;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      display: none;
+    }
+    .jitsi-area.show {
+      display: block;
+    }
+    .jitsi-area-inner {
+      width: 100%;
+      height: 350px;
+    }
+    .jitsi-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      font-size: 12px;
+      border-radius: 10px 10px 0 0;
+    }
+    .jitsi-bar .room-label {
+      color: #4CAF50;
+      font-weight: 500;
     }
   </style>
 </head>
 <body class="has-nav">
 
-<!-- ========== 导航栏 ========== -->
 <nav class="top-nav">
   <a href="/" class="top-nav-brand">elder-radio</a>
   <ul class="top-nav-links">
@@ -75,42 +182,307 @@
   </ul>
 </nav>
 
-<div class="voice-wrapper">
-  <div class="room-bar">
-    <label for="roomName">房间名：</label>
-    <input type="text" id="roomName" placeholder="输入房间名后点击加入">
-    <button id="joinBtn">加入 / 创建</button>
+<div class="voice-page">
+
+  <div class="voice-cards">
+
+    <!-- 卡片1：公共聊天室 -->
+    <div class="voice-card full">
+      <h3>公共聊天室</h3>
+      <p>加入每日公共聊天室，与所有在线用户实时交流。</p>
+      <div class="voice-row">
+        <input class="voice-input" id="publicRoomInput" placeholder="房间名">
+        <button class="voice-btn" id="btnPublicJoin">加入</button>
+        <button class="voice-btn danger" id="btnPublicLeave" style="display:none;">断开</button>
+      </div>
+      <div class="voice-status" id="publicStatus">未连接</div>
+    </div>
+
+    <!-- 卡片2：创建群组 -->
+    <div class="voice-card">
+      <h3>创建群组</h3>
+      <p>创建专属群组，将分享码发给好友即可加入。</p>
+      <input class="voice-input" id="createNameInput" placeholder="输入群组名称">
+      <button class="voice-btn" id="btnCreateGroup">创建群组</button>
+      <div class="voice-result" id="createResult" style="display:none;"></div>
+    </div>
+
+    <!-- 卡片3：加入群组 -->
+    <div class="voice-card">
+      <h3>加入群组</h3>
+      <p>输入好友分享的群组码，立即加入对讲。</p>
+      <div class="voice-row">
+        <input class="voice-input" id="joinCodeInput" placeholder="输入分享码：MDxxxx">
+        <button class="voice-btn" id="btnJoinGroup">加入</button>
+      </div>
+      <div class="voice-error" id="joinError">未找到该群组，请检查分享码</div>
+    </div>
+
+    <!-- 卡片4：我的群组 -->
+    <div class="voice-card">
+      <h3>我的群组</h3>
+      <div class="group-list" id="groupList">
+        <p style="color:var(--text-muted);font-size:12px;">暂无群组</p>
+      </div>
+    </div>
+
   </div>
-  <iframe id="jitsiFrame" class="jitsi-frame"
-          allow="camera; microphone; fullscreen; display-capture"
-          style="display:none"></iframe>
+
+  <!-- Jitsi 嵌入区域 -->
+  <div class="jitsi-area" id="jitsiArea">
+    <div class="jitsi-bar">
+      <span>Jitsi Meet · <span class="room-label" id="jitsiRoomLabel"></span></span>
+      <button class="voice-btn small danger" id="btnJitsiClose">关闭</button>
+    </div>
+    <div class="jitsi-area-inner" id="jitsiContainer"></div>
+  </div>
+
 </div>
 
 <script>
 (function() {
-  var input   = document.getElementById('roomName');
-  var btn     = document.getElementById('joinBtn');
-  var iframe  = document.getElementById('jitsiFrame');
+  'use strict';
 
-  // 默认房间名（包含日期，每天自动换房）
+  var publicRoomInput = document.getElementById('publicRoomInput');
+  var btnPublicJoin  = document.getElementById('btnPublicJoin');
+  var btnPublicLeave = document.getElementById('btnPublicLeave');
+  var publicStatus   = document.getElementById('publicStatus');
+
+  var createNameInput = document.getElementById('createNameInput');
+  var btnCreateGroup  = document.getElementById('btnCreateGroup');
+  var createResult    = document.getElementById('createResult');
+
+  var joinCodeInput = document.getElementById('joinCodeInput');
+  var btnJoinGroup  = document.getElementById('btnJoinGroup');
+  var joinError     = document.getElementById('joinError');
+
+  var groupListEl  = document.getElementById('groupList');
+
+  var jitsiArea      = document.getElementById('jitsiArea');
+  var jitsiContainer = document.getElementById('jitsiContainer');
+  var jitsiRoomLabel = document.getElementById('jitsiRoomLabel');
+  var btnJitsiClose  = document.getElementById('btnJitsiClose');
+
+  var jitsiApi     = null;
+  var isConnected  = false;
+  var currentRoom  = '';
+  var STORAGE_KEY  = 'elderradio_groups';
+
   var today = new Date().toISOString().slice(0, 10);
-  var defaultRoom = 'elder-radio-' + today;
-  input.value = defaultRoom;
+  publicRoomInput.value = 'elder-radio-' + today;
 
-  function joinRoom() {
-    var room = input.value.trim();
-    if (!room) return;
-    // Jitsi Meet 公共实例，免费零配置
-    iframe.src = 'https://meet.jit.si/' + encodeURIComponent(room) + '#config.prejoinPageEnabled=false';
-    iframe.style.display = '';
-    input.disabled = true;
-    btn.textContent = '已加入';
+  // ==================== Jitsi 核心 ====================
+  function initJitsi(roomName) {
+    disconnectJitsi();
+    jitsiArea.classList.add('show');
+    jitsiRoomLabel.textContent = roomName;
+    currentRoom = roomName;
+    isConnected = true;
+
+    var doCreate = function() {
+      jitsiContainer.innerHTML = '';
+      jitsiApi = new JitsiMeetExternalAPI('meet.jit.si', {
+        roomName: roomName,
+        parentNode: jitsiContainer,
+        configOverwrite: {
+          prejoinPageEnabled: false,
+          startWithAudioMuted: false,
+          startWithVideoMuted: true,
+          disableDeepLinking: true,
+          toolbarButtons: ['microphone', 'camera', 'desktop', 'raisehand', 'chat', 'tileview']
+        },
+        interfaceConfigOverwrite: {
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_WATERMARK_FOR_GUESTS: false,
+          TOOLBAR_ALWAYS_VISIBLE: true,
+          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true
+        }
+      });
+      updatePublicUI();
+    };
+
+    if (typeof JitsiMeetExternalAPI === 'undefined') {
+      var script = document.createElement('script');
+      script.src = 'https://meet.jit.si/libs/external_api.min.js';
+      script.onload = doCreate;
+      document.head.appendChild(script);
+    } else {
+      doCreate();
+    }
   }
 
-  btn.addEventListener('click', joinRoom);
-  input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') joinRoom();
+  function disconnectJitsi() {
+    if (jitsiApi) { jitsiApi.dispose(); jitsiApi = null; }
+    jitsiContainer.innerHTML = '';
+    jitsiArea.classList.remove('show');
+    isConnected = false;
+    currentRoom = '';
+    updatePublicUI();
+  }
+
+  function updatePublicUI() {
+    if (isConnected && currentRoom.indexOf('elder-radio-') === 0) {
+      btnPublicJoin.style.display = 'none';
+      btnPublicLeave.style.display = '';
+      publicStatus.textContent = '已连接 · 在线';
+      publicStatus.className = 'voice-status connected';
+      publicRoomInput.disabled = true;
+    } else {
+      btnPublicJoin.style.display = '';
+      btnPublicLeave.style.display = 'none';
+      publicStatus.textContent = '未连接';
+      publicStatus.className = 'voice-status';
+      publicRoomInput.disabled = false;
+    }
+  }
+
+  // ==================== 公共聊天室 ====================
+  btnPublicJoin.addEventListener('click', function() {
+    var room = publicRoomInput.value.trim();
+    if (!room) return;
+    initJitsi(room);
   });
+
+  btnPublicLeave.addEventListener('click', function() {
+    disconnectJitsi();
+  });
+
+  publicRoomInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') btnPublicJoin.click();
+  });
+
+  // ==================== Jitsi 关闭 ====================
+  btnJitsiClose.addEventListener('click', function() {
+    disconnectJitsi();
+  });
+
+  // ==================== 群组存储 ====================
+  function loadGroups() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch(e) { return []; }
+  }
+
+  function saveGroups(groups) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
+  }
+
+  function generateShareCode() {
+    return 'MD' + Date.now().toString(36).toUpperCase();
+  }
+
+  // ==================== 创建群组 ====================
+  btnCreateGroup.addEventListener('click', function() {
+    var name = createNameInput.value.trim();
+    if (!name) {
+      name = '语音群组';
+      createNameInput.value = name;
+    }
+
+    var groups = loadGroups();
+    var groupId = generateShareCode();
+    var group = {
+      id: groupId,
+      name: name,
+      created: new Date().toISOString(),
+      members: 1
+    };
+
+    groups.unshift(group);
+    saveGroups(groups);
+
+    var shareLink = window.location.origin + '/voice?join=' + groupId;
+    createResult.style.display = '';
+    createResult.innerHTML =
+      '<p style="color:#4CAF50;font-size:13px;margin:0 0 8px;">群组「' + name + '」已创建</p>' +
+      '<p class="code">' + groupId + '</p>' +
+      '<p class="hint">' + shareLink + '</p>' +
+      '<button class="voice-btn small" style="margin-top:8px;" id="btnCopyCode">复制分享码</button>';
+
+    document.getElementById('btnCopyCode').addEventListener('click', function() {
+      navigator.clipboard.writeText(groupId).then(function() {
+        alert('分享码已复制: ' + groupId);
+      });
+    });
+
+    renderGroupList();
+  });
+
+  // ==================== 加入群组 ====================
+  btnJoinGroup.addEventListener('click', function() {
+    var code = joinCodeInput.value.trim().toUpperCase();
+    if (!code) { joinError.classList.add('show'); return; }
+    joinError.classList.remove('show');
+
+    var groups = loadGroups();
+    var g = groups.find(function(x) { return x.id === code; });
+    if (g) {
+      g.members = (g.members || 1) + 1;
+      saveGroups(groups);
+      renderGroupList();
+      initJitsi('elder-group-' + g.id);
+    } else {
+      joinError.classList.add('show');
+    }
+  });
+
+  joinCodeInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') btnJoinGroup.click();
+  });
+
+  // ==================== 群组列表 ====================
+  function renderGroupList() {
+    var groups = loadGroups();
+    if (groups.length === 0) {
+      groupListEl.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">暂无群组</p>';
+      return;
+    }
+
+    groupListEl.innerHTML = groups.map(function(g) {
+      return '<div class="group-item">' +
+        '<div><span class="gname">' + g.name + '</span><span class="gcode">' + g.id + '</span></div>' +
+        '<button class="voice-btn small" data-gid="' + g.id + '">对讲</button>' +
+        '</div>';
+    }).join('');
+
+    groupListEl.querySelectorAll('.voice-btn.small').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var gid = this.dataset.gid;
+        var gs = loadGroups();
+        var g = gs.find(function(x) { return x.id === gid; });
+        if (g) {
+          g.members = (g.members || 1) + 1;
+          saveGroups(gs);
+          renderGroupList();
+          initJitsi('elder-group-' + g.id);
+        }
+      });
+    });
+  }
+
+  // ==================== URL 参数 ====================
+  function loadFromURL() {
+    var params = new URLSearchParams(window.location.search);
+    var joinId = params.get('join');
+    if (joinId) {
+      joinId = joinId.trim().toUpperCase();
+      setTimeout(function() {
+        var groups = loadGroups();
+        var g = groups.find(function(x) { return x.id === joinId; });
+        if (g) {
+          g.members = (g.members || 1) + 1;
+          saveGroups(groups);
+          renderGroupList();
+          initJitsi('elder-group-' + g.id);
+        }
+      }, 400);
+    }
+  }
+
+  // ==================== 初始化 ====================
+  renderGroupList();
+  loadFromURL();
+  updatePublicUI();
+
 })();
 </script>
 </body>

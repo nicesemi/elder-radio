@@ -215,20 +215,6 @@
       background: radial-gradient(circle at 40% 35%, #6a6a6a, #2a2a2a);
       border:2px solid #3a3a3a; box-shadow:0 2px 6px rgba(0,0,0,0.5);
     }
-    /* 对讲按钮 */
-    .walkie-btn {
-      width:48px; height:48px; border-radius:50%;
-      background: radial-gradient(circle at 40% 35%, #4CAF50, #2E7D32 80%);
-      border:3px solid #1B5E20; box-shadow:0 3px 10px rgba(0,0,0,0.5);
-      cursor:pointer; display:flex; align-items:center; justify-content:center;
-      font-size:18px; color:#fff; transition:all 0.2s;
-    }
-    .walkie-btn:hover { box-shadow:0 0 16px rgba(76,175,80,0.5); }
-    .walkie-btn.active {
-      background: radial-gradient(circle at 40% 35%, #66BB6A, #388E3C 80%);
-      box-shadow:0 0 24px rgba(76,175,80,0.7);
-    }
-
     .radio-status {
       position:absolute; top:6px; right:10px; z-index:3;
       display:flex; align-items:center; gap:6px; font-size:9px; color:#FFD9A0;
@@ -241,58 +227,6 @@
       background: rgba(0,0,0,0.4); padding: 2px 10px;
       border-radius: 8px; max-width: 90%; overflow: hidden;
       text-overflow: ellipsis;
-    }
-
-    /* 对讲机弹窗 */
-    .walkie-overlay {
-      display:none; position:fixed; inset:0; z-index:2000;
-      background:rgba(0,0,0,0.75); justify-content:center; align-items:center;
-    }
-    .walkie-overlay.show { display:flex; }
-    .walkie-panel {
-      background:linear-gradient(180deg, #1B3A1B 0%, #0D1F0D 100%);
-      border:2px solid #4CAF50; border-radius:16px; padding:24px;
-      width:360px; max-width:90vw; max-height:80vh; overflow-y:auto;
-      box-shadow:0 8px 40px rgba(76,175,80,0.3);
-    }
-    .walkie-panel h3 {
-      text-align:center; color:#4CAF50; font-size:18px; margin:0 0 16px;
-      display:flex; align-items:center; justify-content:center; gap:8px;
-    }
-    .walkie-section {
-      background:rgba(0,0,0,0.3); border-radius:10px; padding:16px; margin-bottom:12px;
-      border:1px solid rgba(76,175,80,0.2);
-    }
-    .walkie-section h4 { color:#66BB6A; font-size:13px; margin:0 0 10px; }
-    .walkie-section p { color:#aaa; font-size:11px; margin:6px 0; line-height:1.5; }
-    .walkie-input {
-      width:100%; padding:8px 12px; border-radius:6px; border:1px solid #4CAF50;
-      background:#0a0a0a; color:#4CAF50; font-size:12px; box-sizing:border-box;
-      font-family:'Courier New',monospace; margin-bottom:8px;
-    }
-    .walkie-input::placeholder { color:#444; }
-    .walkie-btn-green {
-      width:100%; padding:10px; border-radius:8px; border:none;
-      background:linear-gradient(135deg, #4CAF50, #2E7D32);
-      color:#fff; font-size:13px; font-weight:bold; cursor:pointer;
-      margin-top:8px; transition:all 0.2s;
-    }
-    .walkie-btn-green:hover { box-shadow:0 0 12px rgba(76,175,80,0.4); }
-    .walkie-close {
-      display:block; margin:12px auto 0; padding:8px 24px; border-radius:6px;
-      border:1px solid #555; background:transparent; color:#888; cursor:pointer;
-      font-size:12px;
-    }
-    .walkie-close:hover { color:#fff; border-color:#fff; }
-    .group-list { max-height:150px; overflow-y:auto; }
-    .group-item {
-      display:flex; justify-content:space-between; align-items:center;
-      padding:8px 10px; margin:4px 0; background:rgba(76,175,80,0.1);
-      border-radius:6px; font-size:11px; color:#ccc;
-    }
-    .group-item .join-btn {
-      padding:3px 10px; border-radius:4px; background:#4CAF50;
-      color:#fff; border:none; cursor:pointer; font-size:10px;
     }
 
     .toast {
@@ -312,7 +246,6 @@
       .radio-right { width:100%; }
       .knob-era { width:44px; height:44px; }
       .knob-volume { width:38px; height:38px; }
-      .walkie-btn { width:40px; height:40px; font-size:16px; }
       .nixie-tube { font-size:30px; padding:3px 12px; letter-spacing:6px; }
       .carrot-character { width:90px; height:90px; }
       .carrot-body { width:65px; height:65px; }
@@ -331,7 +264,7 @@
   <ul class="top-nav-links">
     <li><a href="/">首页</a></li>
     <li><a href="/radio">收音机</a>
-    <li><a href="/voice">群组语音</a></li></li>
+    <li><a href="/voice">群组语音</a></li>
     <li><a href="/maydayradio" class="active">五月天</a></li>
     <li><a href="/singer">歌手频道</a></li>
     <li><a href="/config">配置</a></li>
@@ -401,51 +334,12 @@
         <span class="knob-label">年代</span>
       </div>
       <div class="knob-group">
-        <button class="walkie-btn" id="btnWalkie" title="对讲机">📻</button>
-        <span class="knob-label">对讲</span>
-      </div>
-      <div class="knob-group">
         <div class="knob-base knob-volume" id="knobVolume">
           <div class="knob-indicator" style="height:28%;top:3px;"></div>
         </div>
         <span class="knob-label">音量</span>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- 对讲机弹窗 -->
-<div class="walkie-overlay" id="walkieOverlay">
-  <div class="walkie-panel">
-    <h3>📻 五迷对讲机</h3>
-    <div class="walkie-section">
-      <h4>📡 连接五迷</h4>
-      <p>加入当前年代的聊天室，与同好实时交流。</p>
-      <button class="walkie-btn-green" id="btnConnectFans">连接「<span id="connectYear">2000</span>年代」聊天室</button>
-      <p style="font-size:10px;color:#666;margin-top:6px;" id="connectStatus">未连接</p>
-    </div>
-    <div class="walkie-section">
-      <h4>👥 创建群组</h4>
-      <p>创建专属群组，分享码给好友即可加入（需在手机上打开链接加入）。</p>
-      <input class="walkie-input" id="groupNameInput" placeholder="输入群组名称：2000年代五迷">
-      <button class="walkie-btn-green" id="btnCreateGroup">创建群组</button>
-      <div id="groupCreateResult" style="margin-top:8px;"></div>
-    </div>
-    <div class="walkie-section">
-      <h4>🔍 搜索加入群组</h4>
-      <p>输入好友分享的群组码，立即加入对讲。</p>
-      <div style="display:flex;gap:8px;">
-        <input class="walkie-input" id="groupSearchInput" placeholder="输入分享码：MDxxxx" style="margin-bottom:0;flex:1;">
-        <button class="walkie-btn-green" id="btnSearchGroup" style="width:auto;margin-top:0;padding:8px 16px;">加入</button>
-      </div>
-    </div>
-    <div class="walkie-section" id="groupListSection">
-      <h4>📋 已有群组</h4>
-      <div class="group-list" id="groupList">
-        <p style="color:#555;font-size:11px;">暂无群组</p>
-      </div>
-    </div>
-    <button class="walkie-close" id="btnWalkieClose">关闭</button>
   </div>
 </div>
 
