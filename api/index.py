@@ -486,6 +486,13 @@ _cntv_index_cache = None
 _cntv_summary_cache = None
 _cntv_year_cache = {}
 
+# 优先使用嵌入的 Python 模块（Vercel 必然打包），fallback 到文件系统
+try:
+    from cntv_data import get_year as _cntv_data_get_year
+    _use_embedded_cntv = True
+except ImportError:
+    _use_embedded_cntv = False
+
 def _cntv_load_json(path: str):
     """从同目录读取 JSON 文件（支持 .json.gz 自动解压）。"""
     if path.endswith(".gz"):
@@ -509,10 +516,13 @@ def _cntv_get_summary():
     return _cntv_summary_cache
 
 def _cntv_get_year(year: str):
-    """返回指定年份的节目索引（从压缩文件按需加载）。"""
+    """返回指定年份的节目索引（优先从嵌入模块读取，确保 Vercel 可用）。"""
     if year in _cntv_year_cache:
         return _cntv_year_cache[year]
-    data = _cntv_load_json(f"cntv_data/{year}.json.gz")
+    if _use_embedded_cntv:
+        data = _cntv_data_get_year(year)
+    else:
+        data = _cntv_load_json(f"cntv_data/{year}.json.gz")
     _cntv_year_cache[year] = data
     return data
 
