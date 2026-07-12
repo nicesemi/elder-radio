@@ -730,12 +730,76 @@
 
 
   // ====================================================
-  //  区域二：2020-2025 历史广播（CNTV 回听）
+  //  区域二：2020-2025 历史广播（CNTV 回听）— 按需加载
   // ====================================================
   (function initRegion2() {
     var container = document.getElementById('historyYearCards');
     var countEl   = document.getElementById('historyCount');
+    // 缓存：{ '2020': { loaded: bool, programs: {...} } }
+    var yearCache = {};
 
+    /** 构建某年份的节目列表 HTML（日期倒序，按月分组） */
+    function buildProgramsHtml(year, programs) {
+      var dateKeys = Object.keys(programs).sort().reverse();
+      if (dateKeys.length === 0) {
+        return '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">暂无节目数据</div>';
+      }
+      var html = '';
+      var currentMonth = '';
+      for (var i = 0; i < dateKeys.length; i++) {
+        var dateStr = dateKeys[i];
+        var parts = dateStr.split('-');
+        var monthLabel = parts[0] + '年' + parseInt(parts[1], 10) + '月';
+        if (monthLabel !== currentMonth) {
+          if (currentMonth) html += '</div>';
+          currentMonth = monthLabel;
+          html += '<div class="history-month-group"><div class="history-month-label">' + monthLabel + '</div>';
+        }
+        var progs = programs[dateStr];
+        html += '<div class="history-date-block">';
+        html += '<div class="history-date-title">' + dateStr + '<span class="history-date-count"> ' + progs.length + ' 档</span></div>';
+        html += '<div class="history-program-list">';
+        for (var j = 0; j < progs.length; j++) {
+          var p = progs[j];
+          html += '<a href="/radio?year=' + year + '&date=' + dateStr + '" class="history-program-row">';
+          html += '<span class="hp-time">' + escHtml(p[0]) + '</span>';
+          html += '<span class="hp-name">' + escHtml(p[2]) + '</span>';
+          html += '</a>';
+        }
+        html += '</div></div>';
+      }
+      if (currentMonth) html += '</div>';
+      return html;
+    }
+
+    /** 为指定年份卡片加载节目数据并展开 */
+    function loadAndExpand(card, year) {
+      var body = card.querySelector('.history-year-body');
+      var cache = yearCache[year];
+
+      if (cache && cache.loaded) {
+        // 已加载，直接切换
+        card.classList.toggle('open');
+        return;
+      }
+
+      // 首次加载：显示加载中
+      card.classList.add('open');
+      body.innerHTML = '<div class="loading-inline">加载中...</div>';
+
+      safeFetch('/api/cntv/' + year).then(function(data) {
+        if (!data || !data.programs) {
+          body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败</div>';
+          return;
+        }
+        yearCache[year] = { loaded: true, programs: data.programs };
+        body.innerHTML = buildProgramsHtml(year, data.programs);
+      }).catch(function() {
+        body.innerHTML = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">加载失败</div>';
+      });
+    }
+
+    // 加载轻量 summary
     safeFetch('/api/cntv/summary').then(function(data) {
       if (!data || !data.years || Object.keys(data.years).length === 0) {
         container.innerHTML = '<div class="region-empty">暂无历史广播数据</div>';
@@ -753,44 +817,13 @@
         totalDays += info.days || 0;
         totalProgs += info.total_programs || 0;
 
-        // 构建展开内容：按日期倒序，每月一组
-        var dates = info.dates || {};
-        var dateKeys = Object.keys(dates).sort().reverse();
-        var bodyHtml = '';
+        // 初始化缓存槽位
+        yearCache[year] = { loaded: false, programs: null };
 
-        if (dateKeys.length > 0) {
-          var currentMonth = '';
-          for (var i = 0; i < dateKeys.length; i++) {
-            var dateStr = dateKeys[i];
-            var parts = dateStr.split('-');
-            var monthLabel = parts[0] + '年' + parseInt(parts[1], 10) + '月';
-            if (monthLabel !== currentMonth) {
-              if (currentMonth) bodyHtml += '</div>';
-              currentMonth = monthLabel;
-              bodyHtml += '<div class="history-month-group"><div class="history-month-label">' + monthLabel + '</div>';
-            }
-
-            var programs = dates[dateStr];
-            bodyHtml += '<div class="history-date-block">';
-            bodyHtml += '<div class="history-date-title">' + dateStr + '<span class="history-date-count"> ' + programs.length + ' 档</span></div>';
-            bodyHtml += '<div class="history-program-list">';
-            for (var j = 0; j < programs.length; j++) {
-              var p = programs[j];
-              bodyHtml += '<a href="/radio?year=' + year + '&date=' + dateStr + '" class="history-program-row">';
-              bodyHtml += '<span class="hp-time">' + escHtml(p.start) + '</span>';
-              bodyHtml += '<span class="hp-name">' + escHtml(p.name) + '</span>';
-              bodyHtml += '</a>';
-            }
-            bodyHtml += '</div></div>';
-          }
-          if (currentMonth) bodyHtml += '</div>';
-        } else {
-          bodyHtml = '<div style="padding:8px 0;color:var(--text-muted);font-size:0.82rem;">暂无节目数据</div>';
-        }
-
+        // 构建卡片（收起状态）
         var card = document.createElement('div');
         card.className = 'history-year-card';
-        if (year === '2025') card.classList.add('open');
+        card.setAttribute('data-year', year);
         card.innerHTML =
           '<div class="history-year-header">' +
             '<div class="year-left">' +
@@ -799,11 +832,12 @@
             '</div>' +
             '<span class="expand-icon">▼</span>' +
           '</div>' +
-          '<div class="history-year-body">' + bodyHtml + '</div>';
+          '<div class="history-year-body"></div>';
         container.appendChild(card);
 
+        // 绑定点击：按需加载
         card.querySelector('.history-year-header').addEventListener('click', function() {
-          card.classList.toggle('open');
+          loadAndExpand(card, year);
         });
       });
 

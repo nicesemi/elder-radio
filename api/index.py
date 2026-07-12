@@ -545,7 +545,7 @@ async def cntv_date_programs(date: str):
 
 @app.get("/api/cntv/summary")
 async def cntv_summary():
-    """返回 CNTV 历年完整数据（含所有日期和节目明细），供首页展示"""
+    """返回 CNTV 各年份轻量统计（不含节目明细），供首页年份卡片展示"""
     r2 = _get_r2()
     years = r2.get_cnr_years()
     result = {}
@@ -553,26 +553,11 @@ async def cntv_summary():
     for year in years:
         try:
             year_programs = r2.get_cnr_year_programs(str(year))
-            days = len(year_programs) if year_programs else 0
-            total_programs = sum(len(v) for v in year_programs.values()) if year_programs else 0
-
-            # 按日期组织节目，数组格式 [start, end, name, url] → 对象格式
-            dates = {}
-            if year_programs:
-                for date_str, programs in year_programs.items():
-                    dates[date_str] = [
-                        {"start": p[0], "end": p[1], "name": p[2], "url": p[3]}
-                        for p in programs
-                    ]
-
-            sorted_dates = sorted(dates.keys()) if dates else []
-            date_range = [sorted_dates[0], sorted_dates[-1]] if sorted_dates else []
-
+            sorted_dates = sorted(year_programs.keys()) if year_programs else []
             result[str(year)] = {
-                "days": days,
-                "total_programs": total_programs,
-                "date_range": date_range,
-                "dates": dates,
+                "days": len(sorted_dates),
+                "total_programs": sum(len(v) for v in year_programs.values()) if year_programs else 0,
+                "date_range": [sorted_dates[0], sorted_dates[-1]] if sorted_dates else [],
             }
         except Exception as e:
             print(f"[CNTV Summary] Failed for year {year}: {e}")
@@ -580,7 +565,6 @@ async def cntv_summary():
                 "days": 0,
                 "total_programs": 0,
                 "date_range": [],
-                "dates": {},
                 "error": str(e),
             }
 
