@@ -519,13 +519,20 @@ _cntv_index_cache = None
 _cntv_year_cache = {}
 
 def _cntv_http_json(path: str):
-    """从 R2 公开 URL 读取 JSON。"""
-    import httpx
+    """从 R2 公开 URL 读取 JSON，优先 httpx 降级 urllib。"""
     url = f"{CNTV_PUBLIC_BASE}/{path}"
     try:
-        r = httpx.get(url, timeout=15.0)
+        import httpx
+        r = httpx.get(url, timeout=15.0, follow_redirects=True)
         if r.status_code == 200:
             return r.json()
+    except Exception:
+        pass
+    # 降级：使用标准库 urllib
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         print(f"[CNTV HTTP] {path} failed: {e}")
     return None
