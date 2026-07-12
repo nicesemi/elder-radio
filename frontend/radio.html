@@ -196,6 +196,21 @@
     }
     .mode-btn-label { font-size:8px; color:#555; text-align:center; margin-top:1px; }
 
+    /* 频道切换 Tab */
+    .channel-tabs {
+      display: flex; justify-content: center; gap: 8px; margin-bottom: 4px;
+    }
+    .channel-tab {
+      padding: 4px 14px; border-radius: 12px; border: 1px solid #3a3a3a;
+      background: #111; color: #666; font-size: 10px; cursor: pointer;
+      transition: all 0.2s; font-family: inherit; letter-spacing: 1px;
+    }
+    .channel-tab:hover { border-color: #D4A853; color: #D4A853; }
+    .channel-tab.active {
+      border-color: #D4A853; background: #2a1a08; color: #FFB300;
+      font-weight: bold; box-shadow: 0 0 8px rgba(212,168,83,0.2);
+    }
+
     .knob-area {
       display:flex; justify-content:space-between; align-items:flex-end;
       flex:1; padding:0 4px; position:relative;
@@ -361,6 +376,12 @@
         <button class="mode-btn" id="btnTONE">A</button>
         <div class="mode-btn-label">音色</div>
       </div>
+    </div>
+
+    <!-- 频道切换 Tab（仅 AM + 1949-2019 显示） -->
+    <div class="channel-tabs" id="channelTabs" style="display:none;">
+      <button class="channel-tab active" data-channel="news">📰 新闻</button>
+      <button class="channel-tab" data-channel="music">🎵 音乐</button>
     </div>
 
     <!-- 旋钮区 -->

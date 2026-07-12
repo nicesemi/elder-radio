@@ -10,6 +10,8 @@ import io
 import json
 import ast
 import uuid
+import time
+import re
 import urllib.request
 import urllib.parse
 from datetime import datetime
@@ -54,6 +56,11 @@ def _get_live_stations():
 
 # Supabase 客户端（延迟初始化）
 _supabase_client = None
+
+# 全年代广播概览缓存（5 分钟 TTL）
+_broadcast_summary_cache: Optional[Dict[str, Any]] = None
+_broadcast_summary_cache_time: float = 0.0
+_BROADCAST_SUMMARY_CACHE_TTL: int = 300
 
 def get_supabase():
     global _supabase_client
@@ -693,4 +700,199 @@ async def mayday_year_songs(year: int):
         "year": data["year"],
         "songs": data["songs"],
         "count": data["count"],
+    }
+
+
+# ============ 全年代广播概览 & 频道列表 ============
+
+def _compute_broadcast_summary() -> Dict[str, Any]:
+    """
+    扫描 R2 broadcasts/ 前缀，聚合 1949-2026 各年份数据量。
+    1949-2019：区分 news/ 和 music/ 子目录
+    2020-2025：统计全部历史广播
+    2026：调用 live_stations 获取直播数
+    """
+    r2 = _get_r2()
+    summary: Dict[str, Dict[str, int]] = {}
+
+    # 初始化所有年份为 0
+    for y in range(1949, 2020):
+        summary[str(y)] = {"news": 0, "music": 0}
+    for y in range(2020, 2026):
+        summary[str(y)] = {"history": 0}
+    summary["2026"] = {"live": 0}
+
+    # 扫描 R2 broadcasts/ 下所有对象，按年份+分类聚合
+    try:
+        all_objs = r2._list_all_r2_objects("broadcasts/")
+    except Exception as e:
+        print(f"[Summary] R2 scan failed: {e}")
+        all_objs = []
+
+    for obj in all_objs:
+        key = obj.get("Key", "")
+        if key.endswith("/") or key == "broadcasts/_index.json":
+            continue
+        # 解析: broadcasts/{year}/{category}/filename
+        parts = key.split("/")
+        if len(parts) < 3:
+            continue
+        year_str = parts[1]
+        category = parts[2]
+
+        try:
+            year_int = int(year_str)
+        except ValueError:
+            continue
+
+        if year_int < 1949 or year_int > 2026:
+            continue
+
+        if 1949 <= year_int <= 2019:
+            if year_str not in summary:
+                summary[year_str] = {"news": 0, "music": 0}
+            s = summary[year_str]
+            if category == "news":
+                s["news"] = s.get("news", 0) + 1
+            elif category == "music":
+                s["music"] = s.get("music", 0) + 1
+            # 忽略其他分类（zgzs/jjzs 等）
+        elif 2020 <= year_int <= 2025:
+            if year_str not in summary:
+                summary[year_str] = {"history": 0}
+            summary[year_str]["history"] = summary[year_str].get("history", 0) + 1
+
+    # 2026：直播电台数量
+    try:
+        ls = _get_live_stations()
+        live_stations = ls.get_all_live_stations()
+        summary["2026"]["live"] = len(live_stations)
+    except Exception as e:
+        print(f"[Summary] live_stations failed: {e}")
+        summary["2026"]["live"] = 0
+
+    now_iso = datetime.now().isoformat()
+    return {"summary": summary, "updated_at": now_iso}
+
+
+@app.get("/api/broadcast/summary")
+async def broadcast_summary():
+    """
+    GET /api/broadcast/summary
+
+    返回 1949-2026 全年代数据概览，5 分钟内存缓存。
+    1949-2019: {"news": N, "music": M}
+    2020-2025: {"history": N}
+    2026:       {"live": N}
+    """
+    global _broadcast_summary_cache, _broadcast_summary_cache_time
+
+    now = time.time()
+    if _broadcast_summary_cache and (now - _broadcast_summary_cache_time) < _BROADCAST_SUMMARY_CACHE_TTL:
+        return _broadcast_summary_cache
+
+    try:
+        result = _compute_broadcast_summary()
+        _broadcast_summary_cache = result
+        _broadcast_summary_cache_time = now
+        return result
+    except Exception as e:
+        print(f"[API] /api/broadcast/summary error: {e}")
+        raise HTTPException(status_code=500, detail=f"概览生成失败: {str(e)}")
+
+
+@app.get("/api/broadcast/{year}/channels")
+async def broadcast_year_channels(
+    year: int,
+    channel: Optional[str] = Query(None, description="频道筛选：news | music，不传返回全部"),
+):
+    """
+    GET /api/broadcast/{year}/channels?channel=news|music
+
+    返回某年各频道的广播列表。
+    对于 1949-2019：返回 news/ 和 music/ 两个频道
+    对于 2020-2026：返回 history 频道
+    """
+    if year < 1949 or year > 2026:
+        raise HTTPException(status_code=400, detail=f"年份超出范围: {year}（1949-2026）")
+
+    r2 = _get_r2()
+    prefix = f"broadcasts/{year}/"
+
+    # 列出该年份下所有对象
+    try:
+        all_objs = r2._list_all_r2_objects(prefix)
+    except Exception as e:
+        print(f"[Channels] R2 scan failed for {year}: {e}")
+        raise HTTPException(status_code=500, detail=f"R2 读取失败: {str(e)}")
+
+    PUBLIC_BASE = r2.PUBLIC_BASE
+
+    # 按频道分类聚合
+    channels_data: Dict[str, Dict[str, Any]] = {}
+
+    for obj in all_objs:
+        key = obj.get("Key", "")
+        if key.endswith("/"):
+            continue
+        parts = key.split("/")
+        if len(parts) < 4:
+            continue
+        # broadcasts/{year}/{category}/filename
+        cat = parts[2]
+        filename = parts[-1]
+
+        # 只取音频文件
+        if not any(filename.lower().endswith(ext) for ext in (".mp3", ".flac", ".m4a", ".ogg", ".wav", ".aac")):
+            continue
+
+        if cat not in channels_data:
+            channels_data[cat] = {"count": 0, "items": []}
+
+        # 从文件名校验提取日期（如 1978-12-18_xxx.mp3）
+        date_match = re.match(r"^(\d{4}-\d{2}-\d{2})", filename)
+        item_date = date_match.group(1) if date_match else ""
+
+        title = filename.rsplit(".", 1)[0] if "." in filename else filename
+
+        channels_data[cat]["items"].append({
+            "title": title,
+            "date": item_date,
+            "url": f"{PUBLIC_BASE}/{key}",
+        })
+        channels_data[cat]["count"] += 1
+
+    # 按日期倒序排列
+    for cat in channels_data:
+        channels_data[cat]["items"].sort(
+            key=lambda x: x.get("date", ""), reverse=True
+        )
+
+    # 筛选频道
+    result_channels: Dict[str, Any] = {}
+    if year <= 2019:
+        if channel:
+            requested = channel.strip().lower()
+            result_channels[requested] = channels_data.get(
+                requested, {"count": 0, "items": []}
+            )
+        else:
+            for ch in ("news", "music"):
+                result_channels[ch] = channels_data.get(
+                    ch, {"count": 0, "items": []}
+                )
+    else:
+        # 2020-2026：合并所有分类为 history
+        all_items = []
+        for cat_data in channels_data.values():
+            all_items.extend(cat_data["items"])
+        all_items.sort(key=lambda x: x.get("date", ""), reverse=True)
+        result_channels["history"] = {
+            "count": len(all_items),
+            "items": all_items,
+        }
+
+    return {
+        "year": year,
+        "channels": result_channels,
     }

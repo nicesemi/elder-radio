@@ -7,236 +7,389 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="nav.css">
   <style>
-    /* 年代表格容器 */
-    .timeline-container {
-      margin-bottom: 30px;
-    }
+    /* =============================================
+       首页三大区域 — 直播 / 历史 / 年代档案
+       保持全局暗色主题，复用 style.css 变量
+       ============================================= */
 
-    .timeline-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
+    .container { padding-top: 20px; padding-bottom: 60px; }
 
-    .timeline-header h2 {
-      font-size: 1.3rem;
+    /* ---- 区域通用标题 ---- */
+    .section-title {
+      font-size: 1.2rem;
+      font-weight: 700;
       color: var(--text-primary);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
-
-    .timeline-header .timeline-subtitle {
-      font-size: 0.85rem;
+    .section-title .count-badge {
+      font-size: 0.78rem;
+      font-weight: 400;
       color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 3px 12px;
+      border-radius: 12px;
     }
 
-    /* 年代表格 (CSS Grid) */
-    .year-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(95px, 1fr));
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    .year-card {
+    /* ---- 搜索框（区域一）---- */
+    .region-search {
       position: relative;
+      margin-bottom: 16px;
+      max-width: 420px;
+    }
+    .region-search input {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--bg-input);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+    }
+    .region-search input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .region-search::before {
+      content: '🔍';
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      opacity: 0.5;
+    }
+
+    /* ---- 分类筛选 Chip 组 ---- */
+    .category-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .category-chip {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all var(--transition);
+      user-select: none;
+    }
+    .category-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+    .category-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* =============================================
+       区域一：2026 直播电台列表
+       ============================================= */
+    .live-station-list {
       display: flex;
       flex-direction: column;
+      gap: 6px;
+      max-height: 520px;
+      overflow-y: auto;
+      margin-bottom: 32px;
+    }
+    .live-station-item {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 12px 6px;
+      justify-content: space-between;
+      padding: 12px 16px;
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
       cursor: pointer;
-      transition: all 0.2s ease;
-      min-height: 80px;
-      text-decoration: none;
-      color: var(--text-primary);
+      transition: all var(--transition);
+      gap: 12px;
     }
-
-    .year-card:hover {
+    .live-station-item:hover {
       border-color: var(--accent);
-      box-shadow: 0 4px 16px var(--accent-glow);
-      transform: translateY(-3px);
-      z-index: 2;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+    .live-station-item .station-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+    .live-station-item .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      flex-shrink: 0;
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .live-station-item .station-name {
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .live-station-item .station-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .live-station-item .category-tag {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 0.7rem;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .year-card .year-num {
+    /* =============================================
+       区域二：2020-2025 历史广播可展开卡片
+       ============================================= */
+    .history-section {
+      margin-bottom: 32px;
+    }
+    .history-year-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .history-year-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      transition: border-color var(--transition);
+    }
+    .history-year-card:hover { border-color: var(--accent); }
+    .history-year-card.open { border-color: var(--accent); }
+
+    .history-year-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition);
+    }
+    .history-year-header:hover { background: rgba(233, 69, 96, 0.05); }
+    .history-year-header .year-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .history-year-header .year-num {
       font-family: var(--font-mono);
       font-size: 1.1rem;
       font-weight: 700;
       color: var(--accent);
-      line-height: 1;
     }
-
-    .year-card .year-info {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 4px;
-      margin-top: 6px;
-      font-size: 0.65rem;
+    .history-year-header .year-stat {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .history-year-header .expand-icon {
+      font-size: 0.75rem;
       color: var(--text-muted);
+      transition: transform 0.25s ease;
     }
+    .history-year-card.open .expand-icon { transform: rotate(180deg); }
 
-    .year-card .year-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      display: inline-block;
-      flex-shrink: 0;
+    .history-year-body {
+      display: none;
+      border-top: 1px solid var(--border);
+      padding: 12px 18px;
     }
+    .history-year-card.open .history-year-body { display: block; }
 
-    .dot-stations { background: var(--success); box-shadow: 0 0 4px var(--success); }
-    .dot-live { background: var(--info); box-shadow: 0 0 4px var(--info); }
-    .dot-ai { background: var(--warning); box-shadow: 0 0 4px var(--warning); }
-    .dot-none { background: var(--text-muted); }
+    .history-broadcast-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      gap: 12px;
+    }
+    .history-broadcast-item:last-child { border-bottom: none; }
+    .history-broadcast-item .bc-title {
+      font-size: 0.88rem;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 0;
+    }
+    .history-broadcast-item .bc-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .history-broadcast-item .bc-play {
+      padding: 4px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.78rem;
+      border: none;
+      cursor: pointer;
+      transition: background var(--transition);
+      white-space: nowrap;
+    }
+    .history-broadcast-item .bc-play:hover { background: var(--accent-hover); }
 
-    .year-card.year-no-data {
-      opacity: 0.55;
+    /* =============================================
+       区域三：1949-2019 年代档案（双频道卡片）
+       ============================================= */
+    .archive-section {
+      margin-bottom: 20px;
+    }
+    .archive-decade-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .archive-decade-header .decade-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .archive-decade-header .decade-range {
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-family: var(--font-mono);
+    }
+    .archive-decade-header .collapse-icon {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: transform 0.25s ease;
+    }
+    .archive-decade.collapsed .collapse-icon { transform: rotate(-90deg); }
+    .archive-decade.collapsed .archive-year-row { display: none; }
+
+    /* 每年的两卡片行 */
+    .archive-year-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: stretch;
+    }
+    .archive-channel-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .archive-channel-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 2px 12px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+    .archive-channel-card.no-data {
+      opacity: 0.5;
       cursor: default;
     }
-    .year-card.year-no-data:hover {
+    .archive-channel-card.no-data:hover {
       border-color: var(--border);
       box-shadow: none;
       transform: none;
     }
-
-    .year-card .year-label {
-      font-size: 0.58rem;
-      color: var(--text-muted);
-      margin-top: 2px;
-      white-space: nowrap;
+    .archive-channel-card .ch-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
     }
-
-    /* 年代分段指示 */
-    .era-section {
-      margin-bottom: 12px;
-    }
-
-    .era-section-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-      padding-left: 12px;
-      border-left: 3px solid var(--accent);
+    .archive-channel-card .ch-info {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
     }
-
-    .era-section-title .era-range {
-      font-size: 0.72rem;
-      color: var(--accent);
+    .archive-channel-card .ch-year {
       font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-secondary);
     }
-
-    /* 筛选栏 */
-    .filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 20px;
-      padding: 14px 18px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-    }
-
-    .filter-bar .filter-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      white-space: nowrap;
-    }
-
-    .filter-bar select,
-    .filter-bar input {
-      padding: 8px 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--bg-input);
+    .archive-channel-card .ch-name {
+      font-size: 0.9rem;
+      font-weight: 600;
       color: var(--text-primary);
+    }
+    .archive-channel-card .ch-count {
+      font-size: 0.72rem;
+      font-weight: 500;
+      margin-left: auto;
+      padding: 3px 10px;
+      border-radius: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ch-count.has-data { background: var(--accent); color: #fff; }
+    .ch-count.no-data { background: var(--bg-tertiary); color: var(--text-muted); }
+
+    /* ---- 区域分隔线 ---- */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    /* ---- 加载与空状态 ---- */
+    .loading-inline {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+    .region-empty {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
       font-size: 0.85rem;
     }
 
-    .filter-bar select:focus,
-    .filter-bar input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .quick-jump {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-left: auto;
-    }
-
-    .quick-jump input {
-      width: 70px;
-      text-align: center;
-    }
-
-    .quick-jump .jump-btn {
-      padding: 6px 12px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .quick-jump .jump-btn:hover {
-      background: var(--accent-hover);
-    }
-
-    /* 图例 */
-    .legend {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .stat-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    @media (max-width: 768px) {
-      .year-grid {
-        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-        gap: 5px;
+    /* ---- 响应式 ---- */
+    @media (max-width: 600px) {
+      .archive-year-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
       }
-      .year-card {
-        padding: 8px 4px;
-        min-height: 62px;
+      .live-station-item {
+        padding: 10px 12px;
+        flex-wrap: wrap;
       }
-      .year-card .year-num { font-size: 0.95rem; }
-      .year-card .year-info { font-size: 0.58rem; }
+      .live-station-item .station-name { font-size: 0.85rem; }
+      .category-chips { gap: 5px; }
+      .category-chip { padding: 4px 10px; font-size: 0.72rem; }
     }
   </style>
 </head>
 <body class="has-nav">
 
-<!-- 导航栏 -->
+<!-- ========== 导航栏 ========== -->
 <nav class="top-nav">
   <a href="/" class="top-nav-brand">elder-radio</a>
   <ul class="top-nav-links">
@@ -249,385 +402,431 @@
   </ul>
 </nav>
 
-<div class="container" style="padding-top:20px;">
+<div class="container">
 
-  <!-- Header -->
+  <!-- ========== Header ========== -->
   <div class="page-header">
     <div>
       <h1>elder-radio</h1>
-      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">怀旧收音机 · 1949-2026 年代表格</p>
+      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">怀旧收音机 · 1949-2026 全年代广播</p>
     </div>
     <div class="header-actions">
-      <a href="/admin" class="btn btn-sm">后台管理</a>
       <a href="/radio" class="btn btn-accent btn-sm">打开收音机</a>
     </div>
   </div>
 
-  <!-- 统计横幅 -->
-  <div class="stats-banner" id="statsBanner">
-    <div class="stat-item"><div class="stat-value" id="statYears">78</div><div class="stat-label">覆盖年份</div></div>
-    <div class="stat-item"><div class="stat-value" id="statTotal">163</div><div class="stat-label">总电台数</div></div>
-    <div class="stat-item"><div class="stat-value" id="statLive">153</div><div class="stat-label">直播流</div></div>
-    <div class="stat-item"><div class="stat-value" id="statProvinces">34</div><div class="stat-label">覆盖省份</div></div>
-  </div>
-
-  <!-- 图例 -->
-  <div class="legend">
-    <span class="legend-item"><span class="year-dot dot-stations"></span> 有电台覆盖</span>
-    <span class="legend-item"><span class="year-dot dot-live"></span> 含直播源</span>
-    <span class="legend-item"><span class="year-dot dot-ai"></span> AI 内容已生成</span>
-    <span class="legend-item"><span class="year-dot dot-none"></span> 待补充</span>
-  </div>
-
-  <!-- 筛选栏 -->
-  <div class="filter-bar">
-    <span class="filter-label">年代筛选：</span>
-    <select id="eraFilter">
-      <option value="all">全部年代</option>
-      <option value="1949-1959">1949-1959 建国初期</option>
-      <option value="1960-1969">1960-1969 探索时期</option>
-      <option value="1970-1979">1970-1979 文革后期</option>
-      <option value="1980-1989">1980-1989 改革开放</option>
-      <option value="1990-1999">1990-1999 经济腾飞</option>
-      <option value="2000-2009">2000-2009 千禧年代</option>
-      <option value="2010-2019">2010-2019 新时代</option>
-      <option value="2020-2026">2020-2026 当代</option>
-    </select>
-
-    <span class="filter-label">省份：</span>
-    <select id="provinceFilter">
-      <option value="all">全部省份</option>
-    </select>
-
-    <span class="filter-label">分类：</span>
-    <select id="categoryFilter">
-      <option value="all">全部分类</option>
-      <option value="新闻">新闻</option>
-      <option value="音乐">音乐</option>
-      <option value="交通">交通</option>
-      <option value="文艺">文艺</option>
-      <option value="经济">经济</option>
-      <option value="生活">生活</option>
-      <option value="农村">农村</option>
-      <option value="民族">民族</option>
-      <option value="国际">国际</option>
-      <option value="综合">综合</option>
-    </select>
-
-    <div class="quick-jump">
-      <span class="filter-label">跳转：</span>
-      <input type="number" id="jumpYear" min="1949" max="2026" value="1985" placeholder="年份">
-      <button class="jump-btn" onclick="jumpToYear()">GO</button>
+  <!-- ================================================
+       区域一：2026 · 直播电台
+       ================================================ -->
+  <section id="liveSection">
+    <div class="section-title">
+      2026 · 直播电台
+      <span class="count-badge" id="liveCount">加载中...</span>
     </div>
-  </div>
 
-  <!-- 搜索结果计数 -->
-  <div class="result-count" id="resultCount" style="margin-bottom:10px;"></div>
+    <!-- 搜索 + 分类筛选 -->
+    <div class="region-search">
+      <input type="text" id="liveSearch" placeholder="搜索电台名称、分类...">
+    </div>
+    <div class="category-chips" id="liveCategoryChips"></div>
 
-  <!-- 年代表格 -->
-  <div class="timeline-container" id="timelineContainer">
-    <div class="loading-spin">加载年代数据中...</div>
-  </div>
+    <!-- 电台列表 -->
+    <div class="live-station-list" id="liveStationList">
+      <div class="loading-inline">加载直播电台中...</div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- ================================================
+       区域二：2020-2025 历史广播
+       ================================================ -->
+  <section class="history-section" id="historySection">
+    <div class="section-title">
+      2020-2025 · 历史广播
+      <span class="count-badge" id="historyCount">加载中...</span>
+    </div>
+    <div class="history-year-cards" id="historyYearCards">
+      <div class="loading-inline">加载历史广播中...</div>
+    </div>
+  </section>
+
+  <hr class="section-divider">
+
+  <!-- ================================================
+       区域三：1949-2019 年代档案（双频道）
+       ================================================ -->
+  <section class="archive-section" id="archiveSection">
+    <div class="section-title">
+      1949-2019 · 年代档案
+      <span class="count-badge" id="archiveCount">加载中...</span>
+    </div>
+    <div id="archiveDecades">
+      <div class="loading-inline">加载年代数据中...</div>
+    </div>
+  </section>
 
 </div>
 
-<!-- 工具提示 -->
-<div id="tooltip" style="
-  display:none; position:fixed; z-index:9999;
-  background:var(--bg-card); border:1px solid var(--accent);
-  border-radius:var(--radius-md); padding:12px 16px;
-  font-size:0.82rem; color:var(--text-primary);
-  max-width:280px; pointer-events:none;
-  box-shadow: var(--shadow-lg);
-"></div>
-
+<script src="app.js"></script>
 <script>
 /* =============================================
-   index.html JS — 年代表格引擎
+   index.html - 全年代广播首页引擎
+   区域一：2026 直播电台 ( /api/stations/live )
+   区域二：2020-2025 历史广播 ( /api/broadcast/history/{year} )
+   区域三：1949-2019 年代档案 ( /api/broadcast/summary )
    ============================================= */
 (function() {
   'use strict';
 
-  let allStations = [];
-  let broadcastData = {};
-  let currentEraFilter = 'all';
-  let currentProvince = 'all';
-  let currentCategory = 'all';
-
-  const ERA_MIN = 1949, ERA_MAX = 2026;
-  const ERA_SECTIONS = [
-    { label: '建国初期', range: [1949, 1959], id: '1949-1959' },
-    { label: '探索时期', range: [1960, 1969], id: '1960-1969' },
-    { label: '文革后期', range: [1970, 1979], id: '1970-1979' },
-    { label: '改革开放', range: [1980, 1989], id: '1980-1989' },
-    { label: '经济腾飞', range: [1990, 1999], id: '1990-1999' },
-    { label: '千禧年代', range: [2000, 2009], id: '2000-2009' },
-    { label: '新时代',   range: [2010, 2019], id: '2010-2019' },
-    { label: '当代',     range: [2020, 2026], id: '2020-2026' }
-  ];
-
-  // ============ 工具提示 ============
-  const tooltip = document.getElementById('tooltip');
-
-  function showTooltip(e, text) {
-    tooltip.innerHTML = text;
-    tooltip.style.display = 'block';
-    const x = e.clientX + 14, y = e.clientY + 14;
-    tooltip.style.left = Math.min(x, window.innerWidth - 290) + 'px';
-    tooltip.style.top = Math.min(y, window.innerHeight - 120) + 'px';
+  // ---- 安全请求工具 ----
+  /** 安全解析 JSON 响应，非 JSON 或失败时返回 null */
+  async function safeFetch(path) {
+    try {
+      var resp = await fetch(path);
+      if (!resp.ok) return null;
+      var text = await resp.text();
+      try { return JSON.parse(text); }
+      catch (_) { return null; }
+    } catch (_) { return null; }
   }
 
-  function hideTooltip() { tooltip.style.display = 'none'; }
+  /** HTML 转义 */
+  function escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
 
-  // ============ 构建年代表 ============
-  function buildYearData() {
-    const yearMap = {};
-    for (let y = ERA_MIN; y <= ERA_MAX; y++) {
-      yearMap[y] = {
-        year: y,
-        stationCount: 0,
-        hasLive: false,
-        hasAI: false,
-        stations: [],
-        events: [],
-        isCurrentYear: (y === 2026)
-      };
-    }
+  // ====================================================
+  //  区域一：2026 直播电台
+  // ====================================================
+  (function initRegion1() {
+    var listEl   = document.getElementById('liveStationList');
+    var countEl  = document.getElementById('liveCount');
+    var searchEl = document.getElementById('liveSearch');
+    var chipsEl  = document.getElementById('liveCategoryChips');
+    var allLiveStations = [];
+    var activeCategory = 'all';
 
-    // 填充电台 — 按年代范围匹配（如 "2000-2009" 匹配 2000~2009 所有年份）
-    allStations.forEach(s => {
-      const era = s.era || '';
-      const matchRange = era.match(/^(\d{4})-(\d{4})$/);
-      if (matchRange) {
-        const startY = parseInt(matchRange[1]);
-        const endY = parseInt(matchRange[2]);
-        for (let y = Math.max(startY, ERA_MIN); y <= Math.min(endY, ERA_MAX); y++) {
-          if (yearMap[y]) {
-            // 去重：同一年份不重复添加
-            if (!yearMap[y].stations.some(es => es.id === s.id)) {
-              yearMap[y].stations.push(s);
-              yearMap[y].stationCount++;
-              if (s.type === 'live' && s.stream_url) yearMap[y].hasLive = true;
-            }
-          }
-        }
-      } else {
-        // 兜底：单年匹配（如仅有 "2000" 而非 "2000-2009"）
-        const matchSingle = era.match(/^(\d{4})/);
-        let y = matchSingle ? parseInt(matchSingle[1]) : null;
-        if (y && y >= ERA_MIN && y <= ERA_MAX && yearMap[y]) {
-          yearMap[y].stations.push(s);
-          yearMap[y].stationCount++;
-          if (s.type === 'live' && s.stream_url) yearMap[y].hasLive = true;
-        }
-      }
-    });
+    // 分类名中文映射
+    var CAT_LABELS = {
+      'news': '新闻', 'music': '音乐', 'sports': '体育',
+      'talk': '谈话', 'culture': '文化', 'education': '教育',
+      'pop': '流行', 'classical': '古典', 'jazz': '爵士',
+      'rock': '摇滚', 'folk': '民谣', 'country': '乡村',
+      'information': '资讯', 'religious': '宗教', 'variety': '综艺',
+      'government': '政务', 'business': '财经', 'weather': '天气',
+      'community': '社区', 'college': '校园'
+    };
+    function labelFor(cat) { return CAT_LABELS[cat] || cat; }
 
-    // 当前年份（2026）：补充所有直播电台（它们在当前都处于活跃状态）
-    const CURRENT_YEAR = 2026;
-    if (yearMap[CURRENT_YEAR]) {
-      allStations.forEach(s => {
-        if (s.type === 'live' && s.stream_url) {
-          if (!yearMap[CURRENT_YEAR].stations.some(es => es.id === s.id)) {
-            yearMap[CURRENT_YEAR].stations.push(s);
-            yearMap[CURRENT_YEAR].stationCount++;
-            yearMap[CURRENT_YEAR].hasLive = true;
-          }
-        }
+    /** 渲染分类 Chip */
+    function renderChips(stations) {
+      var cats = new Set();
+      stations.forEach(function(s) { cats.add(s.category || '综合'); });
+      var sorted = Array.from(cats).sort();
+      var html = '<span class="category-chip' + (activeCategory === 'all' ? ' active' : '') + '" data-cat="all">全部</span>';
+      sorted.forEach(function(c) {
+        html += '<span class="category-chip' + (activeCategory === c ? ' active' : '') + '" data-cat="' + c + '">' + labelFor(c) + '</span>';
+      });
+      chipsEl.innerHTML = html;
+
+      chipsEl.querySelectorAll('.category-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+          activeCategory = this.dataset.cat;
+          renderChips(allLiveStations);
+          renderLiveList();
+        });
       });
     }
 
-    // 填充 broadcast_data
-    if (broadcastData && broadcastData.years) {
-      Object.keys(broadcastData.years).forEach(ys => {
-        const y = parseInt(ys);
-        if (yearMap[y]) {
-          const bd = broadcastData.years[ys];
-          yearMap[y].events = bd.events || [];
-          yearMap[y].hasAI = bd.ai_generated || false;
-          if (!yearMap[y].stationCount && bd.stations) {
-            yearMap[y].stationCount = bd.stations.length;
-          }
-        }
-      });
-    }
-
-    return yearMap;
-  }
-
-  // ============ 筛选逻辑 ============
-  function filterYearMap(yearMap) {
-    const result = {};
-    for (let y = ERA_MIN; y <= ERA_MAX; y++) {
-      const data = yearMap[y];
-      if (!data) continue;
-
-      // 年代筛选
-      if (currentEraFilter !== 'all') {
-        const section = ERA_SECTIONS.find(s => s.id === currentEraFilter);
-        if (!section || y < section.range[0] || y > section.range[1]) continue;
-      }
-
-      // 省份筛选
-      if (currentProvince !== 'all') {
-        const hasMatch = data.stations.some(s => s.province === currentProvince);
-        if (!hasMatch && data.stationCount === 0) continue;
-        if (!hasMatch) {
-          // 有电台但省份不匹配 → 隐藏
-          continue;
-        }
-      }
+    /** 渲染直播电台列表 */
+    function renderLiveList() {
+      var query = (searchEl.value || '').trim().toLowerCase();
+      var filtered = allLiveStations;
 
       // 分类筛选
-      if (currentCategory !== 'all') {
-        const hasMatch = data.stations.some(s => s.category === currentCategory);
-        if (!hasMatch) continue;
+      if (activeCategory !== 'all') {
+        filtered = filtered.filter(function(s) { return (s.category || '综合') === activeCategory; });
+      }
+      // 关键词搜索（名称/分类/频率）
+      if (query) {
+        filtered = filtered.filter(function(s) {
+          var name = (s.name || '').toLowerCase();
+          var cat  = labelFor(s.category || '').toLowerCase();
+          var freq = (s.frequency || '').toLowerCase();
+          return name.indexOf(query) !== -1 || cat.indexOf(query) !== -1 || freq.indexOf(query) !== -1;
+        });
       }
 
-      result[y] = data;
-    }
-    return result;
-  }
+      countEl.textContent = filtered.length + ' 个电台';
 
-  // ============ 渲染 ============
-  function renderTimeline(yearMap) {
-    const container = document.getElementById('timelineContainer');
-    const filtered = filterYearMap(yearMap);
-    const years = Object.keys(filtered).map(Number).sort((a,b) => a-b);
-    document.getElementById('resultCount').textContent =
-      `共 ${years.length} 个年份${currentEraFilter !== 'all' || currentProvince !== 'all' || currentCategory !== 'all' ? '（已筛选）' : ''}`;
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="region-empty">没有匹配的直播电台</div>';
+        return;
+      }
 
-    if (years.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>没有匹配的年份</p></div>';
-      return;
-    }
+      // 构建列表 HTML
+      listEl.innerHTML = filtered.map(function(s, i) {
+        var catLabel = labelFor(s.category || '综合');
+        return '<div class="live-station-item" data-idx="' + i + '" data-url="/radio?year=2026&station=' + i + '&mode=fm">' +
+          '<div class="station-main"><span class="live-dot"></span><span class="station-name">' + escHtml(s.name || '未知电台') + '</span></div>' +
+          '<span class="category-tag">' + escHtml(catLabel) + '</span>' +
+          '<span class="station-meta">' + escHtml(s.frequency || '') + '</span>' +
+          '</div>';
+      }).join('');
 
-    // 按年代分段
-    let html = '';
-    if (currentEraFilter === 'all' && currentProvince === 'all' && currentCategory === 'all') {
-      ERA_SECTIONS.forEach(section => {
-        const sectionYears = years.filter(y => y >= section.range[0] && y <= section.range[1]);
-        if (sectionYears.length === 0) return;
-        html += `<div class="era-section">`;
-        html += `<div class="era-section-title">${section.label}<span class="era-range">${section.range[0]}-${section.range[1]}</span></div>`;
-        html += `<div class="year-grid">`;
-        sectionYears.forEach(y => html += yearCardHTML(filtered[y]));
-        html += `</div></div>`;
+      // 绑定点击跳转
+      listEl.querySelectorAll('.live-station-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+          var targetIdx = parseInt(this.dataset.idx);
+          var st = filtered[targetIdx];
+          var origIdx = allLiveStations.indexOf(st);
+          window.location.href = '/radio?year=2026&station=' + (origIdx >= 0 ? origIdx : targetIdx) + '&mode=fm';
+        });
       });
-    } else {
-      html += `<div class="year-grid">`;
-      years.forEach(y => html += yearCardHTML(filtered[y]));
-      html += `</div>`;
     }
 
-    container.innerHTML = html;
-    bindYearCards();
-  }
+    // 加载 live stations
+    safeFetch('/api/stations/live').then(function(data) {
+      if (data && data.stations && data.stations.length > 0) {
+        allLiveStations = data.stations;
+        renderChips(allLiveStations);
+        renderLiveList();
+      } else {
+        listEl.innerHTML = '<div class="region-empty">暂无直播电台数据</div>';
+        countEl.textContent = '0 个电台';
+        chipsEl.innerHTML = '';
+      }
+    }).catch(function() {
+      listEl.innerHTML = '<div class="region-empty">加载失败，请稍后重试</div>';
+      countEl.textContent = '—';
+    });
 
-  function yearCardHTML(data) {
-    const hasStations = data.stationCount > 0;
-    const dots = [];
-    if (hasStations) dots.push('<span class="year-dot dot-stations" title="电台覆盖"></span>');
-    if (data.hasLive) dots.push('<span class="year-dot dot-live" title="直播源"></span>');
-    if (data.hasAI) dots.push('<span class="year-dot dot-ai" title="AI内容"></span>');
-    if (dots.length === 0) dots.push('<span class="year-dot dot-none"></span>');
+    // 搜索防抖 250ms
+    var searchTimer;
+    searchEl.addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(renderLiveList, 250);
+    });
+  })();
 
-    const statsText = hasStations ? `${data.stationCount}台` : '';
-    const noDataClass = (!hasStations && !data.hasAI && data.year < 2020) ? ' year-no-data' : '';
-    const href = hasStations || data.hasAI || data.isCurrentYear ? `/radio?year=${data.year}` : 'javascript:void(0)';
 
-    const eventsPreview = data.events.length > 0
-      ? data.events.slice(0, 2).map(e => `<div>· ${e}</div>`).join('')
-      : '';
+  // ====================================================
+  //  区域二：2020-2025 历史广播
+  // ====================================================
+  (function initRegion2() {
+    var container = document.getElementById('historyYearCards');
+    var countEl   = document.getElementById('historyCount');
+    var YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
 
-    return `<a href="${href}" class="year-card${noDataClass}" data-year="${data.year}"
-      data-tooltip="<b>${data.year}年</b>${eventsPreview ? '<br/>' + eventsPreview : ''}<br/><span style='color:var(--text-muted);font-size:0.7rem;'>${statsText || '暂无数据'}</span>">
-      <span class="year-num">${data.year}</span>
-      <span class="year-info">${dots.join('')}</span>
-      ${statsText ? `<span class="year-label">${statsText}</span>` : '<span class="year-label" style="color:transparent;">-</span>'}
-    </a>`;
-   }
+    // 为每一年创建卡片骨架
+    YEARS.forEach(function(year) {
+      var card = document.createElement('div');
+      card.className = 'history-year-card';
+      card.id = 'hist-card-' + year;
+      card.innerHTML =
+        '<div class="history-year-header" data-year="' + year + '">' +
+          '<div class="year-left">' +
+            '<span class="year-num">' + year + '</span>' +
+            '<span class="year-stat" id="hist-stat-' + year + '">加载中...</span>' +
+          '</div>' +
+          '<span class="expand-icon">▼</span>' +
+        '</div>' +
+        '<div class="history-year-body" id="hist-body-' + year + '">' +
+          '<div class="loading-inline">点击展开查看</div>' +
+        '</div>';
+      container.appendChild(card);
 
-  function bindYearCards() {
-    document.querySelectorAll('.year-card').forEach(card => {
-      card.addEventListener('mouseenter', function(e) {
-        const tip = this.dataset.tooltip;
-        if (tip) showTooltip(e, tip);
-      });
-      card.addEventListener('mouseleave', hideTooltip);
-      card.addEventListener('mousemove', function(e) {
-        const tip = this.dataset.tooltip;
-        if (tip && tooltip.style.display === 'block') showTooltip(e, tip);
+      // 点击展开/折叠
+      card.querySelector('.history-year-header').addEventListener('click', function() {
+        if (card.classList.contains('open')) {
+          card.classList.remove('open');
+        } else {
+          card.classList.add('open');
+          loadHistoryYear(year);
+        }
       });
     });
-  }
 
-  // ============ 事件 ============
-  document.getElementById('eraFilter').addEventListener('change', function() {
-    currentEraFilter = this.value;
-    rebuildAll();
-  });
+    /** 加载指定年份的历史广播详情 */
+    function loadHistoryYear(year) {
+      var bodyEl = document.getElementById('hist-body-' + year);
+      if (bodyEl.dataset.loaded === 'true') return;
 
-  document.getElementById('provinceFilter').addEventListener('change', function() {
-    currentProvince = this.value;
-    rebuildAll();
-  });
+      safeFetch('/api/broadcast/history/' + year).then(function(data) {
+        var stations = (data && data.stations) ? data.stations : [];
+        var statEl = document.getElementById('hist-stat-' + year);
 
-  document.getElementById('categoryFilter').addEventListener('change', function() {
-    currentCategory = this.value;
-    rebuildAll();
-  });
+        if (stations.length === 0) {
+          statEl.textContent = '0 条历史广播';
+          bodyEl.innerHTML = '<div class="region-empty">暂无历史广播数据</div>';
+        } else {
+          // 提取广播条目
+          var items = [];
+          stations.forEach(function(st, stIdx) {
+            var urls = st.audio_urls || [];
+            if (urls.length > 0) {
+              urls.forEach(function(u, uIdx) {
+                items.push({
+                  title: (st.station_name || '广播') + ' - ' + (u.filename || '片段' + (uIdx + 1)),
+                  date: u.key || '',
+                  stationIdx: stIdx,
+                  year: year
+                });
+              });
+            } else if (st.station_name) {
+              items.push({
+                title: st.station_name,
+                date: st.category || '',
+                stationIdx: stIdx,
+                year: year
+              });
+            }
+          });
 
-  window.jumpToYear = function() {
-    const y = parseInt(document.getElementById('jumpYear').value);
-    if (y >= ERA_MIN && y <= ERA_MAX) {
-      window.location.href = `/radio?year=${y}`;
-    } else {
-      alert('请输入 1949-2026 之间的年份');
+          statEl.textContent = items.length + ' 条历史广播';
+
+          bodyEl.innerHTML = items.map(function(it) {
+            var shortDate = it.date.split('/').pop() || '';
+            return '<div class="history-broadcast-item">' +
+              '<span class="bc-title">' + escHtml(it.title) + '</span>' +
+              '<span class="bc-date">' + escHtml(shortDate) + '</span>' +
+              '<button class="bc-play" data-url="/radio?year=' + it.year + '&station=' + it.stationIdx + '&mode=am">收听</button>' +
+              '</div>';
+          }).join('');
+
+          bodyEl.querySelectorAll('.bc-play').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              window.location.href = this.dataset.url;
+            });
+          });
+        }
+
+        bodyEl.dataset.loaded = 'true';
+        updateHistoryCount();
+      }).catch(function() {
+        document.getElementById('hist-stat-' + year).textContent = '加载失败';
+        bodyEl.innerHTML = '<div class="region-empty">加载失败</div>';
+        bodyEl.dataset.loaded = 'true';
+        updateHistoryCount();
+      });
     }
-  };
 
-  document.getElementById('jumpYear').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') jumpToYear();
-  });
+    /** 汇总全年代历史广播总数 */
+    function updateHistoryCount() {
+      var total = 0;
+      YEARS.forEach(function(year) {
+        var statEl = document.getElementById('hist-stat-' + year);
+        if (statEl && statEl.textContent !== '加载中...') {
+          var m = statEl.textContent.match(/(\d+)/);
+          if (m) total += parseInt(m[1]);
+        }
+      });
+      countEl.textContent = total + ' 条';
+    }
+  })();
 
-  let currentYearMap = {};
-  function rebuildAll() {
-    renderTimeline(currentYearMap);
-  }
 
-  // ============ 初始化 ============
-  function init() {
-    Promise.all([
-      fetch('/radio_sources.json').then(r => r.json()),
-      fetch('/broadcast_data.json').then(r => r.json()).catch(() => ({}))
-    ]).then(([sourcesData, bdData]) => {
-      allStations = sourcesData.stations || [];
-      broadcastData = bdData;
+  // ====================================================
+  //  区域三：1949-2019 年代档案（双频道卡片）
+  // ====================================================
+  (function initRegion3() {
+    var container = document.getElementById('archiveDecades');
+    var countEl   = document.getElementById('archiveCount');
+    var DECADES = [
+      { label: '建国初期', range: [1949, 1959] },
+      { label: '探索时期', range: [1960, 1969] },
+      { label: '文革后期', range: [1970, 1979] },
+      { label: '改革开放', range: [1980, 1989] },
+      { label: '经济腾飞', range: [1990, 1999] },
+      { label: '千禧年代', range: [2000, 2009] },
+      { label: '新时代',   range: [2010, 2019] }
+    ];
+    var DEFAULT_OPEN = '新时代'; // 默认展开最近 10 年
 
-      // 统计
-      document.getElementById('statTotal').textContent = allStations.length;
-      document.getElementById('statLive').textContent = allStations.filter(s => s.type === 'live' && s.stream_url).length;
-      const provinces = new Set(allStations.map(s => s.province));
-      document.getElementById('statProvinces').textContent = provinces.size;
+    // 年份摘要缓存：{ 1949: {news: N, music: N}, ... }
+    var yearSummary = {};
 
-      // 填充省份筛选
-      const provSel = document.getElementById('provinceFilter');
-      [...provinces].sort().forEach(p => {
-        const o = document.createElement('option');
-        o.value = p; o.textContent = p; provSel.appendChild(o);
+    /** 从 summary 对象安全获取某年数据 */
+    function getYearData(year) {
+      var yd = yearSummary[year];
+      if (yd) return yd;
+      // 也尝试 string key
+      yd = yearSummary[String(year)];
+      if (yd) return yd;
+      return { news: 0, music: 0 };
+    }
+
+    /** 渲染全部年代 */
+    function renderDecades() {
+      var totalNews = 0, totalMusic = 0;
+      var html = '';
+
+      DECADES.forEach(function(decade) {
+        var isOpen = (decade.label === DEFAULT_OPEN);
+        var rowsHtml = '';
+
+        for (var y = decade.range[0]; y <= decade.range[1]; y++) {
+          var yd = getYearData(y);
+          var nc = yd.news || 0;
+          var mc = yd.music || 0;
+          totalNews += nc;
+          totalMusic += mc;
+
+          rowsHtml +=
+            '<div class="archive-year-row">' +
+              // 新闻频道
+              '<a class="archive-channel-card' + (nc === 0 ? ' no-data' : '') + '"' +
+              (nc > 0 ? ' href="/radio?year=' + y + '&channel=news"' : ' href="javascript:void(0)"') + '>' +
+                '<span class="ch-icon">📰</span>' +
+                '<div class="ch-info"><span class="ch-year">' + y + '</span><span class="ch-name">新闻频道</span></div>' +
+                '<span class="ch-count ' + (nc > 0 ? 'has-data' : 'no-data') + '">' + (nc > 0 ? nc + ' 条' : '0') + '</span>' +
+              '</a>' +
+              // 音乐频道
+              '<a class="archive-channel-card' + (mc === 0 ? ' no-data' : '') + '"' +
+              (mc > 0 ? ' href="/radio?year=' + y + '&channel=music"' : ' href="javascript:void(0)"') + '>' +
+                '<span class="ch-icon">🎵</span>' +
+                '<div class="ch-info"><span class="ch-year">' + y + '</span><span class="ch-name">音乐频道</span></div>' +
+                '<span class="ch-count ' + (mc > 0 ? 'has-data' : 'no-data') + '">' + (mc > 0 ? mc + ' 首' : '0') + '</span>' +
+              '</a>' +
+            '</div>';
+        }
+
+        html +=
+          '<div class="archive-decade' + (isOpen ? '' : ' collapsed') + '">' +
+            '<div class="archive-decade-header">' +
+              '<span class="decade-label">' + decade.label + '</span>' +
+              '<span class="decade-range">' + decade.range[0] + ' - ' + decade.range[1] + '</span>' +
+              '<span class="collapse-icon">▼</span>' +
+            '</div>' +
+            rowsHtml +
+          '</div>';
       });
 
-      // 构建并渲染
-      currentYearMap = buildYearData();
-      renderTimeline(currentYearMap);
-    }).catch(err => {
-      document.getElementById('timelineContainer').innerHTML =
-        `<div class="empty-state"><div class="empty-icon">❌</div><p>加载失败：${err.message}</p></div>`;
-    });
-  }
+      container.innerHTML = html;
+      countEl.textContent = (totalNews + totalMusic) + ' 条';
 
-  init();
+      // 绑定折叠/展开
+      container.querySelectorAll('.archive-decade-header').forEach(function(header) {
+        header.addEventListener('click', function() {
+          this.parentElement.classList.toggle('collapsed');
+        });
+      });
+    }
+
+    // 加载全年代概览
+    safeFetch('/api/broadcast/summary').then(function(data) {
+      if (data) yearSummary = data;
+      renderDecades();
+    }).catch(function() {
+      // API 不存在时全显示 0
+      renderDecades();
+    });
+  })();
+
 })();
 </script>
 </body>

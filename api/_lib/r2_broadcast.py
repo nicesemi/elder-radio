@@ -1150,3 +1150,184 @@ def get_archive_audio(identifier: str) -> Optional[str]:
         print(f"[ArchiveAudio] R2 查询失败 ({identifier[:40]}): {e}")
 
     return None
+
+
+# ============================================================
+# 双频道存储函数（v4.0 — 1949-2019 news/music 分类）
+# ============================================================
+
+def save_broadcast_to_r2(year: int, category: str, data: dict) -> str:
+    """
+    将一条广播数据保存到 R2 broadcasts/{year}/{category}/ 目录下。
+
+    Args:
+        year: 年份，如 1978
+        category: 频道分类，'news' 或 'music'
+        data: 广播数据字典，必须包含：
+            - title (str): 广播标题
+            - date (str): 日期，如 "1978-12-18"
+            - audio_url (str, optional): 音频 URL
+            - text (str, optional): 广播稿文本
+            - source (str, optional): 来源标记
+
+    Returns:
+        str: R2 对象 Key
+
+    同时更新 broadcasts/_index.json 中的分频道计数。
+    """
+    from datetime import datetime
+
+    s3 = _get_s3()
+    ts = int(time.time())
+    safe_title = re.sub(r'[^a-zA-Z0-9\u4e00-\u9fff\-_]+', '_', data.get("title", "untitled"))
+    key = f"broadcasts/{year}/{category}/{year}_{category}_{safe_title[:60]}_{ts}.json"
+
+    record = {
+        "title": data.get("title", ""),
+        "date": data.get("date", ""),
+        "year": year,
+        "category": category,
+        "audio_url": data.get("audio_url", ""),
+        "text": data.get("text", ""),
+        "source": data.get("source", "generated"),
+        "saved_at": datetime.now().isoformat(),
+    }
+
+    s3.put_object(
+        Bucket=R2_BUCKET,
+        Key=key,
+        Body=json.dumps(record, ensure_ascii=False, indent=2).encode("utf-8"),
+        ContentType="application/json",
+        ACL="public-read",
+    )
+
+    # 更新 _index.json
+    _update_broadcast_index(year, category)
+
+    print(f"[R2] 保存广播: {key}")
+    return key
+
+
+def _update_broadcast_index(year: int, category: str):
+    """
+    更新 R2 broadcasts/_index.json 中的分频道计数。
+
+    格式: {"1949": {"news_count": 3, "music_count": 2, "total": 5}, ...}
+    """
+    s3 = _get_s3()
+    year_key = str(year)
+
+    try:
+        resp = s3.get_object(Bucket=R2_BUCKET, Key="broadcasts/_index.json")
+        index_data = json.loads(resp["Body"].read().decode("utf-8"))
+    except Exception:
+        index_data = {}
+
+    if year_key not in index_data:
+        index_data[year_key] = {}
+
+    # 统计该分类下实际对象数
+    try:
+        prefix = f"broadcasts/{year}/{category}/"
+        resp = s3.list_objects_v2(Bucket=R2_BUCKET, Prefix=prefix, MaxKeys=500)
+        count = len(resp.get("Contents", []))
+    except Exception:
+        count = index_data[year_key].get(f"{category}_count", 0)
+
+    index_data[year_key][f"{category}_count"] = count
+
+    # 计算 total
+    news = index_data[year_key].get("news_count", 0)
+    music = index_data[year_key].get("music_count", 0)
+    index_data[year_key]["total"] = news + music
+
+    from datetime import datetime
+    index_data[year_key]["updated_at"] = datetime.now().isoformat()
+
+    s3.put_object(
+        Bucket=R2_BUCKET,
+        Key="broadcasts/_index.json",
+        Body=json.dumps(index_data, ensure_ascii=False, indent=2).encode("utf-8"),
+        ContentType="application/json",
+        ACL="public-read",
+    )
+
+
+def get_broadcasts_by_category(year: int, category: str = None) -> dict:
+    """
+    读取某年某分类的广播列表。
+
+    Args:
+        year: 年份，如 1978
+        category: 频道分类，'news' / 'music' / None（返回全部）
+
+    Returns:
+        dict: {
+            "year": 1978,
+            "channels": {
+                "news": {"count": N, "items": [{...}, ...]},
+                "music": {"count": M, "items": [{...}, ...]}
+            }
+        }
+    """
+    s3 = _get_s3()
+    categories = [category] if category else ["news", "music", "zgzs", "jjzs", "yyzs", "archive"]
+    result = {"year": year, "channels": {}}
+
+    for cat in categories:
+        prefix = f"broadcasts/{year}/{cat}/"
+        try:
+            resp = s3.list_objects_v2(Bucket=R2_BUCKET, Prefix=prefix, MaxKeys=500)
+            objects = resp.get("Contents", [])
+        except Exception as e:
+            print(f"[R2] list_objects 失败 ({year}/{cat}): {e}")
+            objects = []
+
+        items = []
+        for obj in objects:
+            key = obj.get("Key", "")
+            if not key.endswith(".json"):
+                continue
+            try:
+                item_resp = s3.get_object(Bucket=R2_BUCKET, Key=key)
+                item_data = json.loads(item_resp["Body"].read().decode("utf-8"))
+                items.append({
+                    "title": item_data.get("title", ""),
+                    "date": item_data.get("date", ""),
+                    "url": item_data.get("audio_url", ""),
+                    "text": item_data.get("text", ""),
+                    "source": item_data.get("source", ""),
+                    "category": cat,
+                    "key": key,
+                })
+            except Exception as e:
+                print(f"[R2] 读取对象失败 {key}: {e}")
+                items.append({
+                    "title": key.rsplit("/", 1)[-1].replace(".json", ""),
+                    "date": "",
+                    "url": f"{PUBLIC_BASE}/{key}",
+                    "key": key,
+                })
+
+        # 按日期倒序
+        items.sort(key=lambda x: x.get("date", ""), reverse=True)
+
+        result["channels"][cat] = {
+            "count": len(items),
+            "items": items,
+        }
+
+    # 如果 2020-2026，合并为 history
+    if year >= 2020 and not category:
+        history_items = []
+        for cat_items in result["channels"].values():
+            history_items.extend(cat_items.get("items", []))
+        history_items.sort(key=lambda x: x.get("date", ""), reverse=True)
+        result["channels"] = {
+            "history": {
+                "count": len(history_items),
+                "items": history_items,
+            }
+        }
+
+    return result

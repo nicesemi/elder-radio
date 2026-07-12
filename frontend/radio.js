@@ -1,6 +1,6 @@
 /* =============================================
-   radio.js — 复古收音机模拟器 v3.0
-   新增：URL 年代参数、按天选择器、年代模式电台名显示
+   radio.js — 复古收音机模拟器 v4.0
+   新增：频道切换(新闻/音乐)、自动播放、URL 参数支持
    ============================================= */
 
 (function() {
@@ -13,11 +13,13 @@
 
   let allStations = [];
   let broadcastData = {};
+  let singerData = { singers: [] };   // 歌手/歌曲数据（音乐频道用）
   let liveStations = [];
   let historyStations = [];
   let cntvStations = [];
   let cntrYearSet = new Set();
   let currentCategory = '';
+  let currentChannel = 'news';         // 'news' | 'music'（仅 1949-2019 AM 模式生效）
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -51,7 +53,6 @@
     let lastY = 0, lastTime = 0, velocity = 0;
     let inertiaFrame = null;
 
-    // 移动端：增大触摸热区
     el.style.minWidth = '88px';
     el.style.minHeight = '88px';
     el.style.display = 'flex';
@@ -94,7 +95,6 @@
       dragging = false;
       el.style.cursor = 'grab';
 
-      // 惯性滑动
       if (Math.abs(velocity) > 0.05) {
         let v = velocity * 80 * ((max - min) / 200);
         function animate() {
@@ -111,7 +111,6 @@
       }
     }
 
-    // Mouse events (desktop)
     el.addEventListener('mousedown', function(e) {
       e.preventDefault();
       startDrag(e.clientY);
@@ -123,7 +122,6 @@
 
     window.addEventListener('mouseup', endDrag);
 
-    // Touch events (mobile)
     el.addEventListener('touchstart', function(e) {
       if (e.touches.length === 1) {
         startDrag(e.touches[0].clientY);
@@ -139,7 +137,6 @@
     el.addEventListener('touchend', endDrag);
     el.addEventListener('touchcancel', endDrag);
 
-    // Wheel (desktop scroll)
     el.addEventListener('wheel', function(e) {
       e.preventDefault();
       const dir = e.deltaY > 0 ? -1 : 1;
@@ -202,8 +199,8 @@
       fetchMaydaySongs(year);
     } else {
       setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+      renderChannelTabs();  // 频道 Tab 随年代变化显隐
       filterStations();
-      // CNR 有该年数据 → 自动切到 1月1日
       if (cntrYearSet.has(String(year))) {
         selectedMonth = 1;
         selectedDay = 1;
@@ -236,6 +233,49 @@
     { min: 0, max: 1, step: 0.01, onChange: function() {} }
   );
 
+  // ============ 频道 Tab 渲染 ============
+  function renderChannelTabs() {
+    var el = document.getElementById('channelTabs');
+    if (!el) return;
+    // 仅 AM 模式 + 1949-2019 显示频道 Tab
+    if (mode === 'AM' && year >= 1949 && year <= 2019) {
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+      return;
+    }
+    // 高亮当前频道
+    var tabs = el.querySelectorAll('.channel-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].dataset.channel === currentChannel);
+    }
+  }
+
+  function bindChannelTabs() {
+    var el = document.getElementById('channelTabs');
+    if (!el) return;
+    el.addEventListener('click', function(e) {
+      var tab = e.target.closest('.channel-tab');
+      if (!tab) return;
+      var ch = tab.dataset.channel;
+      if (ch && ch !== currentChannel) {
+        currentChannel = ch;
+        renderChannelTabs();
+        filterStations();
+        if (stations.length > 0) {
+          stationIdx = 0;
+          setStIdx(0);
+          bindTuningKnob();
+          renderDial();
+          renderChannelList();
+          updateNowPlaying();
+          playCurrent();
+        }
+        updateEraScroll();
+      }
+    });
+  }
+
   // ============ 模式切换 ============
   function setMode(m) {
     mode = m;
@@ -250,6 +290,9 @@
     document.getElementById('dialLed').classList.toggle('off', !isLive && !isMayday);
     document.getElementById('dialModeLabel').textContent = m === 'MAYDAY' ? 'MAYDAY' : m;
 
+    // 频道 Tab 随模式变化
+    renderChannelTabs();
+
     if (m === 'FM') {
       document.getElementById('dialRange').textContent = '88-108 MHz';
       document.getElementById('channelList').style.display = '';
@@ -261,7 +304,6 @@
       document.getElementById('channelList').style.display = 'none';
       document.getElementById('categoryTabs').style.display = 'none';
       document.getElementById('nixieLabel').textContent = 'YEAR / 年代';
-      // 隐藏日期选择器
       document.getElementById('selMonth').parentElement.style.display = 'none';
       fetchMaydayYears();
     } else {
@@ -395,38 +437,84 @@
     el.textContent = year + '年 · ' + stations.length + '首 · 循环播放中';
   }
 
+  // ============ 电台过滤（核心 — v4.0 支持双频道） ============
   function filterStations() {
-    var filtered = allStations.slice();
+    var filtered = [];
 
     if (mode === 'FM') {
-      // FM: 所有有流的直播台，verified 优先
-      filtered = filtered.filter(function(s) { return s.type === 'live' && s.stream_url; });
+      // FM 直播：所有有流的直播台
+      filtered = allStations.filter(function(s) { return s.type === 'live' && s.stream_url; });
       filtered.sort(function(a, b) { return (b.verified ? 1 : 0) - (a.verified ? 1 : 0); });
-    } else {
-      // AM: 年代匹配的电台
-      filtered = filtered.filter(function(s) {
+    } else if (mode === 'AM') {
+      // AM 模式：按年代匹配
+      filtered = allStations.filter(function(s) {
         var era = s.era || '';
         var matchDecade = era.match(/^(\d{4})/);
         if (!matchDecade) return false;
         var eraYear = parseInt(matchDecade[1]);
         return eraYear <= year && s.type === 'live' && s.stream_url;
       });
-    }
 
-    // AM 兜底：从 broadcast_data.json 生成虚拟电台
-    if (filtered.length === 0 && mode === 'AM') {
-      var yearData = broadcastData.years && broadcastData.years[String(year)];
-      var bStations = yearData ? (yearData.stations || []) : [];
-      for (var i = 0; i < bStations.length; i++) {
-        filtered.push({
-          id: 'ai_' + i,
-          name: bStations[i],
-          type: 'ai_archive',
-          category: '历史',
-          era: String(year),
-          stream_url: null,
-          verified: false
-        });
+      // 1949-2019 双频道支持
+      if (year >= 1949 && year <= 2019) {
+        if (currentChannel === 'news') {
+          // 新闻频道：筛选新闻类电台
+          var newsFiltered = filtered.filter(function(s) {
+            var cat = (s.category || '').toLowerCase();
+            return cat.indexOf('新闻') >= 0 || cat.indexOf('综合') >= 0 || cat.indexOf('news') >= 0;
+          });
+          // 若新闻类电台不足，保留全部匹配电台
+          filtered = newsFiltered.length > 0 ? newsFiltered : filtered;
+
+          // 兜底：从 broadcast_data.json 生成 AI 虚拟"大事记"频道
+          if (filtered.length === 0) {
+            var yearData = broadcastData.years && broadcastData.years[String(year)];
+            var bEvents = yearData ? (yearData.events || []) : [];
+            if (bEvents.length > 0) {
+              filtered.push({
+                id: 'ai_news_' + year,
+                name: year + '年 大事记',
+                type: 'ai_archive',
+                category: '新闻',
+                era: String(year),
+                stream_url: null,
+                verified: false,
+                channel: 'news'
+              });
+            } else {
+              filtered.push({
+                id: 'ai_news_' + year,
+                name: year + '年 新闻广播',
+                type: 'ai_archive',
+                category: '新闻',
+                era: String(year),
+                stream_url: null,
+                verified: false,
+                channel: 'news'
+              });
+            }
+          }
+        } else if (currentChannel === 'music') {
+          // 音乐频道：从 singer_data.json 获取该年金曲
+          filtered = getMusicStationsForYear(year);
+        }
+      } else {
+        // 2020-2025：保持原有 AM 逻辑
+        if (filtered.length === 0) {
+          var yearData2 = broadcastData.years && broadcastData.years[String(year)];
+          var bStations2 = yearData2 ? (yearData2.stations || []) : [];
+          for (var k = 0; k < bStations2.length; k++) {
+            filtered.push({
+              id: 'ai_' + k,
+              name: bStations2[k],
+              type: 'ai_archive',
+              category: '历史',
+              era: String(year),
+              stream_url: null,
+              verified: false
+            });
+          }
+        }
       }
     }
 
@@ -443,8 +531,56 @@
     setStIdx(stationIdx);
     renderDial();
     renderChannelList();
-    playCurrent();
     updateNowPlaying();
+  }
+
+  // ============ 音乐频道：从 singer_data.json 获取金曲 ============
+  function getMusicStationsForYear(y) {
+    var result = [];
+    var singers = singerData.singers || [];
+
+    for (var i = 0; i < singers.length; i++) {
+      var s = singers[i];
+      var songsByYear = s.songs_by_year || {};
+      var yearSongs = songsByYear[String(y)];
+      if (!yearSongs) continue;
+
+      for (var j = 0; j < yearSongs.length; j++) {
+        var song = yearSongs[j];
+        // 优先有酷我流的歌曲
+        if (song.stream_url && song.has_stream) {
+          result.push({
+            id: 'music_' + y + '_' + s.name + '_' + j,
+            name: s.name_cn + ' - ' + song.title,
+            stream_url: song.stream_url,
+            type: 'music_kuwo',
+            category: '音乐',
+            era: String(y),
+            verified: true,
+            source: 'kuwo',
+            channel: 'music',
+            singer: s.name_cn,
+            album: song.album || ''
+          });
+        }
+      }
+    }
+
+    // 无酷我流金曲 → AI 兜底"经典金曲"虚拟频道
+    if (result.length === 0) {
+      result.push({
+        id: 'ai_music_' + y,
+        name: y + '年 经典金曲',
+        type: 'ai_archive',
+        category: '音乐',
+        era: String(y),
+        stream_url: null,
+        verified: false,
+        channel: 'music'
+      });
+    }
+
+    return result;
   }
 
   // ============ FM 实时电台获取 ============
@@ -479,7 +615,6 @@
     });
 
     function fallbackToLocalVerified() {
-      // 使用全部直播电台（不限定 verified），按名称去重
       var seen = {};
       liveStations = [];
       allStations.forEach(function(s) {
@@ -523,7 +658,6 @@
       return r.json();
     }).then(function(data) {
       if (data.stations && data.stations.length > 0) {
-        // 将 R2 归档数据转为 station 对象
         var histStations = [];
         data.stations.forEach(function(entry) {
           var stationName = entry.station_name || '未知电台';
@@ -563,11 +697,9 @@
           return;
         }
       }
-      // 无历史数据 → 尝试 CNR 云听回听兜底
       console.log('[AM] broadcasts/ 无数据，尝试 CNR 云听回听');
       generateDateBroadcast();
     }).catch(function() {
-      // API 不可用 → 尝试 CNR 兜底
       console.log('[AM] broadcasts/ API 不可用，尝试 CNR 云听');
       generateDateBroadcast();
     });
@@ -583,6 +715,8 @@
         el.textContent = (dateLabel ? dateLabel[0] : year) + ' · 中国之声云听回听';
       } else if (stations.length > 0 && stations[0] && stations[0].source === 'archive.org') {
         el.textContent = year + '年 · Internet Archive · ' + stations.length + ' 个录音';
+      } else if (year >= 1949 && year <= 2019 && currentChannel === 'music') {
+        el.textContent = year + '年 · ' + (currentChannel === 'music' ? '金曲回响' : '') + ' · ' + stations.length + ' 首';
       } else {
         var events = (broadcastData.years && broadcastData.years[String(year)])
           ? broadcastData.years[String(year)].events || [] : [];
@@ -621,6 +755,8 @@
         label = s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---';
       } else if (s.type === 'ai_archive') {
         label = '◆ ' + s.name.slice(0, 7);
+      } else if (s.type === 'music_kuwo') {
+        label = '♪ ' + s.name.slice(0, 7);
       } else {
         label = s.name.slice(0, 8);
       }
@@ -646,6 +782,8 @@
       if (s.type === 'cntv') {
         var timeLabel = s.start ? s.start + '-' + s.end : '';
         el.textContent = '[' + year + '] ' + s.name + (timeLabel ? ' ' + timeLabel : '') + ' · 云听回听';
+      } else if (s.type === 'music_kuwo') {
+        el.textContent = '♪ ' + s.name + ' · 酷我音乐';
       } else if (mode === 'FM') {
         el.textContent = '直播: ' + s.name;
       } else {
@@ -661,7 +799,6 @@
     var mSel = document.getElementById('selMonth');
     var dSel = document.getElementById('selDay');
 
-    // 月份
     mSel.innerHTML = '';
     for (var m = 1; m <= 12; m++) {
       var opt = document.createElement('option');
@@ -708,12 +845,10 @@
       String(selectedMonth).padStart(2, '0') + '-' +
       String(selectedDay).padStart(2, '0');
 
-    // 优先查云听 CNR 回听节目
     fetch('/api/cntv/date/' + dateStr)
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.programs && data.programs.length > 0) {
-          // 有云听回听数据 → 渲染为可调谐的节目列表
           cntvStations = data.programs.map(function(p, i) {
             return {
               id: 'cntv_' + dateStr + '_' + i,
@@ -739,16 +874,13 @@
             '[' + dateStr + '] 中国之声 · ' + data.programs.length + ' 档节目';
           return;
         }
-        // CNR 无数据 → 老年代(1950-2019)尝试 Archive 兜底
         if (year <= 2019) {
           fetchArchiveBroadcasts(year);
           return;
         }
-        // 无 CNR 数据 → 走原有广播生成逻辑
         _fallbackBroadcast(dateStr);
       })
       .catch(function() {
-        // CNR API 不可用 → 老年代尝试 Archive 兜底
         if (year <= 2019) {
           fetchArchiveBroadcasts(year);
           return;
@@ -766,12 +898,11 @@
       .then(function(r) { return r.json(); })
       .then(function(data) {
         if (data.results && data.results.length > 0) {
-          // 将 Archive 结果转为 station 对象
           var archiveStations = data.results.map(function(item, i) {
             return {
               id: 'archive_' + y + '_' + i,
               name: item.title || ('Archive 广播 #' + (i + 1)),
-              stream_url: null,  // 通过 archive_audio_url 播放
+              stream_url: null,
               archive_audio_url: item.audio_url,
               archive_identifier: item.identifier,
               type: 'archive',
@@ -783,7 +914,7 @@
           });
 
           stations = archiveStations;
-          historyStations = archiveStations;  // 复用 historyStations 存储
+          historyStations = archiveStations;
           stationIdx = 0;
           bindTuningKnob();
           setStIdx(0);
@@ -810,7 +941,6 @@
     var channel = stations[stationIdx] ? (stations[stationIdx].category || 'news') : 'news';
     document.getElementById('nowPlaying').textContent = '生成中: ' + dateStr;
 
-    // 调用新 API: /api/broadcast/date/{date}?category=...
     fetch('/api/broadcast/date/' + dateStr + '?category=' + encodeURIComponent(channel))
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -827,7 +957,6 @@
         }
       })
       .catch(function() {
-        // API 不可用 → AI 兜底
         aiGenerateDate(dateStr);
       });
   }
@@ -838,7 +967,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        channel: st ? st.category : 'news',
+        channel: st ? (st.channel || st.category || 'news') : 'news',
         year: year,
         station_name: st ? st.name : '',
         voice: TONE_NAMES[toneIdx]
@@ -866,6 +995,8 @@
     if (!s) return;
     if (mode === 'MAYDAY') {
       playMaydaySong(s);
+    } else if (s.type === 'music_kuwo') {
+      playMusicStream(s);
     } else if (s.type === 'ai_archive') {
       ttsGenerate(s);
     } else if (s.type === 'archive' && s.archive_identifier) {
@@ -877,8 +1008,54 @@
     }
   }
 
+  // ============ 音乐频道播放（酷我流优先） ============
+  function playMusicStream(station) {
+    if (!station.stream_url) {
+      // 酷我流不可用 → 尝试 R2 音乐缓存
+      fetch('/api/broadcast/music/' + year)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.audio_url) {
+            prevStreamUrl = data.audio_url;
+            AUDIO.src = data.audio_url;
+            AUDIO.play().catch(function(e) { console.log('R2 music failed:', e.message); });
+            document.getElementById('nowPlaying').textContent =
+              '♪ [' + year + '] ' + station.name + ' · R2金曲';
+          } else {
+            // R2 无缓存 → AI 生成金曲介绍
+            ttsGenerate(station);
+          }
+        })
+        .catch(function() {
+          ttsGenerate(station);
+        });
+      return;
+    }
+
+    prevStreamUrl = station.stream_url;
+    AUDIO.src = station.stream_url;
+    AUDIO.play().catch(function(e) {
+      console.log('Kuwo stream failed:', e.message);
+      // 酷我流失败 → 降级到 R2 → AI
+      fetch('/api/broadcast/music/' + year)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.audio_url) {
+            prevStreamUrl = data.audio_url;
+            AUDIO.src = data.audio_url;
+            AUDIO.play().catch(function() {});
+            document.getElementById('nowPlaying').textContent =
+              '♪ [' + year + '] 金曲回响 · R2缓存';
+          } else {
+            ttsGenerate(station);
+          }
+        })
+        .catch(function() { ttsGenerate(station); });
+    });
+    document.getElementById('nowPlaying').textContent = '♪ ' + station.name;
+  }
+
   function playArchive(station) {
-    // 优先走 R2 缓存代理 URL（加速），失败则直连 archive.org
     document.getElementById('nowPlaying').textContent = '[' + year + '] ' + station.name + ' · 加载中...';
 
     fetch('/api/broadcast/archive/play/' + encodeURIComponent(station.archive_identifier))
@@ -895,7 +1072,6 @@
         }
       })
       .catch(function() {
-        // 兜底：直连 archive.org 原始 URL
         if (station.archive_audio_url) {
           prevStreamUrl = station.archive_audio_url;
           AUDIO.src = station.archive_audio_url;
@@ -929,7 +1105,7 @@
   function formatSource(src) {
     var labels = {
       'r2': 'R2缓存', 'api': '历史API', 'downloaded': '已下载',
-      'ai': 'AI生成', 'live': '实时直播'
+      'ai': 'AI生成', 'live': '实时直播', 'kuwo': '酷我音乐'
     };
     return labels[src] || src || '未知';
   }
@@ -939,7 +1115,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        channel: station.category || 'news',
+        channel: station.channel || station.category || 'news',
         year: year,
         station_name: station.name,
         voice: TONE_NAMES[toneIdx]
@@ -958,15 +1134,13 @@
     AUDIO.pause();
     prevStreamUrl = '';
 
-    var channel = station.category || 'news';
+    var channel = station.channel || station.category || 'news';
     var apiUrl, fetchOptions;
 
     if (year === ERA_MAX) {
-      // 2026 年 → 实时广播 API
       apiUrl = '/api/broadcast/live?category=' + encodeURIComponent(channel);
       fetchOptions = { method: 'GET' };
     } else {
-      // 历史年代 → 年代广播 API
       apiUrl = '/api/broadcast/year/' + year + '?category=' + encodeURIComponent(channel);
       fetchOptions = { method: 'GET' };
     }
@@ -986,7 +1160,6 @@
       })
       .catch(function(err) {
         console.log('TTS error:', err);
-        // 兜底：回退到 POST /api/broadcast/generate
         aiFallbackGenerate(station);
       });
   }
@@ -1061,46 +1234,104 @@
       });
   }
 
-  // ============ URL 参数加载 ============
+  // ============ URL 参数加载（v4.0 支持 channel/mode/station + 自动播放） ============
   function loadFromURL() {
     var params = new URLSearchParams(window.location.search);
+    var urlYear = params.get('year');
+    var urlMode = params.get('mode');
+    var urlStation = params.get('station');
+    var urlChannel = params.get('channel');
+    var hasParams = !!(urlYear || urlMode || urlStation || urlChannel);
 
-    // 年代参数: ?year=1985
-    var yParam = params.get('year');
-    if (yParam) {
-      var y = parseInt(yParam);
-      if (y >= ERA_MIN && y <= ERA_MAX) {
-        year = y;
-        document.getElementById('nixieYear').textContent = year;
-        setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
-        setMode('AM');
+    if (hasParams) {
+      // 明确 URL 参数 → 按参数初始化
+      if (urlYear) {
+        var y = parseInt(urlYear);
+        if (y >= ERA_MIN && y <= ERA_MAX) {
+          year = y;
+          document.getElementById('nixieYear').textContent = year;
+          setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+        }
       }
-    }
 
-    // 电台参数: ?station=cnr_001
-    var sid = params.get('station');
-    if (sid) {
-      var st = allStations.find(function(s) { return s.id === sid; });
-      if (st) {
-        if (st.stream_url) setMode('FM');
-        filterStations();
-        var idx = stations.findIndex(function(s) { return s.id === sid; });
-        if (idx >= 0) { setStIdx(idx); onTuneChange(); }
-        return;
+      if (urlMode === 'fm') {
+        setMode('FM');
+        return;  // FM 切换会自动 fetchLiveStations
       }
-    }
 
-    filterStations();
+      if (urlChannel === 'news' || urlChannel === 'music') {
+        currentChannel = urlChannel;
+      }
+
+      // AM 模式处理
+      if (year && !urlMode) setMode('AM');
+      renderChannelTabs();
+      filterStations();
+
+      // URL station 参数：按索引选中
+      if (urlStation && stations.length > 0) {
+        var sIdx = parseInt(urlStation);
+        if (sIdx >= 0 && sIdx < stations.length) {
+          setStIdx(sIdx);
+          onTuneChange();
+        }
+      }
+    } else {
+      // 无 URL 参数 → 自动播放当天广播
+      autoPlayToday();
+    }
   }
 
-  // ============ 键盘控制 ============
-  document.addEventListener('keydown', function(e) {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-    if (e.key === 'ArrowRight') { setStIdx(stationIdx + 1); onTuneChange(); }
-    if (e.key === 'ArrowLeft')  { setStIdx(stationIdx - 1); onTuneChange(); }
-    if (e.key === 'ArrowUp')    { setVol(volume + 0.05); }
-    if (e.key === 'ArrowDown')  { setVol(volume - 0.05); }
-  });
+  // ============ 自动播放：根据当前日期选择模式/年份/频道 ============
+  function autoPlayToday() {
+    var now = new Date();
+    var todayYear = now.getFullYear();
+    var todayMonth = now.getMonth() + 1;  // 1-12
+    var todayDay = now.getDate();
+
+    selectedMonth = todayMonth;
+    selectedDay = todayDay;
+
+    // 设置日期选择器
+    document.getElementById('selMonth').value = todayMonth;
+    populateDayOptions();
+    document.getElementById('selDay').value = todayDay;
+
+    if (todayYear === 2026) {
+      // 2026：FM 直播模式
+      year = todayYear;
+      document.getElementById('nixieYear').textContent = year;
+      setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+      setMode('FM');
+    } else if (todayYear >= 2020 && todayYear <= 2025) {
+      // 2020-2025：AM 历史广播，搜索当天
+      year = todayYear;
+      document.getElementById('nixieYear').textContent = year;
+      setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+      setMode('AM');
+      // 触发当天的 CNR 回听
+      generateDateBroadcast();
+    } else {
+      // 1949-2019：AM 模式 + 新闻频道，AI 生成"历史上的今天"
+      year = todayYear;
+      currentChannel = 'news';
+      document.getElementById('nixieYear').textContent = year;
+      setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+      setMode('AM');
+      renderChannelTabs();
+      filterStations();
+      if (stations.length > 0) {
+        stationIdx = 0;
+        setStIdx(0);
+        bindTuningKnob();
+        renderDial();
+        renderChannelList();
+        updateEraScroll();
+        updateNowPlaying();
+        playCurrent();
+      }
+    }
+  }
 
   // ============ 频道列表渲染 ============
   function renderChannelList() {
@@ -1122,23 +1353,36 @@
     }
     el.style.display = 'block';
 
+    // 根据模式设置列表标题
+    var labelEl = el.querySelector('.channel-list-label');
+    if (mode === 'AM' && year >= 1949 && year <= 2019) {
+      var chLabel = currentChannel === 'music' ? '🎵 音乐' : '📰 新闻';
+      labelEl.textContent = year + '年 · ' + chLabel + ' · ' + list.length + ' 个频道';
+    } else {
+      labelEl.textContent = '频道列表';
+    }
+
     scroll.innerHTML = list.map(function(s, i) {
       var cls = 'channel-chip';
-      // 高亮当前台：在 stations 中找到实际索引
       var realIdx = stations.indexOf(s);
       if (realIdx === stationIdx) cls += ' current';
       if (s.verified) cls += ' verified';
       if (s.type === 'ai_archive') cls += ' ai';
       if (s.type === 'cntv') cls += ' cntv';
+      if (s.type === 'music_kuwo') cls += ' verified';
       var label;
       if (s.type === 'cntv' && s.start) {
         label = s.start + ' ' + (s.name.length > 12 ? s.name.slice(0, 12) + '…' : s.name);
+      } else if (s.type === 'music_kuwo') {
+        label = '♪ ' + (s.name.length > 20 ? s.name.slice(0, 20) + '…' : s.name);
       } else {
         label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
       }
       var sourceBadge = '';
       if (s.source && s.source === 'ytapi.radio.cn') {
         sourceBadge = ' <span style="opacity:0.5;font-size:7px;">云听</span>';
+      } else if (s.source && s.source === 'kuwo') {
+        sourceBadge = ' <span style="opacity:0.5;font-size:7px;">酷我</span>';
       } else if (s.source && (mode === 'FM' || s.source === 'r2_archive' || s.source === 'archive.org')) {
         sourceBadge = ' <span style="opacity:0.5;font-size:7px;">' + s.source + '</span>';
       }
@@ -1160,20 +1404,17 @@
     var el = document.getElementById('categoryTabs');
     if (!el) return;
 
-    // 仅 FM 模式显示
     if (mode !== 'FM') {
       el.style.display = 'none';
       return;
     }
 
-    // 从 liveStations 聚合分类
     var cats = {};
     liveStations.forEach(function(s) {
       if (s.category) cats[s.category] = (cats[s.category] || 0) + 1;
     });
 
     var catNames = Object.keys(cats).sort(function(a, b) {
-      // 常见分类排前面：新闻/音乐/体育/财经/交通/生活/教育
       var order = ['新闻', '音乐', '体育', '财经', '交通', '生活', '教育'];
       var ai = order.indexOf(a), bi = order.indexOf(b);
       if (ai >= 0 && bi >= 0) return ai - bi;
@@ -1195,7 +1436,6 @@
     });
     el.innerHTML = html;
 
-    // 绑定点击事件
     var tabs = el.querySelectorAll('.category-tab');
     for (var k = 0; k < tabs.length; k++) {
       tabs[k].addEventListener('click', function() {
@@ -1217,24 +1457,37 @@
     }
   });
 
+  // ============ 键盘控制 ============
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowRight') { setStIdx(stationIdx + 1); onTuneChange(); }
+    if (e.key === 'ArrowLeft')  { setStIdx(stationIdx - 1); onTuneChange(); }
+    if (e.key === 'ArrowUp')    { setVol(volume + 0.05); }
+    if (e.key === 'ArrowDown')  { setVol(volume - 0.05); }
+  });
+
   // ============ 初始化 ============
   function init() {
     populateDateSelector();
+    bindChannelTabs();
 
     Promise.all([
       fetch('/radio_sources.json').then(function(r) { return r.json(); }),
-      fetch('/broadcast_data.json').then(function(r) { return r.json(); }).catch(function() { return {}; })
+      fetch('/broadcast_data.json').then(function(r) { return r.json(); }).catch(function() { return {}; }),
+      fetch('/singer_data.json').then(function(r) { return r.json(); }).catch(function() { return { singers: [] }; })
     ]).then(function(results) {
       allStations = results[0].stations || [];
       broadcastData = results[1];
+      singerData = results[2];
 
       setStIdx(0);
       setVol(0.7);
       loadFromURL();
       renderDial();
+      renderChannelTabs();
       updateEraScroll();
 
-      // 预加载 CNR 年份列表（用于 AM 模式自动回退）
+      // 预加载 CNR 年份列表
       fetch('/api/cntv/years')
         .then(function(r) { return r.json(); })
         .then(function(data) {
