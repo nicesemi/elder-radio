@@ -238,6 +238,24 @@
     .toast.show { opacity:1; }
     .toast.error { background:#e94560; }
 
+    /* Agnes AI 机器人状态指示 */
+    .agnes-indicator {
+      position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+      font-size:9px; background:rgba(0,0,0,0.55); color:#FFD9A0;
+      padding:2px 12px; border-radius:10px; z-index:4;
+      display:none; align-items:center; gap:4px;
+      white-space:nowrap; pointer-events:none;
+    }
+    .agnes-indicator.visible { display:flex; }
+    .agnes-dot {
+      width:6px; height:6px; border-radius:50%;
+      background:#4CAF50; animation:agnes-blink 1s infinite;
+    }
+    .agnes-indicator.countdown .agnes-dot { background:#FF9800; animation:none; }
+    .agnes-indicator.listening .agnes-dot { background:#2196F3; }
+    .agnes-indicator.replying .agnes-dot { background:#9C27B0; }
+    @keyframes agnes-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
     /* PTT 大按钮 */
     .ptt-button {
       width:110px; height:110px; border-radius:50%;
@@ -374,6 +392,12 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Agnes AI 机器人状态指示器 -->
+<div id="agnesIndicator" class="agnes-indicator" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); font-size:10px; z-index:3000;">
+  <span class="agnes-dot"></span>
+  <span id="agnesStatusText"></span>
 </div>
 
 <div id="jitsiContainer" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;">

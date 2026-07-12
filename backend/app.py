@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from typing import Optional
 import io
 
-from config import SERVER_HOST, SERVER_PORT, CHANNELS
+from config import SERVER_HOST, SERVER_PORT, CHANNELS, AGNES_BASE_URL, AGNES_API_KEY, AGNES_MODEL
 from ai_content import generate_broadcast_content, generate_ai_answer
 from tts_service import text_to_speech, list_available_voices, get_voice_for_era
 from voice_clone import (
@@ -171,6 +171,53 @@ async def ai_chat_text(req: AIChatRequest):
         "question": req.question,
         "answer": answer
     }
+
+
+class AgnesProxyRequest(BaseModel):
+    text: str
+    context: Optional[str] = ""
+
+
+@app.post("/api/agnes/proxy")
+async def agnes_proxy(req: AgnesProxyRequest):
+    """Agnes AI 代理 — 接收用户语音转写的文本，返回 AI 文字回应。"""
+    if not AGNES_API_KEY:
+        raise HTTPException(status_code=500, detail="AGNES_API_KEY 未配置")
+
+    system_prompt = (
+        "你叫 Agnes，是一个温暖贴心的 AI 语音助手，嵌入在老年人收音机对讲机中。"
+        "你的任务是根据对讲频道中的语境，给出一句简短、自然、口语化的语音回应。"
+        "规则："
+        "1. 回复控制在 1-3 句话、60 字以内，像对讲机里朋友聊天一样自然。"
+        "2. 用亲切、耐心的语气，称呼对方为「你」。"
+        "3. 可以适当加入老人喜欢的谚语或俗语。"
+        "4. 如果对方只是说「喂」「有人在吗」之类试探性的话，友好地回应打招呼。"
+        "5. 永远用纯文本回复，不要加任何格式或标记。"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+    if req.context:
+        messages.append({"role": "user", "content": f"频道上下文：{req.context}"})
+    messages.append({"role": "user", "content": req.text})
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        resp = await client.post(
+            f"{AGNES_BASE_URL}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {AGNES_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": AGNES_MODEL,
+                "messages": messages,
+                "temperature": 0.8,
+                "max_tokens": 120,
+            },
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        reply = data["choices"][0]["message"]["content"].strip()
+        return {"success": True, "reply": reply}
 
 
 # ============ 声音管理 API ============

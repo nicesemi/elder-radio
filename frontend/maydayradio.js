@@ -432,11 +432,20 @@
           pttConnecting = false;
           isConnected = true;
           updatePTTUI(true);
+          AgnesRobot.updateContext();
         },
         videoConferenceLeft: function() {
           isConnected = false;
           pttActive = false;
           updatePTTUI(false);
+          AgnesRobot.cancel();
+        },
+        // 远程参与者音频状态变化 → 有人说话则取消倒计时
+        audioMuteStatusChanged: function(info) {
+          // info.muted === false 表示有人取消静音（准备说话）
+          if (info && !info.muted) {
+            AgnesRobot.onRemoteAudio();
+          }
         },
         readyToClose: function() {
           disconnectJitsi();
@@ -446,6 +455,7 @@
   }
 
   function disconnectJitsi() {
+    AgnesRobot.cancel();
     if (jitsiApi) {
       jitsiApi.dispose();
       jitsiApi = null;
@@ -473,6 +483,7 @@
   function pttStart() {
     if (!isConnected || !jitsiApi) return;
     if (pttActive) return;
+    AgnesRobot.cancel();  // 用户再次讲话，取消 Agnes 倒计时
     pttActive = true;
     jitsiApi.executeCommand('toggleAudio');
     var btn = document.getElementById('pttButton');
@@ -487,6 +498,8 @@
     var btn = document.getElementById('pttButton');
     btn.classList.remove('pressed');
     document.getElementById('pttLabel').textContent = '按住说话';
+    // 松手后启动 Agnes 等待倒计时
+    AgnesRobot.startCountdown();
   }
 
   var pttBtn = document.getElementById('pttButton');
@@ -525,6 +538,244 @@
     lastTouchTime = Date.now();
     pttStop();
   });
+
+  // ============ Agnes AI 机器人自动回应 ============
+  var AgnesRobot = {
+    // 状态管理
+    _state: 'idle',             // idle | countdown | listening | replying
+    _countdownTimer: null,
+    _countdownStart: 0,
+    _countdownDuration: 10000,  // 10 秒
+    _recognition: null,
+    _synth: window.speechSynthesis,
+    _remoteAudioActive: false,
+    _channelContext: '',         // 频道上下文，随年份变化
+
+    // --- 状态指示器 ---
+    _indicatorEl: document.getElementById('agnesIndicator'),
+    _statusTextEl: document.getElementById('agnesStatusText'),
+
+    _setIndicator: function(state, text) {
+      this._state = state;
+      var el = this._indicatorEl;
+      var cls = 'agnes-indicator visible';
+      if (state === 'countdown') cls += ' countdown';
+      else if (state === 'listening') cls += ' listening';
+      else if (state === 'replying') cls += ' replying';
+      el.className = cls;
+      this._statusTextEl.textContent = text || '';
+    },
+
+    _hideIndicator: function() {
+      this._state = 'idle';
+      this._indicatorEl.className = 'agnes-indicator';
+      this._statusTextEl.textContent = '';
+    },
+
+    // --- 初始化语音识别 ---
+    _initRecognition: function() {
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        console.log('[Agnes] SpeechRecognition 不可用');
+        return null;
+      }
+      var rec = new SpeechRecognition();
+      rec.lang = 'zh-CN';
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+      return rec;
+    },
+
+    // --- 开始 10 秒倒计时 ---
+    startCountdown: function() {
+      if (!isConnected) return;  // 未连接对讲，不启动
+      this.cancel();              // 清除之前的
+
+      var self = this;
+      var remaining = Math.ceil(this._countdownDuration / 1000);
+      this._setIndicator('countdown', 'Agnes 等待回应... ' + remaining + 's');
+      this._countdownStart = Date.now();
+
+      // 每秒更新倒计时
+      var tickInterval = setInterval(function() {
+        if (self._state !== 'countdown') { clearInterval(tickInterval); return; }
+        var elapsed = Date.now() - self._countdownStart;
+        var left = Math.max(0, Math.ceil((self._countdownDuration - elapsed) / 1000));
+        self._statusTextEl.textContent = 'Agnes 等待回应... ' + left + 's';
+        if (left <= 0) { clearInterval(tickInterval); }
+      }, 500);
+
+      this._countdownTimer = setTimeout(function() {
+        clearInterval(tickInterval);
+        self._onTimeout();
+      }, this._countdownDuration);
+    },
+
+    // --- 超时 → 开始监听 + 转写 ---
+    _onTimeout: function() {
+      if (this._state !== 'countdown') return;
+      this._setIndicator('listening', 'Agnes 正在听...');
+      this._startListening();
+    },
+
+    // --- 启动语音识别，捕获用户刚说的话 ---
+    _startListening: function() {
+      var rec = this._initRecognition();
+      if (!rec) {
+        // 无 SpeechRecognition，降级：直接发空消息
+        console.log('[Agnes] 无语音识别，发送默认问候');
+        this._sendToAgnes('喂，有人在吗？');
+        return;
+      }
+
+      var self = this;
+      this._recognition = rec;
+
+      rec.onresult = function(event) {
+        var transcript = '';
+        for (var i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        transcript = transcript.trim();
+        if (transcript) {
+          self._sendToAgnes(transcript);
+        } else {
+          // 没识别到内容，发默认提示
+          self._sendToAgnes('喂？有人在吗？');
+        }
+      };
+
+      rec.onerror = function(event) {
+        console.log('[Agnes] 语音识别错误:', event.error);
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          // 没检测到语音，用默认消息
+          self._sendToAgnes('你好，有人回应吗？');
+        } else {
+          self._hideIndicator();
+        }
+      };
+
+      rec.onend = function() {
+        self._recognition = null;
+      };
+
+      try {
+        rec.start();
+      } catch (e) {
+        console.log('[Agnes] 启动语音识别失败:', e);
+        this._sendToAgnes('有人在吗？');
+      }
+    },
+
+    // --- 发送文字到 Agnes API ---
+    _sendToAgnes: function(text) {
+      var self = this;
+      this._setIndicator('replying', 'Agnes 回复中...');
+
+      fetch('/api/agnes/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: text,
+          context: '五月天 ' + year + ' 年代对讲频道'
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.reply) {
+          self._speak(data.reply);
+        } else {
+          console.log('[Agnes] API 返回失败:', data);
+          self._hideIndicator();
+        }
+      })
+      .catch(function(e) {
+        console.log('[Agnes] API 请求失败:', e);
+        self._hideIndicator();
+      });
+    },
+
+    // --- TTS 朗读 ---
+    _speak: function(text) {
+      var self = this;
+      if (!this._synth) {
+        console.log('[Agnes] SpeechSynthesis 不可用');
+        this._hideIndicator();
+        return;
+      }
+
+      // 取消之前正在播放的语音
+      this._synth.cancel();
+
+      var utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-CN';
+      utter.rate = 0.95;
+      utter.pitch = 1.1;
+      utter.volume = 0.9;
+
+      // 尝试选择女性中文语音
+      var voices = this._synth.getVoices();
+      var preferred = voices.find(function(v) {
+        return v.lang === 'zh-CN' && v.name.indexOf('Female') !== -1;
+      }) || voices.find(function(v) {
+        return v.lang.startsWith('zh');
+      });
+      if (preferred) utter.voice = preferred;
+
+      utter.onstart = function() {
+        self._setIndicator('replying', 'Agnes: ' + text.substring(0, 20) + '...');
+      };
+
+      utter.onend = function() {
+        self._hideIndicator();
+      };
+
+      utter.onerror = function(e) {
+        console.log('[Agnes] TTS 错误:', e);
+        self._hideIndicator();
+      };
+
+      this._synth.speak(utter);
+    },
+
+    // --- 取消（用户再次 PTT / 远程音频 / 断开连接） ---
+    cancel: function() {
+      if (this._countdownTimer) {
+        clearTimeout(this._countdownTimer);
+        this._countdownTimer = null;
+      }
+      if (this._recognition) {
+        try { this._recognition.abort(); } catch(e) {}
+        this._recognition = null;
+      }
+      if (this._synth) {
+        this._synth.cancel();
+      }
+      this._hideIndicator();
+    },
+
+    // --- Jitsi 远程音频活动通知 ---
+    onRemoteAudio: function() {
+      if (this._state === 'countdown') {
+        console.log('[Agnes] 检测到远程音频 → 取消倒计时');
+        this.cancel();
+      }
+    },
+
+    // --- 更新频道上下文 ---
+    updateContext: function(ctx) {
+      this._channelContext = ctx || ('五月天 ' + year + ' 年代对讲频道');
+    }
+  };
+
+  // 预加载 voices 列表（异步）
+  if (window.speechSynthesis) {
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged = function() {
+      window.speechSynthesis.getVoices();
+    };
+  }
 
   // ============ 初始化 ============
   function init() {

@@ -15,6 +15,7 @@ import re
 import gzip
 import urllib.request
 import urllib.parse
+import httpx
 from datetime import datetime
 
 LIB_DIR = os.path.join(os.path.dirname(__file__), "_lib")
@@ -962,3 +963,63 @@ async def broadcast_year_channels(
         "year": year,
         "channels": result_channels,
     }
+
+
+# ============ Agnes AI 代理 ============
+
+AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1"
+AGNES_MODEL = "agnes-2.0-flash"
+
+class AgnesRequest(BaseModel):
+    text: str
+    context: Optional[str] = ""
+
+@app.post("/api/agnes/proxy")
+async def agnes_proxy(req: AgnesRequest):
+    """
+    Agnes AI 代理 — 接收用户语音转写的文本，返回 AI 文字回应。
+
+    前端 SpeechRecognition → 本端点 → Agnes AI → 返回文字 → 前端 TTS 朗读
+    """
+    api_key = os.environ.get("AGNES_API_KEY", "")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="AGNES_API_KEY 未配置")
+
+    system_prompt = (
+        "你叫 Agnes，是一个温暖贴心的 AI 语音助手，嵌入在老年人收音机对讲机中。"
+        "你的任务是根据对讲频道中的语境，给出一句简短、自然、口语化的语音回应。"
+        "规则："
+        "1. 回复控制在 1-3 句话、60 字以内，像对讲机里朋友聊天一样自然。"
+        "2. 用亲切、耐心的语气，称呼对方为「你」。"
+        "3. 可以适当加入老人喜欢的谚语或俗语。"
+        "4. 如果对方只是说「喂」「有人在吗」之类试探性的话，友好地回应打招呼。"
+        "5. 永远用纯文本回复，不要加任何格式或标记。"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+    if req.context:
+        messages.append({"role": "user", "content": f"频道上下文：{req.context}"})
+    messages.append({"role": "user", "content": req.text})
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                f"{AGNES_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": AGNES_MODEL,
+                    "messages": messages,
+                    "temperature": 0.8,
+                    "max_tokens": 120,
+                },
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            reply = data["choices"][0]["message"]["content"].strip()
+            return {"success": True, "reply": reply}
+    except Exception as e:
+        print(f"[Agnes] API 调用失败: {e}")
+        raise HTTPException(status_code=502, detail=f"Agnes API 调用失败: {str(e)}")
