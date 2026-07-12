@@ -14,8 +14,15 @@ import urllib.error
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 
-import boto3
 import httpx
+_boto3 = None
+
+def _get_boto3():
+    global _boto3
+    if _boto3 is None:
+        import boto3 as _b3
+        _boto3 = _b3
+    return _boto3
 
 # ==================== R2 配置 ====================
 R2_ACCESS_KEY = "57161070c2bdd7fda32c8f6967c858aa"
@@ -56,6 +63,7 @@ _s3_client = None
 def _get_s3():
     global _s3_client
     if _s3_client is None:
+        boto3 = _get_boto3()
         _s3_client = boto3.client(
             "s3",
             endpoint_url=R2_ENDPOINT,
@@ -965,27 +973,46 @@ def get_mayday_year_songs(year: int) -> Dict[str, Any]:
         "count": len(songs),
     }
 
+def _cnr_http_get(path: str) -> Optional[dict]:
+    """通过 HTTP 从 R2 公开 URL 读取 JSON，作为 boto3 的降级备选。"""
+    url = f"{PUBLIC_BASE}/{path}"
+    try:
+        r = httpx.get(url, timeout=15.0)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        print(f"[CNR HTTP] Failed to fetch {path}: {e}")
+    return None
+
 def get_cnr_years() -> List[str]:
-    """返回有数据的年份列表。"""
+    """返回有数据的年份列表。boto3 优先，失败时降级到 HTTP 公共 URL。"""
+    # 优先 boto3
     try:
         s3 = _get_s3()
         resp = s3.get_object(Bucket=R2_BUCKET, Key="cntv/_index.json")
         data = json.loads(resp["Body"].read())
         return data.get("years", [])
-    except Exception:
-        return []
+    except Exception as e:
+        print(f"[CNR] boto3 get_cnr_years failed: {e}, trying HTTP fallback")
+    
+    # HTTP 降级
+    data = _cnr_http_get("cntv/_index.json")
+    if data:
+        return data.get("years", [])
+    return []
 
 def get_cnr_year_programs(year: str) -> Dict[str, List]:
     """返回指定年份的全部节目索引 {date: [[start, end, name, url], ...]}。"""
     return _get_cnr_year_index(year) or {}
 
 def _get_cnr_year_index(year: str) -> Optional[Dict[str, List]]:
-    """从 R2 加载年份节目索引，带内存缓存。"""
+    """从 R2 加载年份节目索引，带内存缓存。boto3 优先，失败时降级到 HTTP 公共 URL。"""
     global _CNR_CACHE, _CNR_CACHE_TIME
     now = time.time()
     if year in _CNR_CACHE and (now - _CNR_CACHE_TIME.get(year, 0)) < 3600:
         return _CNR_CACHE[year]
     
+    # 优先 boto3
     try:
         s3 = _get_s3()
         key = f"cntv/cntv_zhisheng_{year}.json"
@@ -995,8 +1022,15 @@ def _get_cnr_year_index(year: str) -> Optional[Dict[str, List]]:
         _CNR_CACHE_TIME[year] = now
         return data
     except Exception as e:
-        print(f"[CNR] Failed to load year {year}: {e}")
-        return None
+        print(f"[CNR] boto3 load year {year} failed: {e}, trying HTTP fallback")
+    
+    # HTTP 降级
+    data = _cnr_http_get(f"cntv/cntv_zhisheng_{year}.json")
+    if data:
+        _CNR_CACHE[year] = data
+        _CNR_CACHE_TIME[year] = now
+        return data
+    return None
 
 
 # ==================== Archive 广播代理 API ====================

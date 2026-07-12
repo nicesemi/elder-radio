@@ -546,7 +546,12 @@ async def cntv_date_programs(date: str):
 @app.get("/api/cntv/summary")
 async def cntv_summary():
     """返回 CNTV 各年份轻量统计（不含节目明细），供首页年份卡片展示"""
-    r2 = _get_r2()
+    try:
+        r2 = _get_r2()
+    except Exception as e:
+        print(f"[CNTV Summary] _get_r2() failed: {e}")
+        return {"years": {}, "source": "cntv", "error": str(e)}
+    
     years = r2.get_cnr_years()
     result = {}
 
