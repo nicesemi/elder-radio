@@ -606,7 +606,38 @@
   }
 
   // ============ FM 实时电台获取 ============
+  // v5.0: radio_sources.json 为主源，API 为补充（解决 Vercel 上 API 不可靠的问题）
   function fetchLiveStations(category) {
+    // Step 1 — 主源：从已加载的 radio_sources.json (allStations) 提取直播源
+    var localStations = [];
+    var seenUrls = {};
+    allStations.forEach(function(s) {
+      if (s.type === 'live' && s.stream_url && s.source_dead !== true) {
+        var sUrl = s.stream_url;
+        if (!seenUrls[sUrl]) {
+          seenUrls[sUrl] = true;
+          localStations.push({
+            id: s.id || s.name,
+            name: s.name,
+            stream_url: s.stream_url,
+            type: 'live',
+            category: s.category || '综合',
+            source: s.source || 'local',
+            favicon: s.favicon || '',
+            verified: s.verified || false
+          });
+        }
+      }
+    });
+
+    // Step 2 — 本地源 >= 10 个：直接使用，不调 API
+    if (localStations.length >= 10) {
+      liveStations = localStations;
+      applyLiveStations();
+      return;
+    }
+
+    // Step 3 — 本地源不足 10 个：API 补充
     var url = '/api/stations/live?limit=300';
     if (category) url += '&category=' + encodeURIComponent(category);
 
@@ -615,40 +646,29 @@
       return r.json();
     }).then(function(data) {
       if (data.stations && data.stations.length > 0) {
-        liveStations = data.stations.map(function(s) {
-          return {
-            id: s.id,
-            name: s.name,
-            stream_url: s.stream_url,
-            type: 'live',
-            category: s.category,
-            source: s.source,
-            favicon: s.favicon || '',
-            verified: true
-          };
+        data.stations.forEach(function(s) {
+          var sUrl = s.stream_url;
+          if (sUrl && !seenUrls[sUrl]) {
+            seenUrls[sUrl] = true;
+            localStations.push({
+              id: s.id,
+              name: s.name,
+              stream_url: s.stream_url,
+              type: 'live',
+              category: s.category || '综合',
+              source: s.source || 'api',
+              favicon: s.favicon || '',
+              verified: true
+            });
+          }
         });
-      } else {
-        fallbackToLocalVerified();
       }
+      liveStations = localStations;
       applyLiveStations();
     }).catch(function() {
-      fallbackToLocalVerified();
+      liveStations = localStations;
       applyLiveStations();
     });
-
-    function fallbackToLocalVerified() {
-      var seen = {};
-      liveStations = [];
-      allStations.forEach(function(s) {
-        if (s.type === 'live' && s.stream_url) {
-          var key = s.id || s.name;
-          if (!seen[key]) {
-            seen[key] = true;
-            liveStations.push(s);
-          }
-        }
-      });
-    }
 
     function applyLiveStations() {
       stations = liveStations;

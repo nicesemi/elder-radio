@@ -277,16 +277,16 @@ def get_cnr_fallback_stations():
       民族之声/老年之声 → 综合
     """
     cnr_stations = [
-        ("cnr_001", "中国之声",        "http://ngcdn001.cnr.cn/live/zgzs/index.m3u8",  "新闻"),
-        ("cnr_002", "经济之声",        "http://ngcdn002.cnr.cn/live/jjzs/index.m3u8",  "经济"),
-        ("cnr_003", "音乐之声",        "http://ngcdn003.cnr.cn/live/yyzs/index.m3u8",  "音乐"),
-        ("cnr_004", "经典音乐广播",    "http://ngcdn004.cnr.cn/live/jdyl/index.m3u8",  "音乐"),
-        ("cnr_005", "中华之声",        "http://ngcdn005.cnr.cn/live/zhzs/index.m3u8",  "新闻"),
-        ("cnr_006", "神州之声",        "http://ngcdn006.cnr.cn/live/szzs/index.m3u8",  "新闻"),
-        ("cnr_007", "华夏之声",        "http://ngcdn007.cnr.cn/live/hxzs/index.m3u8",  "新闻"),
-        ("cnr_008", "民族之声",        "http://ngcdn008.cnr.cn/live/mzzs/index.m3u8",  "综合"),
-        ("cnr_009", "文艺之声",        "http://ngcdn009.cnr.cn/live/wyzs/index.m3u8",  "音乐"),
-        ("cnr_010", "老年之声",        "http://ngcdn010.cnr.cn/live/lnzs/index.m3u8",  "综合"),
+        ("cnr_001", "中国之声",        "https://ngcdn001.cnr.cn/live/zgzs/index.m3u8",  "新闻"),
+        ("cnr_002", "经济之声",        "https://ngcdn002.cnr.cn/live/jjzs/index.m3u8",  "经济"),
+        ("cnr_003", "音乐之声",        "https://ngcdn003.cnr.cn/live/yyzs/index.m3u8",  "音乐"),
+        ("cnr_004", "经典音乐广播",    "https://ngcdn004.cnr.cn/live/jdyl/index.m3u8",  "音乐"),
+        ("cnr_005", "中华之声",        "https://ngcdn005.cnr.cn/live/zhzs/index.m3u8",  "新闻"),
+        ("cnr_006", "神州之声",        "https://ngcdn006.cnr.cn/live/szzs/index.m3u8",  "新闻"),
+        ("cnr_007", "华夏之声",        "https://ngcdn007.cnr.cn/live/hxzs/index.m3u8",  "新闻"),
+        ("cnr_008", "民族之声",        "https://ngcdn008.cnr.cn/live/mzzs/index.m3u8",  "综合"),
+        ("cnr_009", "文艺之声",        "https://ngcdn009.cnr.cn/live/wyzs/index.m3u8",  "音乐"),
+        ("cnr_010", "老年之声",        "https://ngcdn010.cnr.cn/live/lnzs/index.m3u8",  "综合"),
     ]
 
     return [
