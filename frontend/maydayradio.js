@@ -415,20 +415,17 @@
 
   function updatePTTUI(connected) {
     var pttArea = document.getElementById('pttArea');
-    var st = document.getElementById('intercomStatus');
-    var dot = document.getElementById('pttStatusDot');
+    var btn = document.getElementById('intercomBtn');
     if (connected) {
       pttArea.style.display = 'block';
-      st.textContent = '已连接 · 在线';
-      st.className = 'intercom-status connected';
-      dot.className = 'ptt-status-dot on';
+      btn.textContent = '挂断';
+      btn.className = 'intercom-btn connected';
       document.getElementById('pttLabel').textContent = '按住说话';
       document.getElementById('pttButton').classList.remove('pressed');
     } else {
       pttArea.style.display = 'none';
-      st.textContent = '未连接';
-      st.className = 'intercom-status';
-      dot.className = 'ptt-status-dot off';
+      btn.textContent = '对讲';
+      btn.className = 'intercom-btn';
     }
   }
 
@@ -480,11 +477,10 @@
     disconnectJitsi();
   });
 
-  // 点击进入 → 连接 Jitsi（默认静音，显示 PTT）
-  document.getElementById('pttStatusDot').addEventListener('click', function() {
+  // 点击按钮 → 连接/断开 Jitsi（默认静音，显示 PTT）
+  document.getElementById('intercomBtn').addEventListener('click', function() {
     if (isConnected) { disconnectJitsi(); } else { connectJitsi(); }
   });
-  document.getElementById('pttStatusDot').style.cursor = 'pointer';
 
   // ============ 初始化 ============
   function init() {

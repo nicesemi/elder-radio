@@ -239,16 +239,15 @@
     .toast.error { background:#e94560; }
 
     .intercom-sep { color:#555; margin:0 4px; font-size:10px; }
-    .intercom-status { font-size:9px; color:#666; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .intercom-status.connected { color:#4CAF50; }
-
-    /* PTT 状态指示灯 */
-    .ptt-status-dot {
-      display:inline-block; width:8px; height:8px; border-radius:50%;
-      vertical-align:middle; transition: background 0.3s, box-shadow 0.3s;
+    .intercom-btn {
+      background: #FF8C00; color: #fff; border: none;
+      padding: 3px 10px; border-radius: 10px; font-size: 9px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s;
+      white-space: nowrap;
     }
-    .ptt-status-dot.off { background:#3a3a3a; box-shadow:none; }
-    .ptt-status-dot.on { background:#4CAF50; box-shadow:0 0 6px #4CAF50; }
+    .intercom-btn:hover { background: #FFA733; }
+    .intercom-btn.connected { background: #4CAF50; }
+    .intercom-btn.connected:hover { background: #e94560; }
 
     /* PTT 大按钮 */
     .ptt-button {
@@ -319,8 +318,7 @@
     <span id="modeIndicator">五月天</span>
     <span class="led-orange" id="playLed"></span>
     <span class="intercom-sep">|</span>
-    <span id="pttStatusDot" class="ptt-status-dot off" title="对讲状态"></span>
-    <span id="intercomStatus" class="intercom-status">未连接</span>
+    <button id="intercomBtn" class="intercom-btn">对讲</button>
   </div>
   <div class="era-scroll" id="eraScroll"></div>
 
