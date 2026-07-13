@@ -5,6 +5,35 @@
 (function() {
   'use strict';
 
+  // ============ Agnes 页面内实时日志 ============
+  var _agnesLogLines = [];
+  var _agnesLogMax = 100;
+
+  function AgnesLog(msg, level) {
+    level = level || 'info';
+    // 始终输出到 Console
+    if (level === 'error') { console.error('[Agnes]', msg); }
+    else if (level === 'warn') { console.warn('[Agnes]', msg); }
+    else { console.log('[Agnes]', msg); }
+    // 追加到页面日志面板
+    try {
+      var bodyEl = document.getElementById('agnesLogBody');
+      var countEl = document.getElementById('agnesLogCount');
+      if (!bodyEl || !countEl) return;
+      var time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      var cssClass = 'log-line ' + level;
+      _agnesLogLines.push({ time: time, msg: msg, cls: cssClass });
+      if (_agnesLogLines.length > _agnesLogMax) {
+        _agnesLogLines = _agnesLogLines.slice(-_agnesLogMax);
+      }
+      bodyEl.innerHTML = _agnesLogLines.map(function(l) {
+        return '<div class="' + l.cls + '">[' + l.time + '] ' + l.msg + '</div>';
+      }).join('');
+      bodyEl.scrollTop = bodyEl.scrollHeight;
+      countEl.textContent = _agnesLogLines.length;
+    } catch(e) { /* 静默失败，不影响主流程 */ }
+  }
+
   const AUDIO = document.getElementById('audioPlayer');
   const ERA_MIN = 1999, ERA_MAX = 2021;
 
@@ -517,7 +546,7 @@
     btn.classList.remove('pressed');
     document.getElementById('pttLabel').textContent = '按住说话';
     // 松手后启动 Agnes 等待倒计时
-    console.log('[Agnes] PTT 松手 — 触发 startCountdown');
+    AgnesLog('PTT 松手 — 触发 startCountdown');
     AgnesRobot.startCountdown();
   }
 
@@ -597,7 +626,7 @@
     _initRecognition: function() {
       var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-        console.log('[Agnes] SpeechRecognition API 不可用（浏览器不支持）');
+        AgnesLog('SpeechRecognition API 不可用（浏览器不支持）');
         return null;
       }
       var rec = new SpeechRecognition();
@@ -605,18 +634,18 @@
       rec.interimResults = false;
       rec.maxAlternatives = 1;
       rec.continuous = false;
-      console.log('[Agnes] SpeechRecognition 实例已创建, lang=zh-CN');
+      AgnesLog('SpeechRecognition 实例已创建, lang=zh-CN');
       return rec;
     },
 
     // --- 步骤 1: 开始 10 秒倒计时 ---
     startCountdown: function() {
       if (!isConnected) {
-        console.log('[Agnes] startCountdown 跳过 — 未连接对讲');
+        AgnesLog('startCountdown 跳过 — 未连接对讲');
         return;
       }
       this.cancel('倒计时重启');
-      console.log('[Agnes] 步骤 1 — 启动 10s 倒计时');
+      AgnesLog('步骤 1 — 启动 10s 倒计时');
 
       var self = this;
       var remaining = Math.ceil(this._countdownDuration / 1000);
@@ -640,10 +669,10 @@
     // --- 步骤 2: 倒计时结束 → 开始监听 ---
     _onTimeout: function() {
       if (this._state !== 'countdown') {
-        console.log('[Agnes] _onTimeout 跳过 — 当前状态:', this._state);
+        AgnesLog('_onTimeout 跳过 — 当前状态:' + this._state);
         return;
       }
-      console.log('[Agnes] 步骤 2 — 倒计时结束，启动语音识别');
+      AgnesLog('步骤 2 — 倒计时结束，启动语音识别');
       this._setIndicator('listening', 'Agnes 正在听...');
       this._startListening();
     },
@@ -652,7 +681,7 @@
     _startListening: function() {
       var rec = this._initRecognition();
       if (!rec) {
-        console.log('[Agnes] 步骤 3 — 无 SpeechRecognition，降级发送默认消息');
+        AgnesLog('步骤 3 — 无 SpeechRecognition，降级发送默认消息');
         showToast('浏览器不支持语音识别，Agnes 将用默认问候', 'error');
         this._sendToAgnes('喂，有人在吗？');
         return;
@@ -667,25 +696,25 @@
           transcript += event.results[i][0].transcript;
         }
         transcript = transcript.trim();
-        console.log('[Agnes] 步骤 3 — 识别结果: "' + transcript + '" (置信度: ' +
+        AgnesLog('步骤 3 — 识别结果: "' + transcript + '" (置信度: ' +
           (event.results[0] && event.results[0][0].confidence ? event.results[0][0].confidence.toFixed(2) : 'N/A') + ')');
         if (transcript) {
           self._sendToAgnes(transcript);
         } else {
-          console.log('[Agnes] 步骤 3 — 识别为空，发送默认问候');
+          AgnesLog('步骤 3 — 识别为空，发送默认问候');
           self._sendToAgnes('喂？有人在吗？');
         }
       };
 
       rec.onerror = function(event) {
-        console.log('[Agnes] 步骤 3 — 语音识别错误: ' + event.error + ' (message: ' + (event.message || '') + ')');
+        AgnesLog('步骤 3 — 语音识别错误: ' + event.error + ' (message: ' + (event.message || '') + ')');
         switch (event.error) {
           case 'not-allowed':
             showToast('麦克风权限未授权，请在浏览器设置中允许麦克风访问', 'error');
             self._hideIndicator();
             break;
           case 'no-speech':
-            console.log('[Agnes] 未检测到语音，发送默认问候');
+            AgnesLog('未检测到语音，发送默认问候');
             self._sendToAgnes('你好，有人回应吗？');
             break;
           case 'audio-capture':
@@ -700,26 +729,26 @@
             // 用户取消或 cancel() 触发，正常流程
             break;
           default:
-            console.log('[Agnes] 未知语音识别错误: ' + event.error);
+            AgnesLog('未知语音识别错误: ' + event.error, 'error');
             self._hideIndicator();
             break;
         }
       };
 
       rec.onend = function() {
-        console.log('[Agnes] 步骤 3 — SpeechRecognition 会话结束');
+        AgnesLog('步骤 3 — SpeechRecognition 会话结束');
         self._recognition = null;
       };
 
       rec.onstart = function() {
-        console.log('[Agnes] 步骤 3 — SpeechRecognition 已开始监听');
+        AgnesLog('步骤 3 — SpeechRecognition 已开始监听');
       };
 
       try {
         rec.start();
-        console.log('[Agnes] 步骤 3 — SpeechRecognition.start() 调用成功');
+        AgnesLog('步骤 3 — SpeechRecognition.start() 调用成功');
       } catch (e) {
-        console.log('[Agnes] 步骤 3 — SpeechRecognition.start() 异常:', e.message);
+        AgnesLog('步骤 3 — SpeechRecognition.start() 异常:' + e.message);
         showToast('语音识别启动失败: ' + e.message, 'error');
         this._sendToAgnes('有人在吗？');
       }
@@ -728,7 +757,7 @@
     // --- 步骤 4: 发送文字到 Agnes API ---
     _sendToAgnes: function(text) {
       var self = this;
-      console.log('[Agnes] 步骤 4 — 发送请求: "' + text.substring(0, 50) + '"');
+      AgnesLog('步骤 4 — 发送请求: "' + text.substring(0, 50) + '"');
       this._setIndicator('replying', 'Agnes 回复中...');
 
       var startTime = Date.now();
@@ -742,7 +771,7 @@
       })
       .then(function(r) {
         var elapsed = Date.now() - startTime;
-        console.log('[Agnes] 步骤 4 — HTTP ' + r.status + ' (' + elapsed + 'ms)');
+        AgnesLog('步骤 4 — HTTP ' + r.status + ' (' + elapsed + 'ms)');
         if (!r.ok) {
           // 尝试读取错误详情
           return r.text().then(function(body) {
@@ -752,7 +781,7 @@
         return r.json();
       })
       .then(function(data) {
-        console.log('[Agnes] 步骤 4 — 响应成功: ' + (data.reply ? '"' + data.reply.substring(0, 30) + '"' : '无 reply 字段'));
+        AgnesLog('步骤 4 — 响应成功: ' + (data.reply ? '"' + data.reply.substring(0, 30) + '"' : '无 reply 字段'));
         if (data.success && data.reply) {
           self._speak(data.reply);
         } else {
@@ -760,7 +789,7 @@
         }
       })
       .catch(function(e) {
-        console.log('[Agnes] 步骤 4 — 失败: ' + (e.message || e));
+        AgnesLog('步骤 4 — 失败: ' + (e.message || e), 'error');
         self._hideIndicator();
         // 区分 500（API Key 未配置）和其他错误
         var msg = e.message || '';
@@ -779,10 +808,10 @@
     // --- 步骤 5: TTS 朗读 ---
     _speak: function(text) {
       var self = this;
-      console.log('[Agnes] 步骤 5 — TTS 准备朗读: "' + text.substring(0, 40) + '"');
+      AgnesLog('步骤 5 — TTS 准备朗读: "' + text.substring(0, 40) + '"');
 
       if (!this._synth) {
-        console.log('[Agnes] 步骤 5 — SpeechSynthesis 不可用（浏览器不支持）');
+        AgnesLog('步骤 5 — SpeechSynthesis 不可用（浏览器不支持）');
         this._hideIndicator();
         showToast('浏览器不支持语音朗读', 'error');
         return;
@@ -800,7 +829,7 @@
       // 尝试选择中文语音
       var voices = this._synth.getVoices();
       var zhVoices = voices.filter(function(v) { return v.lang.startsWith('zh'); });
-      console.log('[Agnes] 步骤 5 — 可用中文语音: ' + zhVoices.length + ' 个 (' +
+      AgnesLog('步骤 5 — 可用中文语音: ' + zhVoices.length + ' 个 (' +
         zhVoices.map(function(v) { return v.name; }).join(', ') + ')');
 
       var preferred = zhVoices.find(function(v) {
@@ -811,23 +840,23 @@
 
       if (preferred) {
         utter.voice = preferred;
-        console.log('[Agnes] 步骤 5 — 选定语音: ' + preferred.name + ' (' + preferred.lang + ')');
+        AgnesLog('步骤 5 — 选定语音: ' + preferred.name + ' (' + preferred.lang + ')');
       } else {
-        console.log('[Agnes] 步骤 5 — 无中文语音可用，使用浏览器默认');
+        AgnesLog('步骤 5 — 无中文语音可用，使用浏览器默认');
       }
 
       utter.onstart = function() {
-        console.log('[Agnes] 步骤 5 — TTS 开始播放');
+        AgnesLog('步骤 5 — TTS 开始播放');
         self._setIndicator('replying', 'Agnes: ' + text.substring(0, 20) + '...');
       };
 
       utter.onend = function() {
-        console.log('[Agnes] 步骤 5 — TTS 播放完成');
+        AgnesLog('步骤 5 — TTS 播放完成');
         self._hideIndicator();
       };
 
       utter.onerror = function(e) {
-        console.log('[Agnes] 步骤 5 — TTS 错误: ' + (e.error || 'unknown') +
+        AgnesLog('步骤 5 — TTS 错误: ' + (e.error || 'unknown') +
           ' (utterance: "' + (e.utterance && e.utterance.text ? e.utterance.text.substring(0, 30) : 'N/A') + '")');
         self._hideIndicator();
         if (e.error === 'not-allowed') {
@@ -839,16 +868,16 @@
 
       try {
         this._synth.speak(utter);
-        console.log('[Agnes] 步骤 5 — speechSynthesis.speak() 已调用');
+        AgnesLog('步骤 5 — speechSynthesis.speak() 已调用');
         // 检测 speechSynthesis 是否被浏览器静默阻止（某些浏览器需要用户手势）
         // 如果短时间内状态仍为 pending，说明可能被阻止
         setTimeout(function() {
           if (self._synth && self._synth.pending && self._state === 'replying') {
-            console.log('[Agnes] 步骤 5 — 警告: speechSynthesis 仍为 pending，可能被自动播放策略阻止');
+            AgnesLog('步骤 5 — 警告: speechSynthesis 仍为 pending，可能被自动播放策略阻止');
           }
         }, 200);
       } catch (e) {
-        console.log('[Agnes] 步骤 5 — speak() 异常:', e.message);
+        AgnesLog('步骤 5 — speak() 异常:' + e.message);
         self._hideIndicator();
         showToast('语音朗读异常: ' + e.message, 'error');
       }
@@ -859,7 +888,7 @@
       reason = reason || '未知';
       var hadActive = !!(this._countdownTimer || this._recognition || (this._state !== 'idle'));
       if (hadActive) {
-        console.log('[Agnes] 取消 — 原因: ' + reason + ' (之前状态: ' + this._state + ')');
+        AgnesLog('取消 — 原因: ' + reason + ' (之前状态: ' + this._state + ')');
       }
       if (this._countdownTimer) {
         clearTimeout(this._countdownTimer);
@@ -878,7 +907,7 @@
     // --- Jitsi 远程音频活动通知 ---
     onRemoteAudio: function() {
       if (this._state === 'countdown') {
-        console.log('[Agnes] 检测到远程音频 → 取消倒计时');
+        AgnesLog('检测到远程音频 → 取消倒计时');
         this.cancel('远程音频活动');
       }
     },
@@ -886,7 +915,7 @@
     // --- 更新频道上下文 ---
     updateContext: function(ctx) {
       this._channelContext = ctx || ('五月天 ' + year + ' 年代对讲频道');
-      console.log('[Agnes] 频道上下文更新: ' + this._channelContext);
+      AgnesLog('频道上下文更新: ' + this._channelContext);
     }
   };
 
@@ -897,31 +926,31 @@
     window.speechSynthesis.onvoiceschanged = function() {
       var voices = window.speechSynthesis.getVoices();
       var zhVoices = voices.filter(function(v) { return v.lang.startsWith('zh'); });
-      console.log('[Agnes] 诊断 — SpeechSynthesis 就绪, 共 ' + voices.length + ' 个语音, ' +
+      AgnesLog('诊断 — SpeechSynthesis 就绪, 共 ' + voices.length + ' 个语音, ' +
         '其中中文 ' + zhVoices.length + ' 个: ' + zhVoices.map(function(v) { return v.name + '(' + v.lang + ')'; }).join(', '));
     };
   } else {
-    console.log('[Agnes] 诊断 — SpeechSynthesis 不可用');
+    AgnesLog('诊断 — SpeechSynthesis 不可用');
   }
 
   // 诊断 SpeechRecognition
   (function() {
     var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    console.log('[Agnes] 诊断 — SpeechRecognition: ' + (SR ? '可用' : '不可用'));
-    console.log('[Agnes] 诊断 — 协议: ' + window.location.protocol +
+    AgnesLog('诊断 — SpeechRecognition: ' + (SR ? '可用' : '不可用'));
+    AgnesLog('诊断 — 协议: ' + window.location.protocol +
       ' (SpeechRecognition ' + (window.location.protocol === 'https:' ? '应在 HTTPS 下正常工作' : '在 HTTP 下某些浏览器可能受限（Chrome 需 HTTPS，localhost 例外）') + ')');
-    console.log('[Agnes] 诊断 — userAgent: ' + navigator.userAgent.substring(0, 80));
+    AgnesLog('诊断 — userAgent: ' + navigator.userAgent.substring(0, 80));
 
     // 检查 Permissions-Policy / CSP 是否阻止麦克风
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'microphone' }).then(function(status) {
-        console.log('[Agnes] 诊断 — 麦克风权限状态: ' + status.state);
+        AgnesLog('诊断 — 麦克风权限状态: ' + status.state);
       }).catch(function(e) {
-        console.log('[Agnes] 诊断 — 无法查询麦克风权限: ' + e.message +
+        AgnesLog('诊断 — 无法查询麦克风权限: ' + e.message +
           ' (可能是 HTTP 下不支持 Permissions API)');
       });
     } else {
-      console.log('[Agnes] 诊断 — Permissions API 不可用');
+      AgnesLog('诊断 — Permissions API 不可用');
     }
   })();
 
@@ -931,7 +960,7 @@
       .then(function(r) {
         if (r.ok) {
           return r.json().then(function(data) {
-            console.log('[Agnes] 诊断 — 后端健康检查通过 (v' + (data.version || '?') + ')');
+            AgnesLog('诊断 — 后端健康检查通过 (v' + (data.version || '?') + ')');
           });
         }
         throw new Error('HTTP ' + r.status);
@@ -948,19 +977,52 @@
         if (!r.ok) {
           return r.text().then(function(body) {
             if (body.indexOf('AGNES_API_KEY') !== -1) {
-              console.warn('[Agnes] 诊断 — Agnes API Key 未配置，对讲自动回应功能不可用');
+              AgnesLog('诊断 — Agnes API Key 未配置，对讲自动回应功能不可用', 'warn');
             } else {
-              console.warn('[Agnes] 诊断 — Agnes 代理异常 (HTTP ' + r.status + '): ' + body.substring(0, 100));
+              AgnesLog('诊断 — Agnes 代理异常 (HTTP ' + r.status + '): ' + body.substring(0, 100), 'warn');
             }
           });
         }
         return r.json().then(function(data) {
-          console.log('[Agnes] 诊断 — Agnes API 代理正常，测试回复: ' + (data.reply ? '"' + data.reply + '"' : '无'));
+          AgnesLog('诊断 — Agnes API 代理正常，测试回复: ' + (data.reply ? '"' + data.reply + '"' : '无'));
         });
       })
       .catch(function(e) {
-        console.warn('[Agnes] 诊断 — 后端连接失败: ' + (e.message || e));
+        AgnesLog('诊断 — 后端连接失败: ' + (e.message || e), 'warn');
       });
+  })();
+
+  // ============ 日志面板交互 ============
+  (function() {
+    var panel = document.getElementById('agnesLogPanel');
+    var toggleBtn = document.getElementById('agnesLogToggleBtn');
+    var clearBtn = document.getElementById('agnesLogClearBtn');
+    var header = document.getElementById('agnesLogHeader');
+    var isCollapsed = false;
+
+    function togglePanel() {
+      isCollapsed = !isCollapsed;
+      if (isCollapsed) {
+        panel.classList.add('collapsed');
+        toggleBtn.textContent = '展开';
+      } else {
+        panel.classList.remove('collapsed');
+        toggleBtn.textContent = '收起';
+      }
+    }
+
+    if (toggleBtn) { toggleBtn.addEventListener('click', function(e) { e.stopPropagation(); togglePanel(); }); }
+    if (header) { header.addEventListener('click', togglePanel); }
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        _agnesLogLines = [];
+        var bodyEl = document.getElementById('agnesLogBody');
+        var countEl = document.getElementById('agnesLogCount');
+        if (bodyEl) bodyEl.innerHTML = '';
+        if (countEl) countEl.textContent = '0';
+      });
+    }
   })();
 
   // ============ 初始化 ============
