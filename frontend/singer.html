@@ -343,6 +343,19 @@
       border-bottom-color: var(--accent);
     }
 
+    /* ---- 面板容器 ---- */
+    .tab-panels { position: relative; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ---- iframe 面板 ---- */
+    .tab-iframe {
+      width: 100%;
+      border: none;
+      min-height: calc(100vh - 180px);
+      background: var(--bg-primary);
+    }
+
     @media (max-width: 768px) {
       .singer-grid {
         grid-template-columns: 1fr;
@@ -376,47 +389,79 @@
 
   <!-- 子 tab 导航 -->
   <div class="sub-tabs">
-    <span class="sub-tab active">歌手频道</span>
-    <a class="sub-tab" href="/voice">群组语音</a>
-    <a class="sub-tab" href="/maydayradio">五月天</a>
+    <span class="sub-tab active" data-panel="panel-singer">歌手频道</span>
+    <span class="sub-tab" data-panel="panel-voice">群组语音</span>
+    <span class="sub-tab" data-panel="panel-mayday">五月天</span>
   </div>
 
-  <!-- 歌手列表页 -->
-  <div id="listPage" class="active">
-    <div class="page-header">
-      <div>
-        <h1>歌手频道</h1>
-        <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">
-          经典歌手作品回顾 · 支持原版播放与 AI 翻唱生成
-        </p>
+  <div class="tab-panels">
+    <!-- 歌手频道面板 -->
+    <div id="panel-singer" class="tab-panel active">
+      <!-- 歌手列表页 -->
+      <div id="listPage" class="active">
+        <div class="page-header">
+          <div>
+            <h1>歌手频道</h1>
+            <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">
+              经典歌手作品回顾 · 支持原版播放与 AI 翻唱生成
+            </p>
+          </div>
+        </div>
+
+        <div class="singer-grid" id="singerGrid">
+          <div class="loading-spin">加载歌手数据中...</div>
+        </div>
+      </div>
+
+      <!-- 歌手详情页 -->
+      <div id="detailPage" class="detail-page">
+        <div class="detail-header">
+          <button class="back-btn" onclick="goBack()">← 返回歌手列表</button>
+          <div class="detail-info">
+            <h2 id="detailName"></h2>
+            <div class="detail-desc" id="detailDesc"></div>
+            <div class="detail-members" id="detailMembers"></div>
+          </div>
+        </div>
+        <div id="songGroups">
+          <div class="loading-spin">加载歌曲中...</div>
+        </div>
+
+        <!-- 隐藏的音频播放器 -->
+        <audio id="audioPlayer" style="display:none;"></audio>
       </div>
     </div>
 
-    <div class="singer-grid" id="singerGrid">
-      <div class="loading-spin">加载歌手数据中...</div>
-    </div>
-  </div>
-
-  <!-- 歌手详情页 -->
-  <div id="detailPage" class="detail-page">
-    <div class="detail-header">
-      <button class="back-btn" onclick="goBack()">← 返回歌手列表</button>
-      <div class="detail-info">
-        <h2 id="detailName"></h2>
-        <div class="detail-desc" id="detailDesc"></div>
-        <div class="detail-members" id="detailMembers"></div>
-      </div>
-    </div>
-    <div id="songGroups">
-      <div class="loading-spin">加载歌曲中...</div>
+    <!-- 群组语音面板 -->
+    <div id="panel-voice" class="tab-panel">
+      <iframe src="/voice" class="tab-iframe" id="iframeVoice"></iframe>
     </div>
 
-    <!-- 隐藏的音频播放器 -->
-    <audio id="audioPlayer" style="display:none;"></audio>
+    <!-- 五月天面板 -->
+    <div id="panel-mayday" class="tab-panel">
+      <iframe src="/maydayradio" class="tab-iframe" id="iframeMayday"></iframe>
+    </div>
   </div>
 
 </div>
 
 <script src="singer.js"></script>
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.sub-tab');
+  var panels = document.querySelectorAll('.tab-panel');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var panelId = this.dataset.panel;
+      if (!panelId) return;
+      tabs.forEach(function(t) { t.classList.remove('active'); });
+      panels.forEach(function(p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      var panel = document.getElementById(panelId);
+      if (panel) panel.classList.add('active');
+    });
+  });
+})();
+</script>
 </body>
 </html>
