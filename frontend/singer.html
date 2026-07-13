@@ -315,6 +315,34 @@
       margin-left: 6px;
     }
 
+    /* ---- 子 tab 导航 ---- */
+    .sub-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--border);
+    }
+    .sub-tab {
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: all var(--transition);
+      text-decoration: none;
+      user-select: none;
+    }
+    .sub-tab:hover {
+      color: var(--text-primary);
+      border-bottom-color: var(--text-muted);
+    }
+    .sub-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
     @media (max-width: 768px) {
       .singer-grid {
         grid-template-columns: 1fr;
@@ -339,14 +367,19 @@
     <li><a href="/">首页</a></li>
     <li><a href="/radio">收音机</a></li>
     <li><a href="/singer" class="active">歌手频道</a></li>
-    <li><a href="/voice">群组语音</a></li>
-    <li><a href="/maydayradio">五月天</a></li>
     <li><a href="/config">配置</a></li>
     <li><a href="/admin">管理</a></li>
   </ul>
 </nav>
 
 <div class="container singer-page">
+
+  <!-- 子 tab 导航 -->
+  <div class="sub-tabs">
+    <span class="sub-tab active">歌手频道</span>
+    <a class="sub-tab" href="/voice">群组语音</a>
+    <a class="sub-tab" href="/maydayradio">五月天</a>
+  </div>
 
   <!-- 歌手列表页 -->
   <div id="listPage" class="active">
