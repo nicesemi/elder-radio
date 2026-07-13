@@ -236,14 +236,14 @@ async def _ai_broadcast_to_r2(r2, channel: str, year: int, date_str: str = None)
 @app.get("/api/broadcast/year/{year}")
 async def broadcast_by_year(
     year: int,
-    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology"),
+    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology"),
     duration: int = Query(5, description="AI 兜底时生成的时长（分钟）")
 ):
     """
     按年代检索广播内容，五级优先级：
     R2 历史库 → R2缓存 → 历史API → 下载到R2 → AI兜底
     """
-    if category not in ("news", "music", "sports", "finance", "culture", "technology", "综合", "general"):
+    if category not in ("news", "music", "novel", "sports", "finance", "culture", "technology", "综合", "general"):
         raise HTTPException(status_code=400, detail=f"不支持的分类: {category}")
 
     r2 = _get_r2()
@@ -253,7 +253,7 @@ async def broadcast_by_year(
     if history_stations:
         # 按 category 筛选匹配的电台
         cat_map = {
-            "news": "zgzs", "music": "yyzs", "sports": "tyzs",
+            "news": "zgzs", "music": "yyzs", "novel": "novel", "sports": "tyzs",
             "finance": "jjzs", "culture": "wyzs", "technology": "kj",
             "综合": "zh", "general": "zh",
         }
@@ -297,7 +297,7 @@ async def broadcast_by_year(
 @app.get("/api/broadcast/date/{date}")
 async def broadcast_by_date(
     date: str,
-    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
+    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology")
 ):
     """
     按具体日期（YYYY-MM-DD）检索广播内容，四级优先级同上。
@@ -339,7 +339,7 @@ async def broadcast_by_date(
 
 @app.get("/api/broadcast/live")
 async def broadcast_live(
-    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
+    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology")
 ):
     """
     2026 年实时广播：
@@ -775,7 +775,7 @@ async def mayday_year_songs(year: int):
 def _compute_broadcast_summary() -> Dict[str, Any]:
     """
     扫描 R2 broadcasts/ 前缀，聚合 1949-2026 各年份数据量。
-    1949-2019：区分 news/ 和 music/ 子目录
+    1949-2019：区分 news/、music/ 和 novel/ 子目录
     2020-2025：统计全部历史广播
     2026：调用 live_stations 获取直播数
     """
@@ -784,7 +784,7 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
     # 初始化所有年份为 0
     for y in range(1949, 2020):
-        summary[str(y)] = {"news": 0, "music": 0}
+        summary[str(y)] = {"news": 0, "music": 0, "novel": 0}
     for y in range(2020, 2026):
         summary[str(y)] = {"history": 0}
     summary["2026"] = {"live": 0}
@@ -817,12 +817,14 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
         if 1949 <= year_int <= 2019:
             if year_str not in summary:
-                summary[year_str] = {"news": 0, "music": 0}
+                summary[year_str] = {"news": 0, "music": 0, "novel": 0}
             s = summary[year_str]
             if category == "news":
                 s["news"] = s.get("news", 0) + 1
             elif category == "music":
                 s["music"] = s.get("music", 0) + 1
+            elif category == "novel":
+                s["novel"] = s.get("novel", 0) + 1
             # 忽略其他分类（zgzs/jjzs 等）
         elif 2020 <= year_int <= 2025:
             if year_str not in summary:
@@ -848,7 +850,7 @@ async def broadcast_summary():
     GET /api/broadcast/summary
 
     返回 1949-2026 全年代数据概览，5 分钟内存缓存。
-    1949-2019: {"news": N, "music": M}
+    1949-2019: {"news": N, "music": M, "novel": N}
     2020-2025: {"history": N}
     2026:       {"live": N}
     """
@@ -877,7 +879,7 @@ async def broadcast_year_channels(
     GET /api/broadcast/{year}/channels?channel=news|music
 
     返回某年各频道的广播列表。
-    对于 1949-2019：返回 news/ 和 music/ 两个频道
+    对于 1949-2019：返回 news/、music/ 和 novel/ 三个频道
     对于 2020-2026：返回 history 频道
     """
     if year < 1949 or year > 2026:
@@ -944,7 +946,7 @@ async def broadcast_year_channels(
                 requested, {"count": 0, "items": []}
             )
         else:
-            for ch in ("news", "music"):
+            for ch in ("news", "music", "novel"):
                 result_channels[ch] = channels_data.get(
                     ch, {"count": 0, "items": []}
                 )

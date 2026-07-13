@@ -95,6 +95,7 @@ CHANNELS = {
     "news": {"name": "新闻", "icon": "📰", "prompt_template": "news"},
     "sports": {"name": "体育", "icon": "⚽", "prompt_template": "sports"},
     "music": {"name": "音乐", "icon": "🎵", "prompt_template": "music"},
+    "novel": {"name": "小说频道", "icon": "📖", "prompt_template": "novel", "category": "广播剧/有声小说"},
     "finance": {"name": "金融", "icon": "💰", "prompt_template": "finance"},
     "culture": {"name": "文化", "icon": "📚", "prompt_template": "culture"},
     "technology": {"name": "科技", "icon": "🔬", "prompt_template": "technology"}

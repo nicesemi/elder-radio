@@ -33,7 +33,7 @@ PUBLIC_BASE   = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"
 
 # ==================== 广播分类映射 ====================
 CATEGORY_LABELS = {
-    "news": "新闻", "sports": "体育", "music": "音乐",
+    "news": "新闻", "sports": "体育", "music": "音乐", "novel": "小说",
     "finance": "金融", "culture": "文化", "technology": "科技",
     "综合": "综合", "综合": "general",
 }
@@ -1270,10 +1270,9 @@ def _update_broadcast_index(year: int, category: str):
 
     index_data[year_key][f"{category}_count"] = count
 
-    # 计算 total
-    news = index_data[year_key].get("news_count", 0)
-    music = index_data[year_key].get("music_count", 0)
-    index_data[year_key]["total"] = news + music
+    # 计算 total（汇总所有 _count 后缀的字段）
+    total = sum(v for k, v in index_data[year_key].items() if k.endswith("_count"))
+    index_data[year_key]["total"] = total
 
     from datetime import datetime
     index_data[year_key]["updated_at"] = datetime.now().isoformat()
@@ -1305,7 +1304,7 @@ def get_broadcasts_by_category(year: int, category: str = None) -> dict:
         }
     """
     s3 = _get_s3()
-    categories = [category] if category else ["news", "music", "zgzs", "jjzs", "yyzs", "archive"]
+    categories = [category] if category else ["news", "music", "novel", "zgzs", "jjzs", "yyzs", "archive"]
     result = {"year": year, "channels": {}}
 
     for cat in categories:

@@ -57,7 +57,32 @@ async def generate_broadcast_content(
 
     voice_info = BROADCASTER_VOICES.get(era, BROADCASTER_VOICES["2020s"])
 
-    system_prompt = f"""你是一个专业的广播电台内容编辑，专门为老年人听众创作广播节目。
+    # 小说频道使用专用 prompt template
+    if channel == "novel":
+        system_prompt = f"""你是一个专业的广播电台文学编辑，专门为老年人听众创作小说广播节目。
+
+你的任务是为{year}年创作一档小说频道广播稿。
+
+历史背景：{era_desc}
+播音风格：{voice_info['description']}
+
+创作要求：
+1. 请在{year}年（可涵盖前后 2 年）出版的畅销小说中，挑选一部最具代表性、最适合老年听众品味的作品
+2. 广播稿结构分为四段：
+   - 开场：以"各位听众朋友，欢迎收听小说频道..."开头，引出本期的文学时代背景
+   - 小说背景：介绍作者生平、创作年代的社会背景、小说的出版情况与当时影响力
+   - 情节概要：用 2-3 段生动讲述小说的主要情节脉络，注意不要剧透关键结局，保留悬念吸引听众
+   - 文学价值：评析小说的艺术特色、人物塑造、语言风格，以及它在文学史上的地位和对后世的影响
+3. 语言风格必须贴合{year}年前后的年代表达方式，让老年听众有亲切感和怀旧感
+4. 内容时长约{duration_minutes}分钟（约{500 * duration_minutes}字）
+5. 结尾要有温暖亲切的结束语，可预告下期内容方向
+6. 语气娓娓道来，像讲故事一样，适合老年人收听，语速适中
+7. 内容必须符合{year}年前后的历史真实情况，推荐的小说必须是该年代或之前已出版的真实作品，严禁推荐该年代之后才出版的小说"""
+
+        user_prompt = f"请为{year}年小说频道创作一档广播稿，挑选一部{year}年前后出版的畅销小说，介绍其背景、情节概要和文学价值。年代背景为{era_desc}，播音风格为{voice_info['description']}。"
+
+    else:
+        system_prompt = f"""你是一个专业的广播电台内容编辑，专门为老年人听众创作广播节目。
 
 你的任务是生成{year}年左右的{channel_info['name']}频道广播稿。
 
@@ -76,7 +101,7 @@ async def generate_broadcast_content(
 9. 结尾要有结束语
 10. 语气亲切，适合老年人收听，语速适中"""
 
-    user_prompt = f"请生成{year}年{channel_info['name']}频道的广播稿，年代背景为{era_desc}，播音风格为{voice_info['description']}。"
+        user_prompt = f"请生成{year}年{channel_info['name']}频道的广播稿，年代背景为{era_desc}，播音风格为{voice_info['description']}。"
 
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(
