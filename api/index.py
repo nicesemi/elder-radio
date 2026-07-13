@@ -25,7 +25,7 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Reque
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 # ---- 懒加载：避免顶层导入触发 voice_clone 的 os.makedirs ----
 
