@@ -421,6 +421,7 @@
     font-size: 10px; line-height: 1.45; color: #ccc;
     display: flex; flex-direction: column;
     transition: max-height 0.3s ease;
+    pointer-events: none;  /* 不拦截穿透的触摸事件（避免遮挡 PTT 按钮） */
   }
   .agnes-log-panel.collapsed { max-height: 28px; }
   .agnes-log-header {
@@ -428,6 +429,7 @@
     padding: 2px 8px; background: rgba(255,140,0,0.15);
     border-bottom: 1px solid rgba(255,140,0,0.2);
     cursor: pointer; user-select: none; flex-shrink: 0;
+    pointer-events: auto;  /* 标题栏可交互（展开/折叠） */
   }
   .agnes-log-header .title {
     color: #FF8C00; font-size: 10px; font-weight: 700;
@@ -450,6 +452,7 @@
   .agnes-log-body {
     flex: 1; overflow-y: auto; padding: 4px 8px;
     scroll-behavior: smooth; overscroll-behavior: contain;
+    pointer-events: auto;  /* 展开后可滚动查看日志 */
   }
   .agnes-log-body .log-line {
     padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -460,7 +463,7 @@
   .agnes-log-body .log-line.info { color: #4CAF50; }
   .agnes-log-body .log-line.step { color: #64B5F6; }
 </style>
-<div class="agnes-log-panel" id="agnesLogPanel">
+<div class="agnes-log-panel collapsed" id="agnesLogPanel">
   <div class="agnes-log-header" id="agnesLogHeader">
     <span class="title">Agnes 日志</span>
     <div class="actions">
