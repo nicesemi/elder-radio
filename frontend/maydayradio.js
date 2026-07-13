@@ -415,6 +415,7 @@
   var isConnected = false;
   var pttActive = false;
   var pttConnecting = false;
+  var _pendingPTTCycle = false;  // 首次触摸连接完成后自动进入发言状态
   var lastTouchTime = 0;
 
   function loadJitsiAPI(callback) {
@@ -476,6 +477,11 @@
           isConnected = true;
           updatePTTUI(true);
           AgnesRobot.updateContext();
+          // 首次触摸连接完成后自动进入发言状态，实现按住→连接→说话无缝衔接
+          if (_pendingPTTCycle) {
+            _pendingPTTCycle = false;
+            pttStart();
+          }
         },
         videoConferenceLeft: function() {
           clearTimeout(pttConnectTimeout);
@@ -538,8 +544,8 @@
     document.getElementById('pttLabel').textContent = '正在发言...';
   }
   function pttStop() {
-    if (!isConnected || !jitsiApi) return;
-    if (!pttActive) return;
+    if (!isConnected || !jitsiApi) { AgnesLog('pttStop 跳过 — 未连接或无 jitsiApi', 'warn'); return; }
+    if (!pttActive) { AgnesLog('pttStop 跳过 — pttActive=false', 'warn'); return; }
     pttActive = false;
     jitsiApi.executeCommand('toggleAudio');
     var btn = document.getElementById('pttButton');
@@ -547,7 +553,11 @@
     document.getElementById('pttLabel').textContent = '按住说话';
     // 松手后启动 Agnes 等待倒计时
     AgnesLog('PTT 松手 — 触发 startCountdown');
-    AgnesRobot.startCountdown();
+    try {
+      AgnesRobot.startCountdown();
+    } catch (e) {
+      AgnesLog('startCountdown 异常: ' + e.message, 'error');
+    }
   }
 
   var pttBtn = document.getElementById('pttButton');
@@ -574,7 +584,7 @@
   pttBtn.addEventListener('touchstart', function(e) {
     e.preventDefault();
     lastTouchTime = Date.now();
-    if (!isConnected) { connectJitsi(); return; }
+    if (!isConnected) { _pendingPTTCycle = true; connectJitsi(); return; }
     pttStart();
   }, { passive: false });
   pttBtn.addEventListener('touchend', function(e) {
