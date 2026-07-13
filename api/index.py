@@ -6,6 +6,10 @@ Vercel Serverless 入口 - 老年收音机 AI 服务
 
 import os
 import sys
+
+# Vercel serverless: ensure api/ directory is on Python path for _lib imports
+sys.path.insert(0, os.path.dirname(__file__))
+
 import io
 import json
 import ast
