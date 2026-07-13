@@ -872,15 +872,14 @@
     function getYearData(year) {
       var yd = yearSummary[year];
       if (yd) return yd;
-      // 也尝试 string key
       yd = yearSummary[String(year)];
       if (yd) return yd;
-      return { news: 0, music: 0 };
+      return { news: 0, music: 0, novel: 0 };
     }
 
     /** 渲染全部年代 */
     function renderDecades() {
-      var totalNews = 0, totalMusic = 0;
+      var totalNews = 0, totalMusic = 0, totalNovel = 0;
       var html = '';
 
       DECADES.forEach(function(decade) {
@@ -891,8 +890,10 @@
           var yd = getYearData(y);
           var nc = yd.news || 0;
           var mc = yd.music || 0;
+          var nvc = yd.novel || 0;
           totalNews += nc;
           totalMusic += mc;
+          totalNovel += nvc;
 
           rowsHtml +=
             '<div class="archive-year-row">' +
@@ -910,6 +911,13 @@
                 '<div class="ch-info"><span class="ch-year">' + y + '</span><span class="ch-name">音乐频道</span></div>' +
                 '<span class="ch-count ' + (mc > 0 ? 'has-data' : 'no-data') + '">' + (mc > 0 ? mc + ' 首' : '0') + '</span>' +
               '</a>' +
+              // 小说频道
+              '<a class="archive-channel-card' + (nvc === 0 ? ' no-data' : '') + '"' +
+              (nvc > 0 ? ' href="/radio?year=' + y + '&channel=novel"' : ' href="javascript:void(0)"') + '>' +
+                '<span class="ch-icon">📖</span>' +
+                '<div class="ch-info"><span class="ch-year">' + y + '</span><span class="ch-name">小说频道</span></div>' +
+                '<span class="ch-count ' + (nvc > 0 ? 'has-data' : 'no-data') + '">' + (nvc > 0 ? nvc + ' 篇' : '0') + '</span>' +
+              '</a>' +
             '</div>';
         }
 
@@ -925,7 +933,7 @@
       });
 
       container.innerHTML = html;
-      countEl.textContent = (totalNews + totalMusic) + ' 条';
+      countEl.textContent = (totalNews + totalMusic + totalNovel) + ' 条';
 
       // 绑定折叠/展开
       container.querySelectorAll('.archive-decade-header').forEach(function(header) {

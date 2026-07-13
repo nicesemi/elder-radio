@@ -19,7 +19,7 @@
   let cntvStations = [];
   let cntrYearSet = new Set();
   let currentCategory = '';
-  let currentChannel = 'news';         // 'news' | 'music'（仅 1949-2019 AM 模式生效）
+  let currentChannel = 'news';         // 'news' | 'music' | 'novel'（仅 1949-2019 AM 模式生效）
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -517,8 +517,29 @@
             }
           }
         } else if (currentChannel === 'music') {
-          // 音乐频道：从 singer_data.json 获取该年金曲
-          filtered = getMusicStationsForYear(year);
+          // 音乐频道：异步从 /api/music/{year} 获取歌曲数据
+          stations = [{ id: 'music_loading_' + year, name: '加载中...', type: 'placeholder', category: '音乐', era: String(year), stream_url: null, verified: false, channel: 'music' }];
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelList();
+          updateNowPlaying();
+          updateEraScroll();
+          fetchMusicStations(year);
+          return;
+        } else if (currentChannel === 'novel') {
+          // 小说频道：异步从 /api/broadcast/history/{year}?category=novel 获取
+          stations = [{ id: 'novel_loading_' + year, name: '加载中...', type: 'placeholder', category: '小说', era: String(year), stream_url: null, verified: false, channel: 'novel' }];
+          stationIdx = 0;
+          bindTuningKnob();
+          setStIdx(0);
+          renderDial();
+          renderChannelList();
+          updateNowPlaying();
+          updateEraScroll();
+          fetchNovelStations(year);
+          return;
         }
       } else {
         // 2020-2025：保持原有 AM 逻辑
@@ -556,53 +577,154 @@
     updateNowPlaying();
   }
 
-  // ============ 音乐频道：从 singer_data.json 获取金曲 ============
-  function getMusicStationsForYear(y) {
-    var result = [];
-    var singers = singerData.singers || [];
-
-    for (var i = 0; i < singers.length; i++) {
-      var s = singers[i];
-      var songsByYear = s.songs_by_year || {};
-      var yearSongs = songsByYear[String(y)];
-      if (!yearSongs) continue;
-
-      for (var j = 0; j < yearSongs.length; j++) {
-        var song = yearSongs[j];
-        // 优先有酷我流的歌曲
-        if (song.stream_url && song.has_stream) {
-          result.push({
-            id: 'music_' + y + '_' + s.name + '_' + j,
-            name: s.name_cn + ' - ' + song.title,
-            stream_url: song.stream_url,
-            type: 'music_kuwo',
+  // ============ 音乐频道：从 /api/music/{year} 获取歌曲 ============
+  function fetchMusicStations(y) {
+    fetch('/api/music/' + y)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.songs && data.songs.length > 0) {
+          var songStations = data.songs.map(function(song, i) {
+            return {
+              id: 'music_db_' + y + '_' + i,
+              name: song.title + ' - ' + song.artist,
+              stream_url: null,
+              type: 'music_library',
+              source: 'music_db',
+              category: '音乐',
+              era: String(y),
+              verified: false,
+              channel: 'music',
+              artist: song.artist
+            };
+          });
+          stations = songStations;
+        } else {
+          stations = [{
+            id: 'music_empty_' + y,
+            name: y + '年 暂无歌曲数据',
+            type: 'placeholder',
             category: '音乐',
             era: String(y),
-            verified: true,
-            source: 'kuwo',
-            channel: 'music',
-            singer: s.name_cn,
-            album: song.album || ''
-          });
+            stream_url: null,
+            verified: false,
+            channel: 'music'
+          }];
         }
-      }
-    }
-
-    // 无酷我流金曲 → AI 兜底"经典金曲"虚拟频道
-    if (result.length === 0) {
-      result.push({
-        id: 'ai_music_' + y,
-        name: y + '年 经典金曲',
-        type: 'ai_archive',
-        category: '音乐',
-        era: String(y),
-        stream_url: null,
-        verified: false,
-        channel: 'music'
+        stationIdx = 0;
+        bindTuningKnob();
+        setStIdx(0);
+        renderDial();
+        renderChannelList();
+        updateEraScroll();
+        updateNowPlaying();
+      })
+      .catch(function() {
+        stations = [{
+          id: 'music_error_' + y,
+          name: '歌曲数据加载失败',
+          type: 'placeholder',
+          category: '音乐',
+          era: String(y),
+          stream_url: null,
+          verified: false,
+          channel: 'music'
+        }];
+        stationIdx = 0;
+        bindTuningKnob();
+        setStIdx(0);
+        renderDial();
+        renderChannelList();
+        updateEraScroll();
+        updateNowPlaying();
       });
-    }
+  }
 
-    return result;
+  // ============ 小说频道：从 /api/broadcast/history/{year}?category=novel 获取 ============
+  function fetchNovelStations(y) {
+    fetch('/api/broadcast/history/' + y)
+      .then(function(r) {
+        if (!r.ok) throw new Error('API error');
+        return r.json();
+      })
+      .then(function(data) {
+        if (data.stations && data.stations.length > 0) {
+          // 筛选 category 为 "小说" 或 category_key 为 "novel" 的条目
+          var novelStations = [];
+          data.stations.forEach(function(entry) {
+            var cat = entry.category || '';
+            var catKey = entry.category_key || '';
+            if (cat.indexOf('小说') < 0 && catKey !== 'novel') return;
+            (entry.audio_urls || []).forEach(function(item, i) {
+              var url = typeof item === 'string' ? item : (item.url || '');
+              if (!url) return;
+              var label = (entry.audio_urls.length > 1) ? ' #' + (i + 1) : '';
+              novelStations.push({
+                id: 'novel_' + y + '_' + i,
+                name: (entry.station_name || '小说广播') + label,
+                stream_url: url,
+                type: 'archive',
+                source: 'r2_archive',
+                category: '小说',
+                era: String(y),
+                verified: true,
+                channel: 'novel'
+              });
+            });
+          });
+
+          if (novelStations.length > 0) {
+            stations = novelStations;
+          } else {
+            stations = [{
+              id: 'novel_placeholder_' + y,
+              name: '小说广播制作中，敬请期待',
+              type: 'placeholder',
+              category: '小说',
+              era: String(y),
+              stream_url: null,
+              verified: false,
+              channel: 'novel'
+            }];
+          }
+        } else {
+          stations = [{
+            id: 'novel_placeholder_' + y,
+            name: '小说广播制作中，敬请期待',
+            type: 'placeholder',
+            category: '小说',
+            era: String(y),
+            stream_url: null,
+            verified: false,
+            channel: 'novel'
+          }];
+        }
+        stationIdx = 0;
+        bindTuningKnob();
+        setStIdx(0);
+        renderDial();
+        renderChannelList();
+        updateEraScroll();
+        updateNowPlaying();
+      })
+      .catch(function() {
+        stations = [{
+          id: 'novel_placeholder_' + y,
+          name: '小说广播制作中，敬请期待',
+          type: 'placeholder',
+          category: '小说',
+          era: String(y),
+          stream_url: null,
+          verified: false,
+          channel: 'novel'
+        }];
+        stationIdx = 0;
+        bindTuningKnob();
+        setStIdx(0);
+        renderDial();
+        renderChannelList();
+        updateEraScroll();
+        updateNowPlaying();
+      });
   }
 
   // ============ FM 实时电台获取 ============
@@ -782,6 +904,15 @@
 
   // ============ AM 历史存档电台获取 ============
   function fetchHistoryStations(y) {
+    // 音乐 / 小说频道走各自的异步获取逻辑
+    if (currentChannel === 'music') {
+      fetchMusicStations(y);
+      return;
+    }
+    if (currentChannel === 'novel') {
+      fetchNovelStations(y);
+      return;
+    }
     // 2020-2025 年份 archive 无数据，直接走 CNTV 云听回听
     if (y >= 2020 && y <= 2025) {
       generateDateBroadcast();
@@ -853,7 +984,9 @@
       } else if (stations.length > 0 && stations[0] && stations[0].source === 'archive.org') {
         el.textContent = year + '年 · Internet Archive · ' + stations.length + ' 个录音';
       } else if (year >= 1949 && year <= 2019 && currentChannel === 'music') {
-        el.textContent = year + '年 · ' + (currentChannel === 'music' ? '金曲回响' : '') + ' · ' + stations.length + ' 首';
+        el.textContent = year + '年 · 金曲回响 · ' + stations.length + ' 首';
+      } else if (year >= 1949 && year <= 2019 && currentChannel === 'novel') {
+        el.textContent = year + '年 · 小说广播 · ' + stations.length + ' 篇';
       } else {
         var events = (broadcastData.years && broadcastData.years[String(year)])
           ? broadcastData.years[String(year)].events || [] : [];
@@ -892,8 +1025,10 @@
         label = s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---';
       } else if (s.type === 'ai_archive') {
         label = '◆ ' + s.name.slice(0, 7);
-      } else if (s.type === 'music_kuwo') {
+      } else if (s.type === 'music_kuwo' || s.type === 'music_library') {
         label = '♪ ' + s.name.slice(0, 7);
+      } else if (s.type === 'placeholder') {
+        label = '— ' + s.name.slice(0, 7);
       } else {
         label = s.name.slice(0, 8);
       }
@@ -921,6 +1056,10 @@
         el.textContent = '[' + year + '] ' + s.name + (timeLabel ? ' ' + timeLabel : '') + ' · 云听回听';
       } else if (s.type === 'music_kuwo') {
         el.textContent = '♪ ' + s.name + ' · 酷我音乐';
+      } else if (s.type === 'music_library') {
+        el.textContent = '♪ ' + s.name + ' · 经典金曲';
+      } else if (s.type === 'placeholder') {
+        el.textContent = s.name;
       } else if (mode === 'FM') {
         el.textContent = '直播: ' + s.name;
       } else {
@@ -1132,10 +1271,14 @@
   function playCurrent() {
     var s = stations[stationIdx];
     if (!s) return;
+    if (s.type === 'placeholder') return;  // 占位卡片，不播放
     if (mode === 'MAYDAY') {
       playMaydaySong(s);
     } else if (s.type === 'music_kuwo') {
       playMusicStream(s);
+    } else if (s.type === 'music_library') {
+      // 音乐库中歌曲，stream_url 暂空（待 R2 上传完成后有 r2_url 再填入）
+      ttsGenerate(s);
     } else if (s.type === 'ai_archive') {
       ttsGenerate(s);
     } else if (s.type === 'archive' && s.archive_identifier) {
@@ -1453,7 +1596,7 @@
         return;  // FM 切换会自动 fetchLiveStations
       }
 
-      if (urlChannel === 'news' || urlChannel === 'music') {
+      if (urlChannel === 'news' || urlChannel === 'music' || urlChannel === 'novel') {
         currentChannel = urlChannel;
       }
 
@@ -1550,7 +1693,7 @@
     // 根据模式设置列表标题
     var labelEl = el.querySelector('.channel-list-label');
     if (mode === 'AM' && year >= 1949 && year <= 2019) {
-      var chLabel = currentChannel === 'music' ? '🎵 音乐' : '📰 新闻';
+      var chLabel = currentChannel === 'music' ? '🎵 音乐' : (currentChannel === 'novel' ? '📖 小说' : '📰 新闻');
       labelEl.textContent = year + '年 · ' + chLabel + ' · ' + list.length + ' 个频道';
     } else {
       labelEl.textContent = '频道列表';
@@ -1564,10 +1707,12 @@
       if (s.type === 'ai_archive') cls += ' ai';
       if (s.type === 'cntv') cls += ' cntv';
       if (s.type === 'music_kuwo') cls += ' verified';
+      if (s.type === 'music_library') cls += ' verified';
+      if (s.type === 'placeholder') cls += ' ai';
       var label;
       if (s.type === 'cntv' && s.start) {
         label = s.start + ' ' + (s.name.length > 12 ? s.name.slice(0, 12) + '…' : s.name);
-      } else if (s.type === 'music_kuwo') {
+      } else if (s.type === 'music_kuwo' || s.type === 'music_library') {
         label = '♪ ' + (s.name.length > 20 ? s.name.slice(0, 20) + '…' : s.name);
       } else {
         label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;

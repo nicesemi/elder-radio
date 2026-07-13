@@ -639,6 +639,51 @@ async def test_tts():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+# ============ 音乐数据库 API ============
+
+_MUSIC_DB_PATH = os.path.join(LIB_DIR, "music_db_1949_2019.json")
+_music_db_cache = None
+
+
+def _load_music_db():
+    global _music_db_cache
+    if _music_db_cache is None:
+        with open(_MUSIC_DB_PATH, "r") as f:
+            _music_db_cache = json.load(f)
+    return _music_db_cache
+
+
+@app.get("/api/music/{year}")
+async def music_by_year(year: int):
+    """
+    GET /api/music/{year}
+
+    返回指定年份的歌曲列表（从 music_db_1949_2019.json 读取）。
+    1949-2019 年每年 2 首代表歌曲。
+
+    返回:
+        {
+            "success": true,
+            "year": 1985,
+            "songs": [{"title": "...", "artist": "...", "era": "1980s"}, ...],
+            "count": 2
+        }
+        如果该年无数据，返回 {"success": true, "year": 1985, "songs": [], "count": 0}
+    """
+    if year < 1949 or year > 2019:
+        raise HTTPException(status_code=400, detail=f"年份超出范围: {year}（1949-2019）")
+
+    db = _load_music_db()
+    songs = db.get(str(year), [])
+
+    return {
+        "success": True,
+        "year": year,
+        "songs": songs,
+        "count": len(songs),
+    }
+
+
 # ============ 酷我音乐流代理 ============
 
 KUWO_SEARCH_URL = "http://search.kuwo.cn/r.s"
