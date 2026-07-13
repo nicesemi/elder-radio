@@ -20,6 +20,8 @@
   let cntrYearSet = new Set();
   let currentCategory = '';
   let currentChannel = 'news';         // 'news' | 'music' | 'novel'（仅 1949-2019 AM 模式生效）
+  let currentTextContent = null;       // 当前 AI 文字内容缓存 {text, year, channel}
+  let textContentExpanded = false;     // 是否展开全文
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -353,6 +355,23 @@
     if (mode === 'AM' && stations[stationIdx]) ttsGenerate(stations[stationIdx]);
   });
 
+  // 展开全文按钮
+  document.getElementById('contentExpandBtn').addEventListener('click', function() {
+    textContentExpanded = !textContentExpanded;
+    var textEl = document.getElementById('contentPreviewText');
+    var btn = document.getElementById('contentExpandBtn');
+    if (!currentTextContent) return;
+    if (textContentExpanded) {
+      textEl.textContent = currentTextContent.text;
+      textEl.classList.add('expanded');
+      btn.textContent = '收起 ▲';
+    } else {
+      textEl.textContent = currentTextContent.text.substring(0, 200) + '...';
+      textEl.classList.remove('expanded');
+      btn.textContent = '展开全文 ▼';
+    }
+  });
+
   // ============ 五月天模式 ============
   function fetchMaydayYears() {
     fetch('/api/mayday/years')
@@ -516,6 +535,8 @@
               });
             }
           }
+          // 异步获取 AI 文字内容
+          fetchTextContent(year, 'news');
         } else if (currentChannel === 'music') {
           // 音乐频道：异步从 /api/music/{year} 获取歌曲数据
           stations = [{ id: 'music_loading_' + year, name: '加载中...', type: 'placeholder', category: '音乐', era: String(year), stream_url: null, verified: false, channel: 'music' }];
@@ -705,6 +726,8 @@
         renderChannelList();
         updateEraScroll();
         updateNowPlaying();
+        // 同时获取 AI 文字内容
+        fetchTextContent(y, 'novel');
       })
       .catch(function() {
         stations = [{
@@ -900,6 +923,89 @@
       playCurrent();
       updateNowPlaying();
     }
+  }
+
+  // ============ AI 文字内容获取（news / novel 频道） ============
+  function fetchTextContent(y, ch) {
+    // 重置旧状态
+    currentTextContent = null;
+    textContentExpanded = false;
+
+    fetch('/api/content/' + y + '/' + ch)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.text) {
+          currentTextContent = { text: data.text, year: y, channel: ch, generated_at: data.generated_at || '' };
+        } else {
+          // 内容未生成，保留 null 用于占位提示
+          currentTextContent = null;
+        }
+        renderContentPreview();
+      })
+      .catch(function() {
+        currentTextContent = null;
+        renderContentPreview();
+      });
+  }
+
+  function renderContentPreview() {
+    var previewEl = document.getElementById('contentPreview');
+    var textEl = document.getElementById('contentPreviewText');
+    var expandBtn = document.getElementById('contentExpandBtn');
+
+    var isNewsNovel = (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel'));
+
+    if (!currentTextContent || !currentTextContent.text) {
+      if (isNewsNovel) {
+        // 显示占位提示
+        previewEl.style.display = 'block';
+        textEl.textContent = 'AI 文字内容尚未生成，可先聆听语音广播';
+        textEl.classList.remove('expanded');
+        expandBtn.style.display = 'none';
+      } else {
+        previewEl.style.display = 'none';
+      }
+      return;
+    }
+
+    previewEl.style.display = 'block';
+    var fullText = currentTextContent.text;
+    var preview = fullText.length > 200 ? fullText.substring(0, 200) + '...' : fullText;
+    textEl.textContent = preview;
+    textEl.classList.remove('expanded');
+
+    if (fullText.length > 200) {
+      expandBtn.style.display = 'block';
+      expandBtn.textContent = '展开全文 ▼';
+    } else {
+      expandBtn.style.display = 'none';
+    }
+  }
+
+  // ============ "生成语音播放"按钮 ============
+  function showTtsButton(station) {
+    var ttsBtn = document.getElementById('ttsPlayBtn');
+    var previewEl = document.getElementById('contentPreview');
+
+    // 确保预览区域可见
+    if (!previewEl || previewEl.style.display === 'none') {
+      previewEl.style.display = 'block';
+    }
+
+    ttsBtn.style.display = 'block';
+    ttsBtn.disabled = false;
+    ttsBtn.textContent = '生成语音播放 ▶';
+
+    // 移除旧的事件监听（克隆替换）
+    var newBtn = ttsBtn.cloneNode(true);
+    ttsBtn.parentNode.replaceChild(newBtn, ttsBtn);
+
+    newBtn.addEventListener('click', function() {
+      newBtn.disabled = true;
+      newBtn.textContent = '正在生成语音...';
+      ttsGenerate(station);
+      // ttsGenerate 内部会调用 updateNowPlaying 处理后续状态
+    });
   }
 
   // ============ AM 历史存档电台获取 ============
@@ -1280,13 +1386,23 @@
       // 音乐库中歌曲，stream_url 暂空（待 R2 上传完成后有 r2_url 再填入）
       ttsGenerate(s);
     } else if (s.type === 'ai_archive') {
-      ttsGenerate(s);
+      // 1949-2019 news/novel：不自动 TTS，显示"生成语音播放"按钮
+      if (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel')) {
+        showTtsButton(s);
+      } else {
+        ttsGenerate(s);
+      }
     } else if (s.type === 'archive' && s.archive_identifier) {
       playArchive(s);
     } else if (s.stream_url) {
       playStream(s);
     } else {
-      ttsGenerate(s);
+      // 兜底：无 stream_url 时，1949-2019 news/novel 也走按钮
+      if (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel')) {
+        showTtsButton(s);
+      } else {
+        ttsGenerate(s);
+      }
     }
   }
 

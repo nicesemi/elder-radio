@@ -639,6 +639,34 @@ async def test_tts():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+# ============ AI 文字内容 API ============
+
+@app.get("/api/content/{year}/{channel}")
+async def get_text_content(year: int, channel: str):
+    """
+    获取指定年份和频道的 AI 文字内容。
+
+    GET /api/content/1949/news
+
+    返回:
+        成功: {"success": true, "year": 1949, "channel": "news", "text": "...", "generated_at": "..."}
+        未生成: {"success": false, "message": "内容生成中，请稍后再试"}
+    """
+    if year < 1949 or year > 2019:
+        return {"success": False, "message": "仅支持 1949-2019 年份"}
+
+    if channel not in ("news", "novel"):
+        return {"success": False, "message": "仅支持 news / novel 频道"}
+
+    r2 = _get_r2()
+    content = r2.get_text_content(year, channel)
+
+    if content:
+        return {"success": True, **content}
+    else:
+        return {"success": False, "message": "内容生成中，请稍后再试"}
+
+
 # ============ 音乐数据库 API ============
 
 _MUSIC_DB_PATH = os.path.join(LIB_DIR, "music_db_1949_2019.json")

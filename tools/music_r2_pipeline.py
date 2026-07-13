@@ -22,7 +22,7 @@ import tempfile
 import time
 
 # === Config ===
-MUSIC_DB_PATH = "temp/music_db_1949_2019.json"
+MUSIC_DB_PATH = "api/_lib/music_db_1949_2019.json"
 R2_ENDPOINT = "https://8c9e2df83d17acfe5b951a9d016a785c.r2.cloudflarestorage.com"
 R2_BUCKET = "radio"
 R2_PUBLIC = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"

@@ -1364,3 +1364,25 @@ def get_broadcasts_by_category(year: int, category: str = None) -> dict:
         }
 
     return result
+
+
+def get_text_content(year: int, channel: str) -> Optional[dict]:
+    """
+    从 R2 读取 broadcasts/{year}/{channel}/content.json 返回文本内容。
+
+    Args:
+        year: 年份
+        channel: 频道 (news / novel)
+
+    Returns:
+        dict: {"year": ..., "channel": ..., "text": ..., "generated_at": ...}
+        None: 内容不存在
+    """
+    s3 = _get_s3()
+    key = f"broadcasts/{year}/{channel}/content.json"
+    try:
+        resp = s3.get_object(Bucket=R2_BUCKET, Key=key)
+        body = resp["Body"].read().decode("utf-8")
+        return json.loads(body)
+    except Exception:
+        return None
