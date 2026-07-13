@@ -241,9 +241,19 @@
       gap: 10px;
       justify-content: center;
     }
+    /* embed 模式：隐藏导航、去掉顶部留白 */
+    body.embed-mode.has-nav { padding-top: 0 !important; }
+    .embed-mode .top-nav { display: none !important; }
   </style>
 </head>
 <body class="has-nav">
+<script>
+(function() {
+  if (new URLSearchParams(window.location.search).get('embed') === '1') {
+    document.body.classList.add('embed-mode');
+  }
+})();
+</script>
 
 <nav class="top-nav">
   <a href="/" class="top-nav-brand">elder-radio</a>

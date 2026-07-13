@@ -303,9 +303,20 @@
       .carrot-mouth { top:36px; width:14px; }
       .carrot-leaf { width:6px; height:22px; top:-15px; }
     }
+    /* embed 模式：隐藏导航、去掉顶部留白、恢复全高 */
+    body.radio-page.embed-mode { min-height: 100vh; }
+    body.embed-mode.has-nav { padding-top: 0 !important; }
+    .embed-mode .top-nav { display: none !important; }
   </style>
 </head>
 <body class="radio-page has-nav">
+<script>
+(function() {
+  if (new URLSearchParams(window.location.search).get('embed') === '1') {
+    document.body.classList.add('embed-mode');
+  }
+})();
+</script>
 
 <nav class="top-nav">
   <a href="/" class="top-nav-brand">elder-radio</a>
