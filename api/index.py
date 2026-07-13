@@ -639,6 +639,36 @@ async def test_tts():
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
 
 
+# ============ 调试端点 ============
+
+@app.get("/api/debug/r2")
+async def debug_r2():
+    """测试 R2 连接和数据读取"""
+    import traceback
+    import sys
+    result = {"python_version": sys.version, "steps": []}
+    try:
+        result["steps"].append("importing _lib")
+        from _lib import r2_broadcast
+        result["steps"].append("imported _lib.r2_broadcast ok")
+        result["r2_access_key"] = r2_broadcast.R2_ACCESS_KEY[:10] + "..."
+        result["r2_endpoint"] = r2_broadcast.R2_ENDPOINT
+        result["steps"].append("creating s3 client")
+        s3 = r2_broadcast._get_s3()
+        result["steps"].append("s3 client created")
+        result["steps"].append("listing broadcasts/1949/")
+        resp = s3.list_objects_v2(Bucket=r2_broadcast.R2_BUCKET, Prefix="broadcasts/1949/", MaxKeys=5)
+        keys = [obj["Key"] for obj in resp.get("Contents", [])]
+        result["keys_1949"] = keys
+        result["steps"].append("done")
+        result["success"] = True
+    except Exception as e:
+        result["success"] = False
+        result["error"] = str(e)
+        result["traceback"] = traceback.format_exc()
+    return result
+
+
 # ============ AI 文字内容 API ============
 
 @app.get("/api/content/{year}/{channel}")
