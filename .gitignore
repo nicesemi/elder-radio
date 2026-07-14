@@ -12,3 +12,4 @@ kokoro-tts-api/
 temp/
 output/
 scripts/.archive_state.json
+public/audio/
