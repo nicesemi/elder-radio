@@ -1573,6 +1573,15 @@
         if (data.text) {
           speakWithBrowserTTS(data.text);
         }
+        // 如果是小说频道且有外部链接，显示链接
+        var linkEl = document.getElementById('externalLink');
+        if (cat === 'novel' && data.external_url) {
+          linkEl.href = data.external_url;
+          linkEl.style.display = 'inline-block';
+          linkEl.textContent = '📻 收听喜马拉雅专辑';
+        } else {
+          linkEl.style.display = 'none';
+        }
       })
       .catch(function(e) { console.log('Text fetch failed:', e); });
   }

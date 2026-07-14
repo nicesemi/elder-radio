@@ -67,6 +67,14 @@
       background: rgba(0,0,0,0.5); display: inline-block;
       padding: 4px 12px; border-radius: 10px;
     }
+    .external-novel-link {
+      display: inline-block; margin-top: 6px;
+      font-size: 0.7rem; color: #FF9800;
+      background: rgba(0,0,0,0.5); padding: 3px 10px;
+      border-radius: 8px; text-decoration: none;
+      pointer-events: auto; transition: background 0.2s;
+    }
+    .external-novel-link:hover { background: rgba(255,152,0,0.2); }
 
     .radio-right {
       position:relative; z-index:2; width:48%;
@@ -322,6 +330,7 @@
       <div class="speaker-grille"><div class="speaker-shadow"></div></div>
       <div class="speaker-info-overlay">
         <div class="now-playing" id="nowPlaying">等待信号...</div>
+        <a id="externalLink" class="external-novel-link" target="_blank" style="display:none;" href="#">📻 收听喜马拉雅专辑</a>
       </div>
     </div>
   </div>

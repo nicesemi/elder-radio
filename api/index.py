@@ -66,6 +66,11 @@ _broadcast_summary_cache: Optional[Dict[str, Any]] = None
 _broadcast_summary_cache_time: float = 0.0
 _BROADCAST_SUMMARY_CACHE_TTL: int = 300
 
+# 小说频道外部专辑链接（年份 -> 喜马拉雅/其他平台链接）
+NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
+    1949: "https://www.ximalaya.com/album/9044282",
+}
+
 def get_supabase():
     global _supabase_client
     if _supabase_client is None:
@@ -881,7 +886,8 @@ async def broadcast_text(
             "year": year,
             "category": category,
             "text": data.get("text", ""),
-            "generated_at": data.get("generated_at", "")
+            "generated_at": data.get("generated_at", ""),
+            "external_url": NOVEL_EXTERNAL_LINKS.get(year) if category == "novel" else None,
         }
     except HTTPException:
         raise
