@@ -89,6 +89,21 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1967: "https://www.ximalaya.com/album/49053601",
     1968: "https://www.ximalaya.com/album/49053602",
     1969: "https://www.ximalaya.com/album/49053603",
+    1970: "https://www.ximalaya.com/album/49053604",
+    1971: "https://www.ximalaya.com/album/49053605",
+    1972: "https://www.ximalaya.com/album/49053606",
+    1973: "https://www.ximalaya.com/album/49053607",
+    1974: "https://www.ximalaya.com/album/49053608",
+    1975: "https://www.ximalaya.com/album/49053609",
+    1976: "https://www.ximalaya.com/album/49053610",
+    1977: "https://www.ximalaya.com/album/49053611",
+    1978: "https://www.ximalaya.com/album/49053612",
+    1979: "https://www.ximalaya.com/album/49053613",
+    1980: "https://www.ximalaya.com/album/49053614",
+    1981: "https://www.ximalaya.com/album/49053615",
+    1982: "https://www.ximalaya.com/album/49053616",
+    1983: "https://www.ximalaya.com/album/49053617",
+    1984: "https://www.ximalaya.com/album/49053618",
 }
 
 import json as _json

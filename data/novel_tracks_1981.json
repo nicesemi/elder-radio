@@ -1,0 +1,32 @@
+[
+  {
+    "orderNo": 1,
+    "title": "01",
+    "playUrl64": "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev/audio/novel/1981/01.m4a",
+    "source": "r2"
+  },
+  {
+    "orderNo": 2,
+    "title": "02",
+    "playUrl64": "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev/audio/novel/1981/02.m4a",
+    "source": "r2"
+  },
+  {
+    "orderNo": 3,
+    "title": "03",
+    "playUrl64": "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev/audio/novel/1981/03.m4a",
+    "source": "r2"
+  },
+  {
+    "orderNo": 4,
+    "title": "04",
+    "playUrl64": "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev/audio/novel/1981/04.m4a",
+    "source": "r2"
+  },
+  {
+    "orderNo": 5,
+    "title": "05",
+    "playUrl64": "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev/audio/novel/1981/05.m4a",
+    "source": "r2"
+  }
+]
