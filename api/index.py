@@ -73,6 +73,13 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1951: "https://www.ximalaya.com/album/15576284",
     1952: "https://www.ximalaya.com/album/49053587",
     1953: "https://www.ximalaya.com/album/49053588",
+    1954: "https://www.ximalaya.com/album/49053589",
+    1955: "https://www.ximalaya.com/album/49053590",
+    1956: "https://www.ximalaya.com/album/49053591",
+    1957: "https://www.ximalaya.com/album/49053592",
+    1958: "https://www.ximalaya.com/album/49053593",
+    1959: "https://www.ximalaya.com/album/49053594",
+    1960: "https://www.ximalaya.com/album/49053595",
 }
 
 import json as _json
