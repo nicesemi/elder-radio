@@ -19,9 +19,7 @@
   let cntvStations = [];
   let cntrYearSet = new Set();
   let currentCategory = '';
-  let currentChannel = 'news';         // 'news' | 'music' | 'novel'（仅 1949-2019 AM 模式生效）
-  let currentTextContent = null;       // 当前 AI 文字内容缓存 {text, year, channel}
-  let textContentExpanded = false;     // 是否展开全文
+  let currentChannel = 'news';         // 'news' | 'music'（仅 1949-2019 AM 模式生效）
   let stations = [];
   let stationIdx = 0;
   let year = 1985;
@@ -34,13 +32,6 @@
   let prevStreamUrl = '';
   let selectedMonth = 7;
   let selectedDay = 10;
-
-  // 五月天模式
-  let maydayYears = [];
-  let maydaySongs = [];
-  let maydayYearsInfo = {};
-  let maydayLoaded = false;
-  const MAYDAY_MIN = 1999, MAYDAY_MAX = 2024;
 
   AUDIO.volume = volume;
 
@@ -204,36 +195,19 @@
   // ============ 年代旋钮 ============
   function getYear() { return year; }
   function setYear(y) {
-    if (mode === 'MAYDAY' && maydayYears.length > 0) {
-      var curIdx = maydayYears.indexOf(year);
-      if (curIdx < 0) curIdx = 0;
-      if (y > year) curIdx = Math.min(curIdx + 1, maydayYears.length - 1);
-      else if (y < year) curIdx = Math.max(curIdx - 1, 0);
-      year = maydayYears[curIdx];
-    } else {
-      year = Math.max(ERA_MIN, Math.min(ERA_MAX, Math.round(y)));
-    }
+    year = Math.max(ERA_MIN, Math.min(ERA_MAX, Math.round(y)));
     document.getElementById('nixieYear').textContent = year;
-
-    if (mode === 'MAYDAY') {
-      if (maydayYears.length > 0) {
-        var idx = maydayYears.indexOf(year);
-        if (idx >= 0) setKnobRotation(document.getElementById('knobEra'), angleForValue(idx, 0, maydayYears.length - 1));
-      }
-      fetchMaydaySongs(year);
-    } else {
-      setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
-      renderChannelTabs();  // 频道 Tab 随年代变化显隐
-      filterStations();
-      if (cntrYearSet.has(String(year))) {
-        selectedMonth = 1;
-        selectedDay = 1;
-        document.getElementById('selMonth').value = 1;
-        populateDayOptions();
-        document.getElementById('selDay').value = 1;
-      }
-      fetchHistoryStations(year);
+    setKnobRotation(document.getElementById('knobEra'), angleForValue(year, ERA_MIN, ERA_MAX));
+    renderChannelTabs();
+    filterStations();
+    if (cntrYearSet.has(String(year))) {
+      selectedMonth = 1;
+      selectedDay = 1;
+      document.getElementById('selMonth').value = 1;
+      populateDayOptions();
+      document.getElementById('selDay').value = 1;
     }
+    fetchHistoryStations(year);
     updateEraScroll();
   }
 
@@ -296,6 +270,8 @@
           playCurrent();
         }
         updateEraScroll();
+        // 切换频道后自动朗读广播稿
+        speakContentForYearCategory(year, ch);
       }
     });
   }
@@ -305,16 +281,13 @@
     mode = m;
     document.getElementById('btnAM').classList.toggle('active', m === 'AM');
     document.getElementById('btnFM').classList.toggle('active', m === 'FM');
-    document.getElementById('btnMAYDAY').classList.toggle('active', m === 'MAYDAY');
-    document.getElementById('modeIndicator').textContent = m === 'MAYDAY' ? 'MD' : m;
+    document.getElementById('modeIndicator').textContent = m;
 
     var isLive = m === 'FM';
-    var isMayday = m === 'MAYDAY';
-    document.getElementById('liveLed').classList.toggle('off', !isLive && !isMayday);
-    document.getElementById('dialLed').classList.toggle('off', !isLive && !isMayday);
-    document.getElementById('dialModeLabel').textContent = m === 'MAYDAY' ? 'MAYDAY' : m;
+    document.getElementById('liveLed').classList.toggle('off', !isLive);
+    document.getElementById('dialLed').classList.toggle('off', !isLive);
+    document.getElementById('dialModeLabel').textContent = m;
 
-    // 频道 Tab 随模式变化
     renderChannelTabs();
 
     if (m === 'FM') {
@@ -323,13 +296,6 @@
       document.getElementById('categoryTabs').style.display = '';
       currentCategory = '';
       fetchLiveStations();
-    } else if (m === 'MAYDAY') {
-      document.getElementById('dialRange').textContent = '五月天电台';
-      document.getElementById('channelList').style.display = 'none';
-      document.getElementById('categoryTabs').style.display = 'none';
-      document.getElementById('nixieLabel').textContent = 'YEAR / 年代';
-      document.getElementById('selMonth').parentElement.style.display = 'none';
-      fetchMaydayYears();
     } else {
       document.getElementById('dialRange').textContent = '年代电台';
       document.getElementById('channelList').style.display = '';
@@ -341,12 +307,11 @@
     }
 
     updateEraScroll();
-    if (!isMayday) onTuneChange();
+    onTuneChange();
   }
 
   document.getElementById('btnAM').addEventListener('click', function() { setMode('AM'); });
   document.getElementById('btnFM').addEventListener('click', function() { setMode('FM'); });
-  document.getElementById('btnMAYDAY').addEventListener('click', function() { setMode('MAYDAY'); });
   document.getElementById('btnTONE').addEventListener('click', function() {
     toneIdx = (toneIdx + 1) % TONE_NAMES.length;
     var t = TONE_NAMES[toneIdx];
@@ -354,129 +319,6 @@
     document.getElementById('btnTONE').title = '音色: ' + t;
     if (mode === 'AM' && stations[stationIdx]) ttsGenerate(stations[stationIdx]);
   });
-
-  // 展开全文按钮
-  document.getElementById('contentExpandBtn').addEventListener('click', function() {
-    textContentExpanded = !textContentExpanded;
-    var textEl = document.getElementById('contentPreviewText');
-    var btn = document.getElementById('contentExpandBtn');
-    if (!currentTextContent) return;
-    if (textContentExpanded) {
-      textEl.textContent = currentTextContent.text;
-      textEl.classList.add('expanded');
-      btn.textContent = '收起 ▲';
-    } else {
-      textEl.textContent = currentTextContent.text.substring(0, 200) + '...';
-      textEl.classList.remove('expanded');
-      btn.textContent = '展开全文 ▼';
-    }
-  });
-
-  // ============ 五月天模式 ============
-  function fetchMaydayYears() {
-    fetch('/api/mayday/years')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success && data.years && data.years.length > 0) {
-          maydayYears = data.years;
-          maydayYearsInfo = data.years_info || {};
-          maydayLoaded = true;
-
-          if (maydayYears.indexOf(year) < 0) {
-            year = maydayYears[0];
-          }
-          document.getElementById('nixieYear').textContent = year;
-          if (maydayYears.length > 0) {
-            setKnobRotation(document.getElementById('knobEra'), angleForValue(
-              maydayYears.indexOf(year), 0, maydayYears.length - 1
-            ));
-          }
-          fetchMaydaySongs(year);
-        } else {
-          document.getElementById('nowPlaying').textContent = '五月天数据为空';
-        }
-      })
-      .catch(function(e) {
-        console.error('五月天API失败:', e);
-        document.getElementById('nowPlaying').textContent = '五月天电台暂不可用';
-      });
-  }
-
-  function fetchMaydaySongs(y) {
-    document.getElementById('nowPlaying').textContent = '加载中... ' + y;
-    fetch('/api/mayday/year/' + y)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success && data.songs && data.songs.length > 0) {
-          maydaySongs = data.songs;
-          stations = maydaySongs.map(function(s, i) {
-            return {
-              id: 'mayday_' + y + '_' + i,
-              name: s.filename.replace(/\.[^.]+$/, '').replace(/^[\d]{4}-/, ''),
-              stream_url: s.url,
-              type: 'mayday',
-              category: '五月天',
-              era: String(y),
-              verified: true,
-              source: 'r2_mayday'
-            };
-          });
-          stationIdx = 0;
-          bindTuningKnob();
-          setStIdx(0);
-          renderDial();
-          renderChannelListMayday();
-          updateEraScrollMayday();
-          updateNowPlaying();
-          playCurrent();
-        } else {
-          stations = [];
-          stationIdx = 0;
-          renderDial();
-          updateNowPlaying();
-          stopPlayback();
-        }
-      })
-      .catch(function(e) {
-        console.error('五月天歌曲API失败:', e);
-        document.getElementById('nowPlaying').textContent = '加载失败';
-      });
-  }
-
-  function renderChannelListMayday() {
-    var el = document.getElementById('channelList');
-    var scroll = document.getElementById('channelListScroll');
-    if (!el || !scroll) return;
-    document.getElementById('categoryTabs').style.display = 'none';
-
-    if (stations.length <= 1) {
-      el.style.display = 'none';
-      return;
-    }
-    el.style.display = 'block';
-    document.getElementById('channelList').querySelector('.channel-list-label').textContent = year + '年 歌曲列表';
-
-    scroll.innerHTML = stations.map(function(s, i) {
-      var cls = 'channel-chip';
-      if (i === stationIdx) cls += ' current';
-      var label = s.name.length > 22 ? s.name.slice(0, 22) + '…' : s.name;
-      return '<span class="' + cls + '" data-idx="' + i + '">' + label + '</span>';
-    }).join('');
-
-    var chips = scroll.querySelectorAll('.channel-chip');
-    for (var j = 0; j < chips.length; j++) {
-      chips[j].addEventListener('click', function() {
-        setStIdx(parseInt(this.dataset.idx));
-        onTuneChange();
-      });
-    }
-  }
-
-  function updateEraScrollMayday() {
-    var el = document.getElementById('eraScroll');
-    el.style.display = 'block';
-    el.textContent = year + '年 · ' + stations.length + '首 · 循环播放中';
-  }
 
   // ============ 电台过滤（核心 — v4.0 支持双频道） ============
   function filterStations() {
@@ -535,32 +377,21 @@
               });
             }
           }
-          // 异步获取 AI 文字内容
-          fetchTextContent(year, 'news');
         } else if (currentChannel === 'music') {
-          // 音乐频道：异步从 /api/music/{year} 获取歌曲数据
-          stations = [{ id: 'music_loading_' + year, name: '加载中...', type: 'placeholder', category: '音乐', era: String(year), stream_url: null, verified: false, channel: 'music' }];
-          stationIdx = 0;
-          bindTuningKnob();
-          setStIdx(0);
-          renderDial();
-          renderChannelList();
-          updateNowPlaying();
-          updateEraScroll();
-          fetchMusicStations(year);
-          return;
+          // 音乐频道：从 singer_data.json 获取该年金曲
+          filtered = getMusicStationsForYear(year);
         } else if (currentChannel === 'novel') {
-          // 小说频道：异步从 /api/broadcast/history/{year}?category=novel 获取
-          stations = [{ id: 'novel_loading_' + year, name: '加载中...', type: 'placeholder', category: '小说', era: String(year), stream_url: null, verified: false, channel: 'novel' }];
-          stationIdx = 0;
-          bindTuningKnob();
-          setStIdx(0);
-          renderDial();
-          renderChannelList();
-          updateNowPlaying();
-          updateEraScroll();
-          fetchNovelStations(year);
-          return;
+          // 小说频道：生成 AI 虚拟朗读
+          filtered.push({
+            id: 'novel_' + year,
+            name: year + '年 小说代表作',
+            type: 'ai_archive',
+            category: '小说',
+            era: String(year),
+            stream_url: null,
+            verified: false,
+            channel: 'novel'
+          });
         }
       } else {
         // 2020-2025：保持原有 AM 逻辑
@@ -598,156 +429,53 @@
     updateNowPlaying();
   }
 
-  // ============ 音乐频道：从 /api/music/{year} 获取歌曲 ============
-  function fetchMusicStations(y) {
-    fetch('/api/music/' + y)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success && data.songs && data.songs.length > 0) {
-          var songStations = data.songs.map(function(song, i) {
-            return {
-              id: 'music_db_' + y + '_' + i,
-              name: song.title + ' - ' + song.artist,
-              stream_url: null,
-              type: 'music_library',
-              source: 'music_db',
-              category: '音乐',
-              era: String(y),
-              verified: false,
-              channel: 'music',
-              artist: song.artist
-            };
-          });
-          stations = songStations;
-        } else {
-          stations = [{
-            id: 'music_empty_' + y,
-            name: y + '年 暂无歌曲数据',
-            type: 'placeholder',
+  // ============ 音乐频道：从 singer_data.json 获取金曲 ============
+  function getMusicStationsForYear(y) {
+    var result = [];
+    var singers = singerData.singers || [];
+
+    for (var i = 0; i < singers.length; i++) {
+      var s = singers[i];
+      var songsByYear = s.songs_by_year || {};
+      var yearSongs = songsByYear[String(y)];
+      if (!yearSongs) continue;
+
+      for (var j = 0; j < yearSongs.length; j++) {
+        var song = yearSongs[j];
+        // 优先有酷我流的歌曲
+        if (song.stream_url && song.has_stream) {
+          result.push({
+            id: 'music_' + y + '_' + s.name + '_' + j,
+            name: s.name_cn + ' - ' + song.title,
+            stream_url: song.stream_url,
+            type: 'music_kuwo',
             category: '音乐',
             era: String(y),
-            stream_url: null,
-            verified: false,
-            channel: 'music'
-          }];
-        }
-        stationIdx = 0;
-        bindTuningKnob();
-        setStIdx(0);
-        renderDial();
-        renderChannelList();
-        updateEraScroll();
-        updateNowPlaying();
-      })
-      .catch(function() {
-        stations = [{
-          id: 'music_error_' + y,
-          name: '歌曲数据加载失败',
-          type: 'placeholder',
-          category: '音乐',
-          era: String(y),
-          stream_url: null,
-          verified: false,
-          channel: 'music'
-        }];
-        stationIdx = 0;
-        bindTuningKnob();
-        setStIdx(0);
-        renderDial();
-        renderChannelList();
-        updateEraScroll();
-        updateNowPlaying();
-      });
-  }
-
-  // ============ 小说频道：从 /api/broadcast/history/{year}?category=novel 获取 ============
-  function fetchNovelStations(y) {
-    fetch('/api/broadcast/history/' + y)
-      .then(function(r) {
-        if (!r.ok) throw new Error('API error');
-        return r.json();
-      })
-      .then(function(data) {
-        if (data.stations && data.stations.length > 0) {
-          // 筛选 category 为 "小说" 或 category_key 为 "novel" 的条目
-          var novelStations = [];
-          data.stations.forEach(function(entry) {
-            var cat = entry.category || '';
-            var catKey = entry.category_key || '';
-            if (cat.indexOf('小说') < 0 && catKey !== 'novel') return;
-            (entry.audio_urls || []).forEach(function(item, i) {
-              var url = typeof item === 'string' ? item : (item.url || '');
-              if (!url) return;
-              var label = (entry.audio_urls.length > 1) ? ' #' + (i + 1) : '';
-              novelStations.push({
-                id: 'novel_' + y + '_' + i,
-                name: (entry.station_name || '小说广播') + label,
-                stream_url: url,
-                type: 'archive',
-                source: 'r2_archive',
-                category: '小说',
-                era: String(y),
-                verified: true,
-                channel: 'novel'
-              });
-            });
+            verified: true,
+            source: 'kuwo',
+            channel: 'music',
+            singer: s.name_cn,
+            album: song.album || ''
           });
-
-          if (novelStations.length > 0) {
-            stations = novelStations;
-          } else {
-            stations = [{
-              id: 'novel_placeholder_' + y,
-              name: '小说广播制作中，敬请期待',
-              type: 'placeholder',
-              category: '小说',
-              era: String(y),
-              stream_url: null,
-              verified: false,
-              channel: 'novel'
-            }];
-          }
-        } else {
-          stations = [{
-            id: 'novel_placeholder_' + y,
-            name: '小说广播制作中，敬请期待',
-            type: 'placeholder',
-            category: '小说',
-            era: String(y),
-            stream_url: null,
-            verified: false,
-            channel: 'novel'
-          }];
         }
-        stationIdx = 0;
-        bindTuningKnob();
-        setStIdx(0);
-        renderDial();
-        renderChannelList();
-        updateEraScroll();
-        updateNowPlaying();
-        // 同时获取 AI 文字内容
-        fetchTextContent(y, 'novel');
-      })
-      .catch(function() {
-        stations = [{
-          id: 'novel_placeholder_' + y,
-          name: '小说广播制作中，敬请期待',
-          type: 'placeholder',
-          category: '小说',
-          era: String(y),
-          stream_url: null,
-          verified: false,
-          channel: 'novel'
-        }];
-        stationIdx = 0;
-        bindTuningKnob();
-        setStIdx(0);
-        renderDial();
-        renderChannelList();
-        updateEraScroll();
-        updateNowPlaying();
+      }
+    }
+
+    // 无酷我流金曲 → AI 兜底"经典金曲"虚拟频道
+    if (result.length === 0) {
+      result.push({
+        id: 'ai_music_' + y,
+        name: y + '年 经典金曲',
+        type: 'ai_archive',
+        category: '音乐',
+        era: String(y),
+        stream_url: null,
+        verified: false,
+        channel: 'music'
       });
+    }
+
+    return result;
   }
 
   // ============ FM 实时电台获取 ============
@@ -925,100 +653,8 @@
     }
   }
 
-  // ============ AI 文字内容获取（news / novel 频道） ============
-  function fetchTextContent(y, ch) {
-    // 重置旧状态
-    currentTextContent = null;
-    textContentExpanded = false;
-
-    fetch('/api/content/' + y + '/' + ch)
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.success && data.text) {
-          currentTextContent = { text: data.text, year: y, channel: ch, generated_at: data.generated_at || '' };
-        } else {
-          // 内容未生成，保留 null 用于占位提示
-          currentTextContent = null;
-        }
-        renderContentPreview();
-      })
-      .catch(function() {
-        currentTextContent = null;
-        renderContentPreview();
-      });
-  }
-
-  function renderContentPreview() {
-    var previewEl = document.getElementById('contentPreview');
-    var textEl = document.getElementById('contentPreviewText');
-    var expandBtn = document.getElementById('contentExpandBtn');
-
-    var isNewsNovel = (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel'));
-
-    if (!currentTextContent || !currentTextContent.text) {
-      if (isNewsNovel) {
-        // 显示占位提示
-        previewEl.style.display = 'block';
-        textEl.textContent = 'AI 文字内容尚未生成，可先聆听语音广播';
-        textEl.classList.remove('expanded');
-        expandBtn.style.display = 'none';
-      } else {
-        previewEl.style.display = 'none';
-      }
-      return;
-    }
-
-    previewEl.style.display = 'block';
-    var fullText = currentTextContent.text;
-    var preview = fullText.length > 200 ? fullText.substring(0, 200) + '...' : fullText;
-    textEl.textContent = preview;
-    textEl.classList.remove('expanded');
-
-    if (fullText.length > 200) {
-      expandBtn.style.display = 'block';
-      expandBtn.textContent = '展开全文 ▼';
-    } else {
-      expandBtn.style.display = 'none';
-    }
-  }
-
-  // ============ "生成语音播放"按钮 ============
-  function showTtsButton(station) {
-    var ttsBtn = document.getElementById('ttsPlayBtn');
-    var previewEl = document.getElementById('contentPreview');
-
-    // 确保预览区域可见
-    if (!previewEl || previewEl.style.display === 'none') {
-      previewEl.style.display = 'block';
-    }
-
-    ttsBtn.style.display = 'block';
-    ttsBtn.disabled = false;
-    ttsBtn.textContent = '生成语音播放 ▶';
-
-    // 移除旧的事件监听（克隆替换）
-    var newBtn = ttsBtn.cloneNode(true);
-    ttsBtn.parentNode.replaceChild(newBtn, ttsBtn);
-
-    newBtn.addEventListener('click', function() {
-      newBtn.disabled = true;
-      newBtn.textContent = '正在生成语音...';
-      ttsGenerate(station);
-      // ttsGenerate 内部会调用 updateNowPlaying 处理后续状态
-    });
-  }
-
   // ============ AM 历史存档电台获取 ============
   function fetchHistoryStations(y) {
-    // 音乐 / 小说频道走各自的异步获取逻辑
-    if (currentChannel === 'music') {
-      fetchMusicStations(y);
-      return;
-    }
-    if (currentChannel === 'novel') {
-      fetchNovelStations(y);
-      return;
-    }
     // 2020-2025 年份 archive 无数据，直接走 CNTV 云听回听
     if (y >= 2020 && y <= 2025) {
       generateDateBroadcast();
@@ -1092,7 +728,7 @@
       } else if (year >= 1949 && year <= 2019 && currentChannel === 'music') {
         el.textContent = year + '年 · 金曲回响 · ' + stations.length + ' 首';
       } else if (year >= 1949 && year <= 2019 && currentChannel === 'novel') {
-        el.textContent = year + '年 · 小说广播 · ' + stations.length + ' 篇';
+        el.textContent = year + '年 · 小说代表作 · TTS 朗读中';
       } else {
         var events = (broadcastData.years && broadcastData.years[String(year)])
           ? broadcastData.years[String(year)].events || [] : [];
@@ -1131,10 +767,8 @@
         label = s.stream_url ? 'FM ' + (88 + realIdx % 20) + '.' + (Math.floor(realIdx * 0.5 % 10)) : '---';
       } else if (s.type === 'ai_archive') {
         label = '◆ ' + s.name.slice(0, 7);
-      } else if (s.type === 'music_kuwo' || s.type === 'music_library') {
+      } else if (s.type === 'music_kuwo') {
         label = '♪ ' + s.name.slice(0, 7);
-      } else if (s.type === 'placeholder') {
-        label = '— ' + s.name.slice(0, 7);
       } else {
         label = s.name.slice(0, 8);
       }
@@ -1162,10 +796,6 @@
         el.textContent = '[' + year + '] ' + s.name + (timeLabel ? ' ' + timeLabel : '') + ' · 云听回听';
       } else if (s.type === 'music_kuwo') {
         el.textContent = '♪ ' + s.name + ' · 酷我音乐';
-      } else if (s.type === 'music_library') {
-        el.textContent = '♪ ' + s.name + ' · 经典金曲';
-      } else if (s.type === 'placeholder') {
-        el.textContent = s.name;
       } else if (mode === 'FM') {
         el.textContent = '直播: ' + s.name;
       } else {
@@ -1377,32 +1007,16 @@
   function playCurrent() {
     var s = stations[stationIdx];
     if (!s) return;
-    if (s.type === 'placeholder') return;  // 占位卡片，不播放
-    if (mode === 'MAYDAY') {
-      playMaydaySong(s);
-    } else if (s.type === 'music_kuwo') {
+    if (s.type === 'music_kuwo') {
       playMusicStream(s);
-    } else if (s.type === 'music_library') {
-      // 音乐库中歌曲，stream_url 暂空（待 R2 上传完成后有 r2_url 再填入）
-      ttsGenerate(s);
     } else if (s.type === 'ai_archive') {
-      // 1949-2019 news/novel：不自动 TTS，显示"生成语音播放"按钮
-      if (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel')) {
-        showTtsButton(s);
-      } else {
-        ttsGenerate(s);
-      }
+      ttsGenerate(s);
     } else if (s.type === 'archive' && s.archive_identifier) {
       playArchive(s);
     } else if (s.stream_url) {
       playStream(s);
     } else {
-      // 兜底：无 stream_url 时，1949-2019 news/novel 也走按钮
-      if (year >= 1949 && year <= 2019 && (currentChannel === 'news' || currentChannel === 'novel')) {
-        showTtsButton(s);
-      } else {
-        ttsGenerate(s);
-      }
+      ttsGenerate(s);
     }
   }
 
@@ -1478,14 +1092,6 @@
             '[' + year + '] ' + station.name + ' · Archive';
         }
       });
-  }
-
-  function playMaydaySong(station) {
-    if (!station.stream_url) return;
-    _destroyHls();
-    prevStreamUrl = station.stream_url;
-    AUDIO.src = station.stream_url;
-    AUDIO.play().catch(function(e) { console.log('Mayday play failed:', e.message); });
   }
 
   function stopPlayback() {
@@ -1712,7 +1318,7 @@
         return;  // FM 切换会自动 fetchLiveStations
       }
 
-      if (urlChannel === 'news' || urlChannel === 'music' || urlChannel === 'novel') {
+      if (urlChannel === 'news' || urlChannel === 'music') {
         currentChannel = urlChannel;
       }
 
@@ -1809,7 +1415,7 @@
     // 根据模式设置列表标题
     var labelEl = el.querySelector('.channel-list-label');
     if (mode === 'AM' && year >= 1949 && year <= 2019) {
-      var chLabel = currentChannel === 'music' ? '🎵 音乐' : (currentChannel === 'novel' ? '📖 小说' : '📰 新闻');
+      var chLabel = currentChannel === 'music' ? '🎵 音乐' : currentChannel === 'novel' ? '📖 小说' : '📰 新闻';
       labelEl.textContent = year + '年 · ' + chLabel + ' · ' + list.length + ' 个频道';
     } else {
       labelEl.textContent = '频道列表';
@@ -1823,12 +1429,10 @@
       if (s.type === 'ai_archive') cls += ' ai';
       if (s.type === 'cntv') cls += ' cntv';
       if (s.type === 'music_kuwo') cls += ' verified';
-      if (s.type === 'music_library') cls += ' verified';
-      if (s.type === 'placeholder') cls += ' ai';
       var label;
       if (s.type === 'cntv' && s.start) {
         label = s.start + ' ' + (s.name.length > 12 ? s.name.slice(0, 12) + '…' : s.name);
-      } else if (s.type === 'music_kuwo' || s.type === 'music_library') {
+      } else if (s.type === 'music_kuwo') {
         label = '♪ ' + (s.name.length > 20 ? s.name.slice(0, 20) + '…' : s.name);
       } else {
         label = s.name.length > 18 ? s.name.slice(0, 18) + '…' : s.name;
@@ -1901,17 +1505,6 @@
     }
   }
 
-  // ============ 五月天模式：歌曲循环播放 ============
-  AUDIO.addEventListener('ended', function() {
-    if (mode === 'MAYDAY' && stations.length > 0) {
-      stationIdx = (stationIdx + 1) % stations.length;
-      renderDial();
-      renderChannelListMayday();
-      updateNowPlaying();
-      playCurrent();
-    }
-  });
-
   // ============ 键盘控制 ============
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -1959,6 +1552,29 @@
         }
       }
     }).catch(function(e) { console.error('Load error:', e); });
+  }
+
+  // ============ 浏览器 TTS 朗读 ============
+  function speakWithBrowserTTS(text) {
+    if (!text || text.length < 10) return;
+    window.speechSynthesis.cancel(); // 停止当前朗读
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 0.9;  // 稍慢，模拟播音风格
+    utterance.pitch = 1.0;
+    utterance.onerror = function(e) { console.log('TTS error:', e); };
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function speakContentForYearCategory(y, cat) {
+    fetch('/api/broadcast/text/' + y + '?category=' + encodeURIComponent(cat))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.text) {
+          speakWithBrowserTTS(data.text);
+        }
+      })
+      .catch(function(e) { console.log('Text fetch failed:', e); });
   }
 
   init();

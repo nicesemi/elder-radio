@@ -67,32 +67,6 @@
       background: rgba(0,0,0,0.5); display: inline-block;
       padding: 4px 12px; border-radius: 10px;
     }
-    /* 文字内容预览 */
-    .content-preview {
-      margin-top: 6px; pointer-events: auto;
-      background: rgba(0,0,0,0.65); border-radius: 8px;
-      padding: 8px 12px; max-width: 260px; text-align: left;
-    }
-    .content-preview-text {
-      font-size: 0.65rem; color: #bbb; line-height: 1.5;
-      max-height: 4.5em; overflow: hidden; transition: max-height 0.3s;
-    }
-    .content-preview-text.expanded { max-height: none; }
-    .content-expand-btn {
-      font-size: 0.6rem; color: #D4A853; background: none; border: none;
-      cursor: pointer; padding: 2px 0; margin-top: 2px; display: block;
-      text-align: center; width: 100%;
-    }
-    .content-expand-btn:hover { color: #FFB300; }
-    .tts-play-btn {
-      font-size: 0.65rem; color: #FFB300; background: rgba(212,168,83,0.15);
-      border: 1px solid #D4A853; border-radius: 4px;
-      cursor: pointer; padding: 3px 10px; margin-top: 6px;
-      display: block; width: 100%; text-align: center;
-      transition: background 0.2s;
-    }
-    .tts-play-btn:hover { background: rgba(212,168,83,0.3); }
-    .tts-play-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .radio-right {
       position:relative; z-index:2; width:48%;
@@ -327,7 +301,6 @@
   <ul class="top-nav-links">
     <li><a href="/">首页</a></li>
     <li><a href="/radio" class="active">收音机</a></li>
-    <li><a href="/maydayradio">五月天</a></li>
     <li><a href="/singer">歌手频道</a></li>
     <li><a href="/config">配置</a></li>
     <li><a href="/admin">管理</a></li>
@@ -349,11 +322,6 @@
       <div class="speaker-grille"><div class="speaker-shadow"></div></div>
       <div class="speaker-info-overlay">
         <div class="now-playing" id="nowPlaying">等待信号...</div>
-        <div class="content-preview" id="contentPreview" style="display:none;">
-          <div class="content-preview-text" id="contentPreviewText"></div>
-          <button class="content-expand-btn" id="contentExpandBtn" style="display:none;">展开全文 ▼</button>
-          <button class="tts-play-btn" id="ttsPlayBtn" style="display:none;">生成语音播放 ▶</button>
-        </div>
       </div>
     </div>
   </div>
@@ -398,10 +366,6 @@
       <div style="text-align:center;">
         <button class="mode-btn" id="btnFM">FM</button>
         <div class="mode-btn-label">直播</div>
-      </div>
-      <div style="text-align:center;">
-        <button class="mode-btn" id="btnMAYDAY">MD</button>
-        <div class="mode-btn-label">五月天</div>
       </div>
       <div style="text-align:center;">
         <button class="mode-btn" id="btnTONE">A</button>

@@ -6,20 +6,14 @@ Vercel Serverless 入口 - 老年收音机 AI 服务
 
 import os
 import sys
-
-# Vercel serverless: ensure api/ directory is on Python path for _lib imports
-sys.path.insert(0, os.path.dirname(__file__))
-
 import io
 import json
 import ast
 import uuid
 import time
 import re
-import gzip
 import urllib.request
 import urllib.parse
-import httpx
 from datetime import datetime
 
 LIB_DIR = os.path.join(os.path.dirname(__file__), "_lib")
@@ -29,7 +23,7 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Form, Reque
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, List
 
 # ---- 懒加载：避免顶层导入触发 voice_clone 的 os.makedirs ----
 
@@ -240,14 +234,14 @@ async def _ai_broadcast_to_r2(r2, channel: str, year: int, date_str: str = None)
 @app.get("/api/broadcast/year/{year}")
 async def broadcast_by_year(
     year: int,
-    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology"),
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology"),
     duration: int = Query(5, description="AI 兜底时生成的时长（分钟）")
 ):
     """
     按年代检索广播内容，五级优先级：
     R2 历史库 → R2缓存 → 历史API → 下载到R2 → AI兜底
     """
-    if category not in ("news", "music", "novel", "sports", "finance", "culture", "technology", "综合", "general"):
+    if category not in ("news", "music", "sports", "finance", "culture", "technology", "综合", "general"):
         raise HTTPException(status_code=400, detail=f"不支持的分类: {category}")
 
     r2 = _get_r2()
@@ -257,7 +251,7 @@ async def broadcast_by_year(
     if history_stations:
         # 按 category 筛选匹配的电台
         cat_map = {
-            "news": "zgzs", "music": "yyzs", "novel": "novel", "sports": "tyzs",
+            "news": "zgzs", "music": "yyzs", "sports": "tyzs",
             "finance": "jjzs", "culture": "wyzs", "technology": "kj",
             "综合": "zh", "general": "zh",
         }
@@ -301,7 +295,7 @@ async def broadcast_by_year(
 @app.get("/api/broadcast/date/{date}")
 async def broadcast_by_date(
     date: str,
-    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology")
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
 ):
     """
     按具体日期（YYYY-MM-DD）检索广播内容，四级优先级同上。
@@ -343,7 +337,7 @@ async def broadcast_by_date(
 
 @app.get("/api/broadcast/live")
 async def broadcast_live(
-    category: str = Query("news", description="分类: news, music, novel, sports, finance, culture, technology")
+    category: str = Query("news", description="分类: news, music, sports, finance, culture, technology")
 ):
     """
     2026 年实时广播：
@@ -482,74 +476,106 @@ async def archive_play(identifier: str):
 
 # ============ 云听 CNR 回听节目 API ============
 
-# ==================== CNTV 云听回听（数据嵌入代码目录，零 HTTP 依赖） ====================
+# ==================== CNTV 云听回听（直读 R2 公开 HTTP，不依赖 r2_broadcast） ====================
 
-_API_DIR = os.path.dirname(os.path.abspath(__file__))
+CNTV_PUBLIC_BASE = "https://pub-0eec6c55dc714795a536617ead7ae89d.r2.dev"
 
-# 内存缓存
+CNTV_YEARS = ["2020", "2021", "2022", "2023", "2024", "2025"]
+
+CNTV_SUMMARY = {
+    "2020": {"days": 246, "total_programs": 5174, "date_range": ["2020-04-30", "2020-12-31"]},
+    "2021": {"days": 365, "total_programs": 7836, "date_range": ["2021-01-01", "2021-12-31"]},
+    "2022": {"days": 365, "total_programs": 8067, "date_range": ["2022-01-01", "2022-12-31"]},
+    "2023": {"days": 365, "total_programs": 7801, "date_range": ["2023-01-01", "2023-12-31"]},
+    "2024": {"days": 366, "total_programs": 7858, "date_range": ["2024-01-01", "2024-12-31"]},
+    "2025": {"days": 365, "total_programs": 7921, "date_range": ["2025-01-01", "2025-12-31"]},
+}
+
+@app.get("/api/debug/cntv")
+async def debug_cntv():
+    """诊断端点：测试 CNTV 数据链路"""
+    import httpx, time
+    results = {"ts": time.time(), "tests": {}}
+    
+    # Test 1: httpx import
+    results["tests"]["httpx"] = "ok"
+    
+    # Test 2: _index.json
+    url = f"{CNTV_PUBLIC_BASE}/cntv/_index.json"
+    try:
+        r = httpx.get(url, timeout=15.0)
+        results["tests"]["index_json"] = {
+            "status": r.status_code,
+            "body_preview": str(r.json())[:200]
+        }
+    except Exception as e:
+        results["tests"]["index_json"] = {"error": str(e)}
+    
+    # Test 3: year JSON
+    try:
+        r2 = httpx.get(f"{CNTV_PUBLIC_BASE}/cntv/cntv_zhisheng_2025.json", timeout=15.0)
+        data = r2.json()
+        results["tests"]["year_json"] = {
+            "status": r2.status_code,
+            "dates_count": len(data),
+            "sample_date": list(data.keys())[:1]
+        }
+    except Exception as e:
+        results["tests"]["year_json"] = {"error": str(e)}
+    
+    return results
+
+# 内存缓存（Vercel 冷启动不共享，但在单次请求内节省重复 HTTP 调用）
 _cntv_index_cache = None
-_cntv_summary_cache = None
 _cntv_year_cache = {}
 
-# 优先使用嵌入的 Python 模块（Vercel 必然打包），fallback 到文件系统
-try:
-    from cntv_data import get_year as _cntv_data_get_year
-    _use_embedded_cntv = True
-except ImportError:
-    _use_embedded_cntv = False
-
-def _cntv_load_json(path: str):
-    """从同目录读取 JSON 文件（支持 .json.gz 自动解压）。"""
-    if path.endswith(".gz"):
-        with open(os.path.join(_API_DIR, path), "rb") as f:
-            return json.loads(gzip.decompress(f.read()).decode())
-    with open(os.path.join(_API_DIR, path), "r") as f:
-        return json.load(f)
+def _cntv_http_json(path: str):
+    """从 R2 公开 URL 读取 JSON，优先 httpx 降级 urllib。"""
+    url = f"{CNTV_PUBLIC_BASE}/{path}"
+    try:
+        import httpx
+        r = httpx.get(url, timeout=15.0, follow_redirects=True)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+    # 降级：使用标准库 urllib（带 SSL 容错）
+    try:
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
+        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"[CNTV HTTP] {path} failed: {e}")
+    # 最后降级：不使用 SSL context
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "elder-radio/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"[CNTV HTTP fallback] {path} failed: {e}")
+    return None
 
 def _cntv_get_years():
-    """返回有数据的年份列表。"""
-    global _cntv_index_cache
-    if _cntv_index_cache is None:
-        _cntv_index_cache = _cntv_load_json("cntv_index.json")["years"]
-    return _cntv_index_cache
-
-def _cntv_get_summary():
-    """返回预计算的年份摘要统计。"""
-    global _cntv_summary_cache
-    if _cntv_summary_cache is None:
-        _cntv_summary_cache = _cntv_load_json("cntv_summary.json")
-    return _cntv_summary_cache
+    """返回有数据的年份列表。数据已硬编码，不再从 R2 获取。"""
+    return CNTV_YEARS
 
 def _cntv_get_year(year: str):
-    """返回指定年份的节目索引（优先从嵌入模块读取，确保 Vercel 可用）。"""
+    """返回指定年份的节目索引。"""
     if year in _cntv_year_cache:
         return _cntv_year_cache[year]
-    if _use_embedded_cntv:
-        data = _cntv_data_get_year(year)
-    else:
-        data = _cntv_load_json(f"cntv_data/{year}.json.gz")
-    _cntv_year_cache[year] = data
-    return data
+    data = _cntv_http_json(f"cntv/cntv_zhisheng_{year}.json")
+    _cntv_year_cache[year] = data or {}
+    return _cntv_year_cache[year]
 
 def _cntv_get_date(date: str):
     """返回指定日期的节目列表。"""
     year = date[:4]
     year_data = _cntv_get_year(year)
     return year_data.get(date, [])
-
-
-@app.get("/api/debug/cntv")
-async def debug_cntv():
-    """诊断端点：验证本地 CNTV 数据完整性。"""
-    years = _cntv_get_years()
-    summary = _cntv_get_summary()
-    year_data = _cntv_get_year("2025")
-    return {
-        "source": "embedded",
-        "years": years,
-        "summary_sample": {y: summary[y] for y in list(years)[:3]},
-        "year_2025_dates": len(year_data),
-    }
 
 
 @app.get("/api/cntv/years")
@@ -561,10 +587,8 @@ async def cntv_years():
 @app.get("/api/cntv/{year}")
 async def cntv_year_programs(year: str):
     programs = _cntv_get_year(year)
-    if not programs:
-        return {"year": year, "dates": [], "total_days": 0, "total_programs": 0, "programs": {}, "source": "ytapi.radio.cn", "station": "中国之声"}
-    dates = sorted(programs.keys())
-    total = sum(len(v) for v in programs.values())
+    dates = sorted(programs.keys()) if programs else []
+    total = sum(len(v) for v in programs.values()) if programs else 0
     return {
         "year": year,
         "dates": dates,
@@ -597,22 +621,9 @@ async def cntv_date_programs(date: str):
 
 @app.get("/api/cntv/summary")
 async def cntv_summary():
-    """返回各年份 CNTV 节目统计（从嵌入数据直接读取，无 HTTP 依赖）。"""
-    try:
-        summary = _cntv_get_summary()
-        years = _cntv_get_years()
-        result = {}
-        for year in years:
-            s = summary.get(year, {})
-            result[year] = {
-                "days": s.get("days", 0),
-                "total_programs": s.get("total_programs", 0),
-                "date_range": s.get("date_range", []),
-            }
-        return {"years": result, "source": "cntv_embedded"}
-    except Exception as e:
-        import traceback
-        return {"years": {}, "source": "cntv_embedded", "_error": str(e), "_traceback": traceback.format_exc()}
+    """返回各年份统计摘要。数据已硬编码，不再从 R2 获取。"""
+    return {"years": CNTV_SUMMARY, "source": "cntv"}
+
 
 @app.get("/api/audio/{filename}")
 async def get_audio(filename: str):
@@ -641,109 +652,6 @@ async def test_tts():
     except Exception as e:
         import traceback
         return {"success": False, "error": str(e), "traceback": traceback.format_exc()}
-
-
-# ============ 调试端点 ============
-
-@app.get("/api/debug/r2")
-async def debug_r2():
-    """测试 R2 连接和数据读取"""
-    import traceback
-    import sys
-    result = {"python_version": sys.version, "steps": []}
-    try:
-        result["steps"].append("importing _lib")
-        from _lib import r2_broadcast
-        result["steps"].append("imported _lib.r2_broadcast ok")
-        result["r2_access_key"] = r2_broadcast.R2_ACCESS_KEY[:10] + "..."
-        result["r2_endpoint"] = r2_broadcast.R2_ENDPOINT
-        result["steps"].append("creating s3 client")
-        s3 = r2_broadcast._get_s3()
-        result["steps"].append("s3 client created")
-        result["steps"].append("listing broadcasts/1949/")
-        resp = s3.list_objects_v2(Bucket=r2_broadcast.R2_BUCKET, Prefix="broadcasts/1949/", MaxKeys=5)
-        keys = [obj["Key"] for obj in resp.get("Contents", [])]
-        result["keys_1949"] = keys
-        result["steps"].append("done")
-        result["success"] = True
-    except Exception as e:
-        result["success"] = False
-        result["error"] = str(e)
-        result["traceback"] = traceback.format_exc()
-    return result
-
-
-# ============ AI 文字内容 API ============
-
-@app.get("/api/content/{year}/{channel}")
-async def get_text_content(year: int, channel: str):
-    """
-    获取指定年份和频道的 AI 文字内容。
-
-    GET /api/content/1949/news
-
-    返回:
-        成功: {"success": true, "year": 1949, "channel": "news", "text": "...", "generated_at": "..."}
-        未生成: {"success": false, "message": "内容生成中，请稍后再试"}
-    """
-    if year < 1949 or year > 2019:
-        return {"success": False, "message": "仅支持 1949-2019 年份"}
-
-    if channel not in ("news", "novel"):
-        return {"success": False, "message": "仅支持 news / novel 频道"}
-
-    r2 = _get_r2()
-    content = r2.get_text_content(year, channel)
-
-    if content:
-        return {"success": True, **content}
-    else:
-        return {"success": False, "message": "内容生成中，请稍后再试"}
-
-
-# ============ 音乐数据库 API ============
-
-_MUSIC_DB_PATH = os.path.join(LIB_DIR, "music_db_1949_2019.json")
-_music_db_cache = None
-
-
-def _load_music_db():
-    global _music_db_cache
-    if _music_db_cache is None:
-        with open(_MUSIC_DB_PATH, "r") as f:
-            _music_db_cache = json.load(f)
-    return _music_db_cache
-
-
-@app.get("/api/music/{year}")
-async def music_by_year(year: int):
-    """
-    GET /api/music/{year}
-
-    返回指定年份的歌曲列表（从 music_db_1949_2019.json 读取）。
-    1949-2019 年每年 2 首代表歌曲。
-
-    返回:
-        {
-            "success": true,
-            "year": 1985,
-            "songs": [{"title": "...", "artist": "...", "era": "1980s"}, ...],
-            "count": 2
-        }
-        如果该年无数据，返回 {"success": true, "year": 1985, "songs": [], "count": 0}
-    """
-    if year < 1949 or year > 2019:
-        raise HTTPException(status_code=400, detail=f"年份超出范围: {year}（1949-2019）")
-
-    db = _load_music_db()
-    songs = db.get(str(year), [])
-
-    return {
-        "success": True,
-        "year": year,
-        "songs": songs,
-        "count": len(songs),
-    }
 
 
 # ============ 酷我音乐流代理 ============
@@ -882,7 +790,7 @@ async def mayday_year_songs(year: int):
 def _compute_broadcast_summary() -> Dict[str, Any]:
     """
     扫描 R2 broadcasts/ 前缀，聚合 1949-2026 各年份数据量。
-    1949-2019：区分 news/、music/ 和 novel/ 子目录
+    1949-2019：区分 news/ 和 music/ 子目录
     2020-2025：统计全部历史广播
     2026：调用 live_stations 获取直播数
     """
@@ -891,7 +799,7 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
     # 初始化所有年份为 0
     for y in range(1949, 2020):
-        summary[str(y)] = {"news": 0, "music": 0, "novel": 0}
+        summary[str(y)] = {"news": 0, "music": 0}
     for y in range(2020, 2026):
         summary[str(y)] = {"history": 0}
     summary["2026"] = {"live": 0}
@@ -924,14 +832,12 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
         if 1949 <= year_int <= 2019:
             if year_str not in summary:
-                summary[year_str] = {"news": 0, "music": 0, "novel": 0}
+                summary[year_str] = {"news": 0, "music": 0}
             s = summary[year_str]
             if category == "news":
                 s["news"] = s.get("news", 0) + 1
             elif category == "music":
                 s["music"] = s.get("music", 0) + 1
-            elif category == "novel":
-                s["novel"] = s.get("novel", 0) + 1
             # 忽略其他分类（zgzs/jjzs 等）
         elif 2020 <= year_int <= 2025:
             if year_str not in summary:
@@ -951,13 +857,42 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
     return {"summary": summary, "updated_at": now_iso}
 
 
+@app.get("/api/broadcast/text/{year}")
+async def broadcast_text(
+    year: int,
+    category: str = Query("news", description="分类: news, novel, music")
+):
+    """返回指定年份+分类的广播稿文本内容"""
+    import json
+    try:
+        r2 = _get_r2()
+        s3 = r2._get_s3()
+        key = f"broadcasts/{year}/{category}/content.json"
+        resp = s3.get_object(Bucket=r2.R2_BUCKET, Key=key)
+        data = json.loads(resp["Body"].read().decode("utf-8"))
+        return {
+            "success": True,
+            "year": year,
+            "category": category,
+            "text": data.get("text", ""),
+            "generated_at": data.get("generated_at", "")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        err_msg = str(e)
+        if "NoSuchKey" in err_msg or "404" in err_msg:
+            raise HTTPException(status_code=404, detail=f"未找到 {year} 年 {category} 的广播稿")
+        raise HTTPException(status_code=500, detail=f"读取广播稿失败: {err_msg}")
+
+
 @app.get("/api/broadcast/summary")
 async def broadcast_summary():
     """
     GET /api/broadcast/summary
 
     返回 1949-2026 全年代数据概览，5 分钟内存缓存。
-    1949-2019: {"news": N, "music": M, "novel": N}
+    1949-2019: {"news": N, "music": M}
     2020-2025: {"history": N}
     2026:       {"live": N}
     """
@@ -986,7 +921,7 @@ async def broadcast_year_channels(
     GET /api/broadcast/{year}/channels?channel=news|music
 
     返回某年各频道的广播列表。
-    对于 1949-2019：返回 news/、music/ 和 novel/ 三个频道
+    对于 1949-2019：返回 news/ 和 music/ 两个频道
     对于 2020-2026：返回 history 频道
     """
     if year < 1949 or year > 2026:
@@ -1053,7 +988,7 @@ async def broadcast_year_channels(
                 requested, {"count": 0, "items": []}
             )
         else:
-            for ch in ("news", "music", "novel"):
+            for ch in ("news", "music"):
                 result_channels[ch] = channels_data.get(
                     ch, {"count": 0, "items": []}
                 )
@@ -1072,63 +1007,3 @@ async def broadcast_year_channels(
         "year": year,
         "channels": result_channels,
     }
-
-
-# ============ Agnes AI 代理 ============
-
-AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1"
-AGNES_MODEL = "agnes-2.0-flash"
-
-class AgnesRequest(BaseModel):
-    text: str
-    context: Optional[str] = ""
-
-@app.post("/api/agnes/proxy")
-async def agnes_proxy(req: AgnesRequest):
-    """
-    Agnes AI 代理 — 接收用户语音转写的文本，返回 AI 文字回应。
-
-    前端 SpeechRecognition → 本端点 → Agnes AI → 返回文字 → 前端 TTS 朗读
-    """
-    api_key = os.environ.get("AGNES_API_KEY", "")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="AGNES_API_KEY 未配置")
-
-    system_prompt = (
-        "你叫 Agnes，是一个温暖贴心的 AI 语音助手，嵌入在老年人收音机对讲机中。"
-        "你的任务是根据对讲频道中的语境，给出一句简短、自然、口语化的语音回应。"
-        "规则："
-        "1. 回复控制在 1-3 句话、60 字以内，像对讲机里朋友聊天一样自然。"
-        "2. 用亲切、耐心的语气，称呼对方为「你」。"
-        "3. 可以适当加入老人喜欢的谚语或俗语。"
-        "4. 如果对方只是说「喂」「有人在吗」之类试探性的话，友好地回应打招呼。"
-        "5. 永远用纯文本回复，不要加任何格式或标记。"
-    )
-
-    messages = [{"role": "system", "content": system_prompt}]
-    if req.context:
-        messages.append({"role": "user", "content": f"频道上下文：{req.context}"})
-    messages.append({"role": "user", "content": req.text})
-
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.post(
-                f"{AGNES_BASE_URL}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": AGNES_MODEL,
-                    "messages": messages,
-                    "temperature": 0.8,
-                    "max_tokens": 120,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            reply = data["choices"][0]["message"]["content"].strip()
-            return {"success": True, "reply": reply}
-    except Exception as e:
-        print(f"[Agnes] API 调用失败: {e}")
-        raise HTTPException(status_code=502, detail=f"Agnes API 调用失败: {str(e)}")
