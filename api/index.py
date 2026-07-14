@@ -70,6 +70,9 @@ _BROADCAST_SUMMARY_CACHE_TTL: int = 300
 NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1949: "https://www.ximalaya.com/album/9044282",
     1950: "https://www.ximalaya.com/album/49053586",
+    1951: "https://www.ximalaya.com/album/15576284",
+    1952: "https://www.ximalaya.com/album/49053587",
+    1953: "https://www.ximalaya.com/album/49053588",
 }
 
 import json as _json
