@@ -107,6 +107,16 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1985: "https://www.ximalaya.com/album/19440614",
     1986: "https://www.ximalaya.com/album/19440614",
     1987: "https://www.ximalaya.com/album/19440614",
+    1989: "https://www.ximalaya.com/album/2879275",
+    1992: "https://www.ximalaya.com/album/507228",
+    1993: "https://www.ximalaya.com/album/37507376",
+    1994: "https://www.ximalaya.com/album/37507599",
+    1995: "https://www.ximalaya.com/album/37507377",
+    1996: "https://www.ximalaya.com/album/37507378",
+    1997: "https://www.ximalaya.com/album/37507379",
+    2000: "https://www.ximalaya.com/album/37507380",
+    2004: "https://www.ximalaya.com/album/37507381",
+    2006: "https://www.ximalaya.com/album/37507382",
 }
 
 import json as _json
