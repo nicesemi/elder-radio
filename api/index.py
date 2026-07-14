@@ -119,6 +119,9 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1998: "https://www.ximalaya.com/album/37507385",
     1999: "https://www.ximalaya.com/album/37507386",
     2000: "https://www.ximalaya.com/album/37507380",
+    2001: "https://www.ximalaya.com/album/37507387",
+    2002: "https://www.ximalaya.com/album/37507388",
+    2003: "https://www.ximalaya.com/album/37507389",
     2004: "https://www.ximalaya.com/album/37507381",
     2006: "https://www.ximalaya.com/album/37507382",
 }
