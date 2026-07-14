@@ -71,6 +71,21 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1949: "https://www.ximalaya.com/album/9044282",
 }
 
+import json as _json
+import os as _os
+
+_NOVEL_TRACKS_CACHE: Dict[int, list] = {}
+
+def _load_novel_tracks(year: int) -> list:
+    if year not in _NOVEL_TRACKS_CACHE:
+        tracks_path = _os.path.join(_os.path.dirname(__file__), '..', 'data', f'novel_tracks_{year}.json')
+        if _os.path.exists(tracks_path):
+            with open(tracks_path, 'r', encoding='utf-8') as f:
+                _NOVEL_TRACKS_CACHE[year] = _json.load(f)
+        else:
+            _NOVEL_TRACKS_CACHE[year] = []
+    return _NOVEL_TRACKS_CACHE[year]
+
 def get_supabase():
     global _supabase_client
     if _supabase_client is None:

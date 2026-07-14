@@ -257,6 +257,7 @@
       if (!tab) return;
       var ch = tab.dataset.channel;
       if (ch && ch !== currentChannel) {
+        stopNovelPlayback();
         currentChannel = ch;
         renderChannelTabs();
         filterStations();
@@ -1566,24 +1567,92 @@
     window.speechSynthesis.speak(utterance);
   }
 
+  // Track playlist state for sequential playback
+  var novelPlaylist = [];
+  var novelPlaylistIndex = -1;
+
   function speakContentForYearCategory(y, cat) {
+    // If novel channel, use album track playback instead of TTS
+    if (cat === 'novel') {
+        fetch('/api/broadcast/novel-tracks/' + y)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.tracks && data.tracks.length > 0) {
+                    novelPlaylist = data.tracks;
+                    novelPlaylistIndex = 0;
+                    playNovelTrack(0);
+                } else {
+                    showNowPlaying('暂无小说音频');
+                }
+            })
+            .catch(function(e) {
+                console.log('Novel tracks fetch failed:', e);
+                showNowPlaying('小说音频加载失败');
+            });
+        return;
+    }
+
+    // Original TTS logic for other categories
     fetch('/api/broadcast/text/' + y + '?category=' + encodeURIComponent(cat))
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.text) {
-          speakWithBrowserTTS(data.text);
-        }
-        // 如果是小说频道且有外部链接，显示链接
-        var linkEl = document.getElementById('externalLink');
-        if (cat === 'novel' && data.external_url) {
-          linkEl.href = data.external_url;
-          linkEl.style.display = 'inline-block';
-          linkEl.textContent = '📻 收听喜马拉雅专辑';
-        } else {
-          linkEl.style.display = 'none';
-        }
-      })
-      .catch(function(e) { console.log('Text fetch failed:', e); });
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.text) {
+                speakWithBrowserTTS(data.text);
+            }
+            var linkEl = document.getElementById('externalLink');
+            linkEl.style.display = 'none';
+        })
+        .catch(function(e) { console.log('Text fetch failed:', e); });
+  }
+
+  function playNovelTrack(index) {
+    if (index < 0 || index >= novelPlaylist.length) {
+        novelPlaylist = [];
+        novelPlaylistIndex = -1;
+        showNowPlaying('专辑播放完毕');
+        return;
+    }
+
+    var track = novelPlaylist[index];
+    var audio = document.getElementById('audioPlayer');
+    var nowPlayingEl = document.getElementById('nowPlaying');
+
+    // Set audio source
+    audio.src = track.playUrl64;
+    audio.load();
+
+    // Update display
+    var totalMin = Math.floor(track.duration / 60);
+    var totalSec = track.duration % 60;
+    var durStr = totalMin + '分' + totalSec + '秒';
+    nowPlayingEl.textContent = '📖 正在播放: ' + track.title + '（' + (index + 1) + '/' + novelPlaylist.length + '）' + durStr;
+    nowPlayingEl.classList.remove('hidden');
+    document.getElementById('eraScroll').classList.add('hidden');
+
+    // When track ends, play next
+    audio.onended = function() {
+        novelPlaylistIndex++;
+        playNovelTrack(novelPlaylistIndex);
+    };
+
+    // Play
+    audio.play().catch(function(e) {
+        console.log('Audio play failed:', e);
+        nowPlayingEl.textContent = '⚠️ 音频播放失败，尝试下一首...';
+        setTimeout(function() {
+            novelPlaylistIndex++;
+            playNovelTrack(novelPlaylistIndex);
+        }, 2000);
+    });
+  }
+
+  function stopNovelPlayback() {
+    var audio = document.getElementById('audioPlayer');
+    audio.pause();
+    audio.src = '';
+    audio.onended = null;
+    novelPlaylist = [];
+    novelPlaylistIndex = -1;
   }
 
   init();
