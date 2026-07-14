@@ -69,6 +69,7 @@ _BROADCAST_SUMMARY_CACHE_TTL: int = 300
 # 小说频道外部专辑链接（年份 -> 喜马拉雅/其他平台链接）
 NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1949: "https://www.ximalaya.com/album/9044282",
+    1950: "https://www.ximalaya.com/album/49053586",
 }
 
 import json as _json
