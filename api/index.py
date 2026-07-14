@@ -794,7 +794,7 @@ async def mayday_year_songs(year: int):
 def _compute_broadcast_summary() -> Dict[str, Any]:
     """
     扫描 R2 broadcasts/ 前缀，聚合 1949-2026 各年份数据量。
-    1949-2019：区分 news/ 和 music/ 子目录
+    1949-2019：区分 news/、music/ 和 novel/ 子目录
     2020-2025：统计全部历史广播
     2026：调用 live_stations 获取直播数
     """
@@ -803,7 +803,7 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
     # 初始化所有年份为 0
     for y in range(1949, 2020):
-        summary[str(y)] = {"news": 0, "music": 0}
+        summary[str(y)] = {"news": 0, "music": 0, "novel": 0}
     for y in range(2020, 2026):
         summary[str(y)] = {"history": 0}
     summary["2026"] = {"live": 0}
@@ -836,12 +836,14 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
 
         if 1949 <= year_int <= 2019:
             if year_str not in summary:
-                summary[year_str] = {"news": 0, "music": 0}
+                summary[year_str] = {"news": 0, "music": 0, "novel": 0}
             s = summary[year_str]
             if category == "news":
                 s["news"] = s.get("news", 0) + 1
             elif category == "music":
                 s["music"] = s.get("music", 0) + 1
+            elif category == "novel":
+                s["novel"] = s.get("novel", 0) + 1
             # 忽略其他分类（zgzs/jjzs 等）
         elif 2020 <= year_int <= 2025:
             if year_str not in summary:
