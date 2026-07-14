@@ -913,6 +913,15 @@ async def broadcast_text(
         raise HTTPException(status_code=500, detail=f"读取广播稿失败: {err_msg}")
 
 
+@app.get("/api/broadcast/novel-tracks/{year}")
+async def novel_tracks(year: int):
+    """获取指定年份的小说音频轨道列表"""
+    tracks = _load_novel_tracks(year)
+    if not tracks:
+        return {"success": False, "tracks": []}
+    return {"success": True, "tracks": tracks}
+
+
 @app.get("/api/broadcast/summary")
 async def broadcast_summary():
     """
