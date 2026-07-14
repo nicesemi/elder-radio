@@ -108,6 +108,8 @@ NOVEL_EXTERNAL_LINKS: Dict[int, str] = {
     1986: "https://www.ximalaya.com/album/19440614",
     1987: "https://www.ximalaya.com/album/19440614",
     1989: "https://www.ximalaya.com/album/2879275",
+    1990: "https://www.ximalaya.com/album/37507383",
+    1991: "https://www.ximalaya.com/album/37507384",
     1992: "https://www.ximalaya.com/album/507228",
     1993: "https://www.ximalaya.com/album/37507376",
     1994: "https://www.ximalaya.com/album/37507599",
