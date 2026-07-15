@@ -47,7 +47,7 @@ async def text_to_speech(
     output_filename: str = None
 ) -> str:
     """
-    文字转语音 - 优先 Google Translate TTS（免费稳定），降级 Edge-TTS / Agnes
+    文字转语音 - 优先百度 TTS（国内稳定），降级 Google / Edge-TTS / Agnes
 
     Args:
         text: 要合成的文本
@@ -64,6 +64,16 @@ async def text_to_speech(
 
     base_name = os.path.splitext(output_filename)[0]
     mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
+
+    # 方案0: 百度 TTS（国内可用，零延迟，用同一组 ASR 凭据）
+    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "")
+    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+    if baidu_api_key and baidu_secret:
+        try:
+            await _baidu_tts(text, year, mp3_path, baidu_api_key, baidu_secret)
+            return mp3_path
+        except Exception as e:
+            print(f"[TTS] Baidu TTS 失败 ({e}), 降级 Google...")
 
     # 方案1: Google Translate TTS（零配置，全球稳定）
     try:
@@ -82,6 +92,93 @@ async def text_to_speech(
     # 方案3: Agnes TTS
     await _agnes_tts_fallback(text, mp3_path)
     return mp3_path
+
+
+async def _baidu_get_token(api_key: str, secret_key: str) -> str:
+    """获取百度 API access_token（缓存 24h 在模块级变量中）"""
+    global _baidu_token_cache
+    now = __import__("time").time()
+    if hasattr(_baidu_get_token, "_expire") and now < _baidu_get_token._expire:
+        return _baidu_get_token._cached
+
+    import httpx
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            "https://aip.baidubce.com/oauth/2.0/token",
+            params={
+                "grant_type": "client_credentials",
+                "client_id": api_key,
+                "client_secret": secret_key
+            }
+        )
+    resp.raise_for_status()
+    data = resp.json()
+    token = data.get("access_token", "")
+    _baidu_get_token._cached = token
+    _baidu_get_token._expire = now + data.get("expires_in", 86400) - 300  # 提前5分钟刷新
+    return token
+
+
+async def _baidu_tts(text: str, year: int, output_path: str, api_key: str, secret_key: str) -> None:
+    """百度 TTS - 长文本分段合成后拼接为 MP3"""
+    import httpx
+    import urllib.parse
+
+    app_id = os.environ.get("BAIDU_ASR_APP_ID", "7916408")
+    token = await _baidu_get_token(api_key, secret_key)
+
+    # 百度 TTS 单次限制 1024 字节（UTF-8），约 340 个中文字
+    max_bytes = 900  # 留一点余量
+    chunks = []
+    remaining = text
+    while remaining:
+        # 找到安全的截断点
+        test = remaining.encode("utf-8")
+        if len(test) <= max_bytes:
+            chunks.append(remaining)
+            break
+        cut = max_bytes
+        while cut > 0 and (test[cut] & 0xC0) == 0x80:
+            cut -= 1
+        # 在句号处断句
+        snippet = test[:cut].decode("utf-8", errors="ignore")
+        last_period = max(snippet.rfind("。"), snippet.rfind("，"), snippet.rfind("\n"))
+        if last_period > 50:
+            cut = len(snippet[:last_period+1].encode("utf-8"))
+        chunks.append(test[:cut].decode("utf-8", errors="ignore"))
+        remaining = test[cut:].decode("utf-8", errors="ignore")
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        audio_parts = []
+        for chunk in chunks:
+            params = {
+                "tex": chunk,
+                "tok": token,
+                "cuid": app_id,
+                "ctp": "1",
+                "lan": "zh",
+                "spd": "5",   # 语速 0-15，5 为正常
+                "pit": "5",   # 音调
+                "vol": "5",   # 音量
+                "per": "0",   # 0=普通女声（度小美）
+                "aue": "3",   # mp3
+            }
+            encoded = urllib.parse.urlencode(params)
+            resp = await client.post(
+                "https://tsn.baidu.com/text2audio",
+                content=encoded.encode(),
+                headers={"Content-Type": "application/x-www-form-urlencoded"}
+            )
+            # 百度 TTS：成功返回 audio/mp3，失败返回 application/json
+            content_type = resp.headers.get("content-type", "")
+            if "json" in content_type:
+                err = resp.json()
+                raise Exception(f"Baidu TTS error: {err}")
+            audio_parts.append(resp.content)
+
+    with open(output_path, "wb") as f:
+        for part in audio_parts:
+            f.write(part)
 
 
 async def _google_tts(text: str, output_path: str) -> None:
@@ -149,8 +246,23 @@ async def _edge_tts(text: str, year: int, voice_id: str, output_path: str) -> No
 
 async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
     """
-    流式文字转语音 - 优先 Google TTS，降级 Edge-TTS
+    流式文字转语音 - 优先百度 TTS，降级 Google / Edge-TTS
     """
+    # 百度 TTS
+    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "")
+    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+    if baidu_api_key and baidu_secret:
+        try:
+            import tempfile
+            tmp = os.path.join(TMP_DIR, f"_stream_{int(__import__('time').time())}.mp3")
+            await _baidu_tts(text[:500], year, tmp, baidu_api_key, baidu_secret)
+            with open(tmp, "rb") as f:
+                data = f.read()
+            os.remove(tmp)
+            return data
+        except Exception:
+            pass
+
     # Google TTS 流式
     try:
         import httpx
