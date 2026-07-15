@@ -1258,28 +1258,27 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
         reason = "；".join(reasons) if reasons else "AI 调用失败"
         ai_response = f"[{reason}] 请在 Vercel 环境变量中设置 API Key。"
 
-    # 2. TTS 合成语音
+    # 2. TTS 合成语音（edge_tts，使用内存流避免 Vercel /tmp 写文件问题）
     audio_bytes = None
+    tts_error = None
     try:
         from _lib.tts_service import get_voice_for_era
         voice_cfg = get_voice_for_era(2020)
         voice_id = voice_cfg.get("voice_id", "zh-CN-XiaoxiaoNeural")
 
         import edge_tts
-        import tempfile
-
-        tmp_path = os.path.join(tempfile.gettempdir(), f"intercom_bot_{int(time.time())}.mp3")
+        import io
         communicate = edge_tts.Communicate(ai_response, voice_id)
-        await communicate.save(tmp_path)
-
-        with open(tmp_path, "rb") as f:
-            audio_bytes = f.read()
-        os.remove(tmp_path)
+        buf = io.BytesIO()
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                buf.write(chunk["data"])
+        audio_bytes = buf.getvalue()
     except Exception as e:
-        print(f"[Intercom TTS] error: {e}")
-        # TTS 失败，返回纯文本
-        store.add_question(req.channel, req.user_id, req.text, ai_response)
-        return {"success": True, "text": ai_response, "audio_url": None}
+        import traceback
+        tts_error = f"{type(e).__name__}: {e}"
+        print(f"[Intercom TTS] error: {tts_error}")
+        print(traceback.format_exc())
 
     # 3. 上传 TTS 音频到 R2
     if audio_bytes:
@@ -1289,7 +1288,7 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
         return {"success": True, "text": ai_response, "audio_url": audio_url}
 
     store.add_question(req.channel, req.user_id, req.text, ai_response)
-    return {"success": True, "text": ai_response, "audio_url": None}
+    return {"success": True, "text": ai_response, "audio_url": None, "tts_error": tts_error}
 
 
 @app.post("/api/intercom/poll")

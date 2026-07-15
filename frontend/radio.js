@@ -1526,6 +1526,7 @@
     .then(function(r) { return r.json(); })
     .then(function(data) {
       console.log('[Intercom] AI response:', data.text, 'audio:', data.audio_url ? 'YES' : 'NONE');
+      if (data.tts_error) console.log('[Intercom] TTS error:', data.tts_error);
       if (data.audio_url) {
         intercomPlayer.src = data.audio_url;
         intercomPlayer.volume = volume;
