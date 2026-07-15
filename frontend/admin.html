@@ -1,164 +1,234 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KeyClaw.Tech - 后台管理</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="nav.css">
-  <style>
-    .admin-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    .tabs { margin-bottom: 24px; }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }
-    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; }
-    .stat-card .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
-    .stat-card .stat-title { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
-    .section-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; color: var(--text-primary); }
-    .table-wrapper { overflow-x: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); }
-    .filter-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
-    .filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font-size: 0.82rem; }
-    .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--accent); }
-    .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
-    .color-dot.green { background: var(--success); }
-    .color-dot.gray { background: var(--text-muted); }
-    .action-row { display: flex; gap: 8px; margin-bottom: 16px; }
-    .health-bar { width: 60px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 6px; }
-    .health-fill { height: 100%; border-radius: 3px; }
-    .health-good { background: var(--success); }
-    .health-warn { background: var(--warning); }
-    .health-bad { background: var(--danger); }
-    .tag-status { padding: 3px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
-    .tag-active { background: #2ecc7122; color: #2ecc71; }
-    .tag-expired { background: #e74c3c22; color: #e74c3c; }
-    .tag-revoked { background: #f39c1222; color: #f39c12; }
-    .tag-basic { background: #3498db22; color: #3498db; }
-    .tag-pro { background: #e9456022; color: #e94560; }
-    .tag-premium { background: #ff6b8122; color: #ff6b81; }
-    .ai-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
-    @media (max-width: 768px) { .ai-mini-grid { grid-template-columns: 1fr; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对讲系统 - 管理后台</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:#0d0d0d; color:#ccc; padding:20px;
+    max-width:1200px; margin:0 auto;
+  }
+  h1 { color:#D4A853; margin-bottom:8px; font-size:24px; }
+  h2 { color:#888; font-size:16px; margin:24px 0 12px; border-bottom:1px solid #222; padding-bottom:6px; }
+  .tabs { display:flex; gap:8px; margin:16px 0; }
+  .tab {
+    padding:8px 20px; background:#1a1a1a; border:1px solid #333;
+    color:#888; cursor:pointer; border-radius:4px; font-size:14px;
+  }
+  .tab.active { background:#2a2a2a; color:#D4A853; border-color:#D4A853; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th { text-align:left; padding:10px 8px; background:#1a1a1a; color:#888; font-weight:normal; border-bottom:1px solid #333; }
+  td { padding:10px 8px; border-bottom:1px solid #1a1a1a; vertical-align:top; }
+  tr:hover td { background:#111; }
+  .badge {
+    display:inline-block; padding:2px 8px; border-radius:10px;
+    font-size:11px; margin-right:4px;
+  }
+  .badge-green { background:#1a3a1a; color:#4CAF50; border:1px solid #2a5a2a; }
+  .badge-gray { background:#1a1a1a; color:#666; border:1px solid #333; }
+  .q-text { color:#ddd; max-width:400px; word-break:break-all; }
+  .a-text { color:#D4A853; max-width:400px; word-break:break-all; }
+  .time { color:#555; font-size:11px; white-space:nowrap; }
+  .empty { color:#444; padding:40px; text-align:center; font-size:14px; }
+  .refresh-btn {
+    padding:6px 16px; background:#1a1a1a; border:1px solid #333;
+    color:#888; cursor:pointer; border-radius:4px; font-size:13px;
+  }
+  .refresh-btn:hover { border-color:#D4A853; color:#D4A853; }
+  .stats { display:flex; gap:16px; margin:12px 0; }
+  .stat-card {
+    background:#1a1a1a; border:1px solid #333; border-radius:6px;
+    padding:16px 24px; text-align:center; min-width:120px;
+  }
+  .stat-card .num { font-size:32px; color:#D4A853; font-weight:bold; }
+  .stat-card .label { font-size:12px; color:#666; margin-top:4px; }
+</style>
 </head>
 <body>
-<div class="admin-container">
-  <div class="page-header">
-    <div>
-      <h1>⚙️ 后台管理</h1>
-      <p class="text-muted" style="font-size:0.85rem;margin-top:4px;">终端设备 · 授权管理 · 付费统计 · 数据分析</p>
-    </div>
-    <div class="header-actions">
-      <a href="/" class="btn btn-sm">返回首页</a>
-      <a href="/config" class="btn btn-sm">语音商城</a>
-    </div>
-  </div>
 
-  <!-- Tabs -->
-  <div class="tabs" id="mainTabs">
-    <button class="tab-btn active" data-tab="dashboard">仪表板</button>
-    <button class="tab-btn" data-tab="resources">电台节目源</button>
-    <button class="tab-btn" data-tab="devices">终端设备</button>
-    <button class="tab-btn" data-tab="licenses">授权管理</button>
-    <button class="tab-btn" data-tab="payments">付费统计</button>
-    <button class="tab-btn" data-tab="conversations">对话分析</button>
-  </div>
+<h1>对讲系统管理后台</h1>
 
-  <!-- Dashboard Panel -->
-  <div class="tab-panel active" id="panel-dashboard">
-    <div class="stats-grid" id="dashStats">
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总电台数</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总设备数</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">在线设备</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">活跃授权</div></div>
-    </div>
+<div class="stats" id="stats"></div>
 
-    <div class="section-title">AI 使用统计</div>
-    <div class="ai-mini-grid" id="aiStats">
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">今日调用次数</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">本月调用次数</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">平均时长（秒）</div></div>
-    </div>
-  </div>
-
-  <!-- Resources Panel -->
-  <div class="tab-panel" id="panel-resources">
-    <div class="action-row">
-      <button class="btn btn-accent btn-sm" id="btnExportJSON">导出 JSON</button>
-      <button class="btn btn-sm" id="btnRefreshRes">刷新</button>
-      <span class="text-muted" style="font-size:0.8rem;margin-left:8px;" id="resCount"></span>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>ID</th><th>名称</th><th>省份</th><th>分类</th><th>年代</th><th>类型</th><th>来源</th><th>格式</th></tr></thead>
-        <tbody id="resTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Devices Panel -->
-  <div class="tab-panel" id="panel-devices">
-    <div class="filter-bar">
-      <select id="deviceStatusFilter">
-        <option value="all">全部状态</option>
-        <option value="online">在线</option>
-        <option value="offline">离线</option>
-      </select>
-      <input type="text" id="deviceSearch" placeholder="搜索设备名称...">
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>设备ID</th><th>名称</th><th>位置</th><th>在线状态</th><th>健康度</th><th>最后上线</th><th>版本</th></tr></thead>
-        <tbody id="devicesTableBody"><tr><td colspan="7" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/devices 获取数据</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Licenses Panel -->
-  <div class="tab-panel" id="panel-licenses">
-    <div class="filter-bar">
-      <select id="licenseStatusFilter">
-        <option value="all">全部状态</option>
-        <option value="active">活跃</option>
-        <option value="expired">已过期</option>
-        <option value="revoked">已撤销</option>
-      </select>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>设备ID</th><th>授权码</th><th>套餐</th><th>状态</th><th>到期时间</th></tr></thead>
-        <tbody id="licensesTableBody"><tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/licenses 获取数据</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Payments Panel -->
-  <div class="tab-panel" id="panel-payments">
-    <div class="stats-grid" id="payStats">
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总收入</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">本月收入</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">总订单</div></div>
-      <div class="stat-card"><div class="stat-num">-</div><div class="stat-title">付费用户</div></div>
-    </div>
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>设备ID</th><th>订单类型</th><th>金额</th><th>支付方式</th><th>状态</th><th>时间</th></tr></thead>
-        <tbody id="ordersTableBody"><tr><td colspan="6" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/orders 获取数据</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Conversations Panel -->
-  <div class="tab-panel" id="panel-conversations">
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>时间</th><th>设备ID</th><th>用户消息</th><th>AI 回复</th><th>时长</th></tr></thead>
-        <tbody id="convTableBody"><tr><td colspan="5" class="text-muted" style="text-align:center;padding:20px;">通过 /api/admin/conversations 获取数据</td></tr></tbody>
-      </table>
-    </div>
-  </div>
+<div class="tabs">
+  <button class="tab active" data-panel="questions">用户问答记录</button>
+  <button class="tab" data-panel="channels">频道状态</button>
+  <button class="tab" data-panel="messages">消息记录</button>
 </div>
 
-<script src="app.js"></script>
-<script src="admin.js"></script>
+<div class="panel active" id="questions-panel">
+  <h2>AI 客服问答记录</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:12px;color:#555;" id="qCount"></span>
+    <button class="refresh-btn" onclick="loadQuestions()">刷新</button>
+  </div>
+  <table>
+    <thead><tr><th style="width:50px">频道</th><th style="width:100px">用户</th><th>用户问题</th><th>AI 回答</th><th style="width:140px">时间</th></tr></thead>
+    <tbody id="qTable"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="panel" id="channels-panel">
+  <h2>活跃频道</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-size:12px;color:#555;" id="chCount"></span>
+    <button class="refresh-btn" onclick="loadChannels()">刷新</button>
+  </div>
+  <table>
+    <thead><tr><th>频道</th><th>在线人数</th><th>消息数</th><th>提问数</th><th>最后活动</th></tr></thead>
+    <tbody id="chTable"><tr><td colspan="5" class="empty">加载中...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="panel" id="messages-panel">
+  <h2>消息记录</h2>
+  <select id="msgChannelSelect" style="background:#1a1a1a;border:1px solid #333;color:#ccc;padding:6px 10px;border-radius:4px;font-size:13px;margin-right:8px;">
+    <option value="">选择频道...</option>
+  </select>
+  <button class="refresh-btn" onclick="loadMessages()">查看</button>
+  <table style="margin-top:12px;">
+    <thead><tr><th style="width:80px">发送者</th><th>内容</th><th style="width:140px">时间</th></tr></thead>
+    <tbody id="mTable"><tr><td colspan="3" class="empty">请选择频道查看</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+var API_BASE = '';
+
+function timeStr(ts) {
+  if (!ts) return '-';
+  var d = new Date(ts * 1000);
+  return d.toLocaleString('zh-CN');
+}
+
+// ---- 统计 ----
+function loadStats() {
+  fetch(API_BASE + '/api/intercom/admin/channels')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var chs = data.channels || [];
+      var totalMsgs = 0, totalQs = 0, totalUsers = 0;
+      chs.forEach(function(c) {
+        totalMsgs += c.message_count;
+        totalQs += c.question_count;
+        totalUsers += c.user_count;
+      });
+      document.getElementById('stats').innerHTML =
+        '<div class="stat-card"><div class="num">' + chs.length + '</div><div class="label">活跃频道</div></div>' +
+        '<div class="stat-card"><div class="num">' + totalUsers + '</div><div class="label">在线用户</div></div>' +
+        '<div class="stat-card"><div class="num">' + totalMsgs + '</div><div class="label">消息总数</div></div>' +
+        '<div class="stat-card"><div class="num">' + totalQs + '</div><div class="label">提问总数</div></div>';
+    });
+}
+loadStats();
+
+// ---- Tab 切换 ----
+document.querySelectorAll('.tab').forEach(function(t) {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(x) { x.classList.remove('active'); });
+    t.classList.add('active');
+    document.getElementById(t.dataset.panel + '-panel').classList.add('active');
+    if (t.dataset.panel === 'questions') loadQuestions();
+    if (t.dataset.panel === 'channels') loadChannels();
+  });
+});
+
+// ---- 问答记录 ----
+function loadQuestions() {
+  fetch(API_BASE + '/api/intercom/admin/questions')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var qs = data.questions || [];
+      document.getElementById('qCount').textContent = '共 ' + qs.length + ' 条记录';
+      var tbody = document.getElementById('qTable');
+      if (qs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无问答记录</td></tr>';
+        return;
+      }
+      tbody.innerHTML = qs.map(function(q) {
+        return '<tr>' +
+          '<td><span class="badge badge-green">CH' + q.channel + '</span></td>' +
+          '<td><span class="badge badge-gray">' + (q.user_id || '').slice(0, 8) + '</span></td>' +
+          '<td class="q-text">' + escHtml(q.question) + '</td>' +
+          '<td class="a-text">' + escHtml(q.answer) + '</td>' +
+          '<td class="time">' + timeStr(q.timestamp) + '</td>' +
+          '</tr>';
+      }).join('');
+    });
+}
+
+// ---- 频道状态 ----
+function loadChannels() {
+  fetch(API_BASE + '/api/intercom/admin/channels')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var chs = data.channels || [];
+      document.getElementById('chCount').textContent = '共 ' + chs.length + ' 个频道';
+      var tbody = document.getElementById('chTable');
+      if (chs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无活跃频道</td></tr>';
+        return;
+      }
+      // 填充消息频道下拉
+      var sel = document.getElementById('msgChannelSelect');
+      sel.innerHTML = '<option value="">选择频道...</option>' +
+        chs.map(function(c) { return '<option value="' + c.channel + '">频道 ' + c.channel + '</option>'; }).join('');
+
+      tbody.innerHTML = chs.sort(function(a,b) { return b.last_activity - a.last_activity; }).map(function(c) {
+        return '<tr>' +
+          '<td><span class="badge badge-green">CH' + c.channel + '</span></td>' +
+          '<td>' + c.user_count + ' 人</td>' +
+          '<td>' + c.message_count + '</td>' +
+          '<td>' + c.question_count + '</td>' +
+          '<td class="time">' + timeStr(c.last_activity) + '</td>' +
+          '</tr>';
+      }).join('');
+      loadStats();
+    });
+}
+
+// ---- 消息记录 ----
+function loadMessages() {
+  var ch = document.getElementById('msgChannelSelect').value;
+  if (!ch) return;
+  fetch(API_BASE + '/api/intercom/admin/messages/' + ch)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var msgs = data.messages || [];
+      var tbody = document.getElementById('mTable');
+      if (msgs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">暂无消息记录</td></tr>';
+        return;
+      }
+      tbody.innerHTML = msgs.map(function(m) {
+        var isBot = m.from === 'bot';
+        var sender = isBot ? 'AI客服' : (m.from || '').slice(0, 8);
+        var cls = isBot ? 'a-text' : 'q-text';
+        var content = isBot ? m.text : ('[语音消息] ' + (m.text || ''));
+        return '<tr>' +
+          '<td><span class="badge ' + (isBot ? 'badge-green' : 'badge-gray') + '">' + sender + '</span></td>' +
+          '<td class="' + cls + '">' + escHtml(content) + '</td>' +
+          '<td class="time">' + timeStr(m.timestamp) + '</td>' +
+          '</tr>';
+      }).join('');
+    });
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// 初始加载
+loadQuestions();
+loadChannels();
+setInterval(loadStats, 30000);
+</script>
 </body>
 </html>
