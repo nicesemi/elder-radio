@@ -1454,8 +1454,10 @@
         }
       };
 
-      speechRecognition.onerror = function() {
-        // 降级：直接录音上传
+      speechRecognition.onerror = function(e) {
+        console.log('[Intercom] SpeechRecognition error:', e.error);
+        // 降级：切换到手动文字输入
+        showIntercomTextInput();
       };
 
       speechRecognition.start();
@@ -1494,6 +1496,7 @@
   }
 
   function sendAIChat(text) {
+    console.log('[Intercom] Sending AI chat:', text);
     fetch('/api/intercom/ai-chat', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1516,6 +1519,37 @@
     })
     .catch(function(e) { console.log('AI chat error:', e); });
   }
+
+  // 手动文字输入（语音识别失败时的降级方案）
+  var intercomTextInput = document.getElementById('intercomTextInput');
+  var intercomTextSend = document.getElementById('intercomTextSend');
+
+  function showIntercomTextInput() {
+    intercomTextInput.style.display = 'inline-block';
+    intercomTextSend.style.display = 'inline-block';
+    intercomTextInput.focus();
+  }
+
+  function hideIntercomTextInput() {
+    intercomTextInput.style.display = 'none';
+    intercomTextSend.style.display = 'none';
+    intercomTextInput.value = '';
+  }
+
+  intercomTextSend.addEventListener('click', function() {
+    var text = intercomTextInput.value.trim();
+    if (!text) return;
+    if (!intercomJoined) joinIntercom();
+    hideIntercomTextInput();
+    sendAIChat(text);
+  });
+
+  intercomTextInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      intercomTextSend.click();
+    }
+  });
 
   // 页面关闭时离开频道
   window.addEventListener('beforeunload', function() { leaveIntercom(); });
