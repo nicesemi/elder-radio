@@ -1415,11 +1415,14 @@ async def intercom_speech_to_text(request: Request):
                             audio_b64 = base64.b64encode(audio_bytes).decode()
                             async with httpx.AsyncClient(timeout=15.0) as client:
                                 asr_resp = await client.post(
-                                    f"https://vop.baidu.com/server_api?dev_pid=1537&cuid={baidu_app_id}&token={access_token}",
+                                    "https://vop.baidu.com/server_api",
                                     json={
                                         "format": "wav",
                                         "rate": 16000,
                                         "channel": 1,
+                                        "cuid": baidu_app_id,
+                                        "token": access_token,
+                                        "dev_pid": 1537,
                                         "speech": audio_b64,
                                         "len": len(audio_bytes)
                                     }
