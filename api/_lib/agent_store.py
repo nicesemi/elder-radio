@@ -1,12 +1,21 @@
 """
-业务员转接存储 - 内存模式
+业务员转接存储 - R2 持久化
 Transfer: AI 检测到采购意图时创建
 Active Call: 业务员接听后转为活跃通话
 """
+import json
 import time
 import uuid
+from typing import Optional
+
+from _lib.r2_broadcast import R2_BUCKET, PUBLIC_BASE, _get_s3
+
+TRANSFERS_KEY = "agent/transfers.json"
+CALLS_KEY = "agent/active_calls.json"
+MESSAGES_KEY = "agent/call_messages.json"
 
 _agent_store = None
+
 
 def get_agent_store():
     global _agent_store
@@ -17,12 +26,35 @@ def get_agent_store():
 
 class AgentStore:
     def __init__(self):
-        self.pending_transfers = {}   # transfer_id → transfer
-        self.active_calls = {}        # transfer_id → call
-        self.call_messages = {}       # transfer_id → [messages]
+        self.s3 = _get_s3()
+
+    def _read_json(self, key: str) -> dict:
+        try:
+            resp = self.s3.get_object(Bucket=R2_BUCKET, Key=key)
+            raw = resp['Body'].read()
+            return json.loads(raw)
+        except Exception:
+            return {}
+
+    def _write_json(self, key: str, data: dict):
+        try:
+            self.s3.put_object(
+                Bucket=R2_BUCKET,
+                Key=key,
+                Body=json.dumps(data, ensure_ascii=False).encode('utf-8'),
+                ContentType='application/json'
+            )
+        except Exception as e:
+            print(f"[AgentStore] R2 write failed: {e}")
+
+    def _prune_expired(self, items: dict, max_age: float = 300):
+        now = time.time()
+        return {k: v for k, v in items.items()
+                if now - v.get("created_at", 0) <= max_age}
+
+    # ==================== Transfer ====================
 
     def create_transfer(self, user_channel, user_id, text, intent, summary):
-        """AI 检测到采购意图，创建转接"""
         tid = str(uuid.uuid4())[:8]
         transfer = {
             "id": tid,
@@ -34,100 +66,102 @@ class AgentStore:
             "time": time.strftime("%H:%M:%S"),
             "created_at": time.time(),
         }
-        self.pending_transfers[tid] = transfer
+        data = self._read_json(TRANSFERS_KEY)
+        data[tid] = transfer
+        self._write_json(TRANSFERS_KEY, data)
         print(f"[Agent] New transfer {tid}: channel={user_channel} intent={intent}")
         return transfer
 
     def get_pending(self, agent_channel=None):
-        """获取待接转接列表"""
-        now = time.time()
-        # 清理超过 5 分钟的过期转接
-        expired = [tid for tid, t in self.pending_transfers.items()
-                   if now - t["created_at"] > 300]
-        for tid in expired:
-            del self.pending_transfers[tid]
-
-        return list(self.pending_transfers.values())
+        data = self._read_json(TRANSFERS_KEY)
+        data = self._prune_expired(data)
+        self._write_json(TRANSFERS_KEY, data)
+        return list(data.values())
 
     def accept_transfer(self, transfer_id, agent_id, agent_channel):
-        """业务员接听转接"""
-        transfer = self.pending_transfers.pop(transfer_id, None)
+        transfers = self._read_json(TRANSFERS_KEY)
+        calls = self._read_json(CALLS_KEY)
+        transfer = transfers.pop(transfer_id, None)
         if not transfer:
             return None
         transfer["agent_id"] = agent_id
         transfer["agent_channel"] = agent_channel
         transfer["accepted_at"] = time.time()
-        self.active_calls[transfer_id] = transfer
-        self.call_messages[transfer_id] = []
+        calls[transfer_id] = transfer
+        self._write_json(TRANSFERS_KEY, transfers)
+        self._write_json(CALLS_KEY, calls)
         return transfer
 
+    # ==================== Messages ====================
+
+    def _read_messages(self) -> dict:
+        return self._read_json(MESSAGES_KEY)
+
+    def _write_messages(self, data: dict):
+        self._write_json(MESSAGES_KEY, data)
+
     def add_customer_message(self, transfer_id, text):
-        """客户发送新消息到通话"""
-        msg = {
-            "from": "customer",
-            "text": text,
-            "time": time.strftime("%H:%M:%S"),
-        }
-        if transfer_id in self.call_messages:
-            self.call_messages[transfer_id].append(msg)
+        msgs = self._read_messages()
+        if transfer_id not in msgs:
+            msgs[transfer_id] = []
+        msg = {"from": "customer", "text": text, "time": time.strftime("%H:%M:%S")}
+        msgs[transfer_id].append(msg)
+        self._write_messages(msgs)
         return msg
 
     def add_agent_message(self, transfer_id, agent_name, text):
-        """业务员回复消息"""
-        msg = {
-            "from": "agent",
-            "agent_name": agent_name,
-            "text": text,
-            "time": time.strftime("%H:%M:%S"),
-        }
-        if transfer_id in self.call_messages:
-            self.call_messages[transfer_id].append(msg)
+        msgs = self._read_messages()
+        if transfer_id not in msgs:
+            msgs[transfer_id] = []
+        msg = {"from": "agent", "agent_name": agent_name, "text": text,
+               "time": time.strftime("%H:%M:%S")}
+        msgs[transfer_id].append(msg)
+        self._write_messages(msgs)
         return msg
 
     def get_call_messages(self, transfer_id, agent_id):
-        """获取通话的消息（业务员视角）"""
-        # 找到该 agent 的活跃通话
-        for tid, call in self.active_calls.items():
+        calls = self._read_json(CALLS_KEY)
+        msgs = self._read_messages()
+        for tid, call in calls.items():
             if call.get("agent_id") == agent_id and tid == transfer_id:
-                msgs = self.call_messages.get(tid, [])
-                return [m for m in msgs if m["from"] == "customer"]
-        # 兼容：直接用 transfer_id 查
-        return [m for m in self.call_messages.get(transfer_id, [])
-                if m["from"] == "customer"]
+                return [m for m in msgs.get(tid, []) if m["from"] == "customer"]
+        return [m for m in msgs.get(transfer_id, []) if m["from"] == "customer"]
 
     def get_call_by_transfer(self, transfer_id):
-        return self.active_calls.get(transfer_id)
+        calls = self._read_json(CALLS_KEY)
+        return calls.get(transfer_id)
 
     def hangup(self, transfer_id, user_channel):
-        """挂断通话"""
-        call = self.active_calls.pop(transfer_id, None)
+        calls = self._read_json(CALLS_KEY)
+        call = calls.pop(transfer_id, None)
         if call:
-            msgs = self.call_messages.pop(transfer_id, [])
+            self._write_json(CALLS_KEY, calls)
             print(f"[Agent] Call ended: {transfer_id} channel={user_channel}")
         return call
 
     def get_user_call(self, user_channel):
-        """根据用户频道查找活跃通话（给用户端轮询用）"""
-        for tid, call in self.active_calls.items():
+        calls = self._read_json(CALLS_KEY)
+        msgs = self._read_messages()
+        for tid, call in calls.items():
             if call.get("user_channel") == user_channel:
-                msgs = self.call_messages.get(tid, [])
                 return {
                     "transfer_id": tid,
                     "agent_name": call.get("agent_name", "业务员"),
-                    "messages": [m for m in msgs if m["from"] == "agent"],
+                    "messages": [m for m in msgs.get(tid, []) if m["from"] == "agent"],
                 }
         return None
 
     def add_agent_message_by_channel(self, user_channel, agent_name, text):
-        """通过用户频道号添加业务员消息"""
-        for tid, call in self.active_calls.items():
+        calls = self._read_json(CALLS_KEY)
+        for tid, call in calls.items():
             if call.get("user_channel") == user_channel:
                 return self.add_agent_message(tid, agent_name, text)
         return None
 
     def get_messages_by_channel(self, user_channel, agent_id):
-        """通过用户频道号获取客户消息"""
-        for tid, call in self.active_calls.items():
+        calls = self._read_json(CALLS_KEY)
+        msgs = self._read_messages()
+        for tid, call in calls.items():
             if call.get("user_channel") == user_channel and call.get("agent_id") == agent_id:
-                return self.get_call_messages(tid, agent_id)
+                return [m for m in msgs.get(tid, []) if m["from"] == "customer"]
         return []
