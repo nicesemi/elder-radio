@@ -1271,9 +1271,15 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
         communicate = edge_tts.Communicate(ai_response, voice_id)
         buf = io.BytesIO()
         async for chunk in communicate.stream():
-            # edge_tts 7.x: stream() yields (type, data) tuples
-            if chunk[0] == "audio":
-                buf.write(chunk[1])
+            # 兼容多种返回格式：tuple (type, data) / dict {"type":..., "data":...}
+            if isinstance(chunk, (list, tuple)):
+                ctype, cdata = chunk[0], chunk[1]
+            elif isinstance(chunk, dict):
+                ctype, cdata = chunk.get("type"), chunk.get("data")
+            else:
+                continue
+            if ctype == "audio":
+                buf.write(cdata)
         audio_bytes = buf.getvalue()
     except Exception as e:
         import traceback
