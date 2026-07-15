@@ -66,8 +66,8 @@ async def text_to_speech(
     mp3_path = os.path.join(TMP_DIR, f"{base_name}.mp3")
 
     # 方案0: 百度 TTS（国内可用，零延迟，用同一组 ASR 凭据）
-    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "")
-    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "8uI2b3PTjmEtN9jmIpJlVnai")
+    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "L6vQGOzNs1cMFt7r5rLApJH5ru0rjfa2")
     if baidu_api_key and baidu_secret:
         try:
             await _baidu_tts(text, year, mp3_path, baidu_api_key, baidu_secret)
@@ -249,8 +249,8 @@ async def text_to_speech_streaming(text: str, year: int = 1980) -> bytes:
     流式文字转语音 - 优先百度 TTS，降级 Google / Edge-TTS
     """
     # 百度 TTS
-    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "")
-    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+    baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "8uI2b3PTjmEtN9jmIpJlVnai")
+    baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "L6vQGOzNs1cMFt7r5rLApJH5ru0rjfa2")
     if baidu_api_key and baidu_secret:
         try:
             import tempfile

@@ -158,6 +158,61 @@ def _load_music_tracks(year: int) -> list:
             _MUSIC_TRACKS_CACHE[year] = []
     return _MUSIC_TRACKS_CACHE[year]
 
+def _convert_webm_to_wav(audio_bytes: bytes) -> bytes:
+    """将 WebM/Opus 音频转为 WAV PCM 16k mono（百度 ASR 要求）"""
+    import subprocess, tempfile, os, urllib.request, stat
+
+    def _get_ffmpeg():
+        for cmd in ["ffmpeg", "/usr/local/bin/ffmpeg", "/tmp/ffmpeg"]:
+            try:
+                subprocess.run([cmd, "-version"], capture_output=True, timeout=5, check=True)
+                return cmd
+            except Exception:
+                continue
+        # 运行时下载静态 ffmpeg
+        try:
+            ffmpeg_path = "/tmp/ffmpeg"
+            url = "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz"
+            print("[STT] Downloading ffmpeg static binary...")
+            urllib.request.urlretrieve(url, "/tmp/ffmpeg.tar.xz")
+            subprocess.run(["tar", "-xJf", "/tmp/ffmpeg.tar.xz", "-C", "/tmp"], check=True, timeout=60)
+            # find ffmpeg binary
+            for root, dirs, files in os.walk("/tmp"):
+                if "ffmpeg" in files:
+                    src = os.path.join(root, "ffmpeg")
+                    os.rename(src, ffmpeg_path)
+                    os.chmod(ffmpeg_path, stat.S_IRWXU)
+                    print("[STT] ffmpeg downloaded to /tmp/ffmpeg")
+                    return ffmpeg_path
+        except Exception as e:
+            print(f"[STT] Failed to download ffmpeg: {e}")
+        return None
+
+    try:
+        ffmpeg = _get_ffmpeg()
+        if not ffmpeg:
+            return b""
+        with tempfile.NamedTemporaryFile(suffix=".webm", delete=False) as f_in:
+            f_in.write(audio_bytes)
+            f_in_path = f_in.name
+        f_out_path = f_in_path.replace(".webm", ".wav")
+        result = subprocess.run(
+            [ffmpeg, "-y", "-i", f_in_path, "-ar", "16000", "-ac", "1", "-f", "wav", f_out_path],
+            capture_output=True, timeout=15
+        )
+        if result.returncode == 0 and os.path.exists(f_out_path):
+            with open(f_out_path, "rb") as f:
+                wav_bytes = f.read()
+            os.unlink(f_out_path)
+            os.unlink(f_in_path)
+            return wav_bytes
+        os.unlink(f_in_path)
+        if os.path.exists(f_out_path):
+            os.unlink(f_out_path)
+    except Exception as e:
+        print(f"[STT] WebM→WAV 转码失败: {e}")
+    return b""
+
 def get_supabase():
     global _supabase_client
     if _supabase_client is None:
@@ -1393,12 +1448,18 @@ async def intercom_speech_to_text(request: Request):
 
         # 后端3: 百度短语音识别（国内可用，免费 5万次/天）
         if not text:
-            baidu_app_id = os.environ.get("BAIDU_ASR_APP_ID", "")
-            baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "") 
-            baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+            baidu_app_id = os.environ.get("BAIDU_ASR_APP_ID", "7916408")
+            baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "8uI2b3PTjmEtN9jmIpJlVnai") 
+            baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "L6vQGOzNs1cMFt7r5rLApJH5ru0rjfa2")
             if baidu_api_key and baidu_secret:
                 try:
-                    # 先获取 access_token
+                    # WebM → WAV 转码（百度 ASR 要求 pcm/wav 格式）
+                    wav_bytes = _convert_webm_to_wav(audio_bytes)
+                    if not wav_bytes:
+                        print("[STT] Baidu skip: ffmpeg not available, WebM→WAV conversion failed")
+                        raise Exception("WebM→WAV conversion failed")
+
+                    # 获取 access_token
                     async with httpx.AsyncClient(timeout=10.0) as client:
                         token_resp = await client.get(
                             "https://aip.baidubce.com/oauth/2.0/token",
@@ -1411,18 +1472,17 @@ async def intercom_speech_to_text(request: Request):
                     if token_resp.status_code == 200:
                         access_token = token_resp.json().get("access_token", "")
                         if access_token:
-                            # 转换 webm→pcm（百度要求 pcm 16k 16bit mono），直接用原始数据传 wav/pcm 格式
                             import base64
-                            audio_b64 = base64.b64encode(audio_bytes).decode()
+                            audio_b64 = base64.b64encode(wav_bytes).decode()
                             async with httpx.AsyncClient(timeout=15.0) as client:
                                 asr_resp = await client.post(
                                     f"https://vop.baidu.com/server_api?dev_pid=1537&cuid={baidu_app_id}&token={access_token}",
                                     json={
-                                        "format": "webm",
+                                        "format": "wav",
                                         "rate": 16000,
                                         "channel": 1,
                                         "speech": audio_b64,
-                                        "len": len(audio_bytes)
+                                        "len": len(wav_bytes)
                                     }
                                 )
                             asr_data = asr_resp.json()
@@ -1430,7 +1490,7 @@ async def intercom_speech_to_text(request: Request):
                                 text = "".join(asr_data.get("result", []))
                                 print(f"[STT] Baidu OK: {text}")
                             else:
-                                print(f"[STT] Baidu error: {asr_data.get('err_msg', '')}")
+                                print(f"[STT] Baidu error: err_no={asr_data.get('err_no')} msg={asr_data.get('err_msg','')}")
                 except Exception as e:
                     print(f"[STT] Baidu exception: {e}")
 
