@@ -1371,6 +1371,13 @@
           });
           intercomLastMsgIdx = data.total;
         }
+
+        // 检查是否有业务员接听转接
+        if (data.agent_connected) {
+          intercomLabel.textContent = '业务员(' + (data.agent_name || '小店') + ')';
+          intercomUserCount = 99; // 标记为特殊状态
+          updateIntercomUI();
+        }
       })
       .catch(function(){});
     }, 1500);

@@ -1156,6 +1156,24 @@ class IntercomPollRequest(BaseModel):
     user_id: str
     last_idx: int = 0
 
+# ==================== 业务员转接模型 ====================
+
+class AgentAcceptRequest(BaseModel):
+    agent_id: str
+    transfer_id: str
+    agent_channel: int = 1001
+
+class AgentReplyRequest(BaseModel):
+    agent_id: str
+    agent_name: str = "业务员"
+    user_channel: int
+    text: str
+
+class AgentHangupRequest(BaseModel):
+    agent_id: str
+    transfer_id: str
+    user_channel: int
+
 
 @app.post("/api/intercom/join")
 async def intercom_join(req: IntercomJoinRequest):
@@ -1258,6 +1276,24 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
         reason = "；".join(reasons) if reasons else "AI 调用失败"
         ai_response = f"[{reason}] 请在 Vercel 环境变量中设置 API Key。"
 
+    # 1.5 检测采购/服务意图 → 创建转接
+    is_purchase, intent_cat, intent_summary = detect_purchase_intent(req.text)
+    if is_purchase:
+        try:
+            from _lib.agent_store import get_agent_store
+            agent_store_instance = get_agent_store()
+            transfer = agent_store_instance.create_transfer(
+                user_channel=req.channel,
+                user_id=req.user_id,
+                text=req.text,
+                intent=intent_cat,
+                summary=intent_summary
+            )
+            ai_response += f" 已为您转接附近的{intent_cat}小店，业务员马上接听。请在频道 {req.channel} 等待。"
+            print(f"[Intercom AI] Purchase intent detected: {intent_cat}, transfer={transfer['id']}")
+        except Exception as e:
+            print(f"[Intercom AI] Transfer creation failed: {e}")
+
     # 2. TTS 合成语音（edge_tts，使用内存流避免 Vercel /tmp 写文件问题）
     audio_bytes = None
     tts_error = None
@@ -1300,7 +1336,7 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
 
 @app.post("/api/intercom/speech-to-text")
 async def intercom_speech_to_text(request: Request):
-    """语音转文字：接收 webm/wav 音频，返回识别文本"""
+    """语音转文字：接收 webm/wav 音频，返回识别文本。多后端降级。"""
     try:
         form = await request.form()
         audio_file = form.get("audio")
@@ -1308,31 +1344,60 @@ async def intercom_speech_to_text(request: Request):
             return {"success": False, "error": "No audio file"}
 
         audio_bytes = await audio_file.read()
-
-        # 使用 Groq Whisper API（免费额度 100 次/天，Vercel 可访问）
-        groq_key = os.environ.get("GROQ_API_KEY", "")
-        if not groq_key:
-            return {"success": False, "error": "GROQ_API_KEY not configured"}
-
+        text = None
         import httpx
-        files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
-        data = {"model": "whisper-large-v3-turbo", "language": "zh"}
-        headers = {"Authorization": f"Bearer {groq_key}"}
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/audio/transcriptions",
-                headers=headers, data=data, files=files
-            )
+        # 后端1: Groq Whisper（免费 100次/天，可能被 Vercel IP 限制）
+        groq_key = os.environ.get("GROQ_API_KEY", "")
+        if groq_key:
+            try:
+                files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
+                data = {"model": "whisper-large-v3-turbo", "language": "zh"}
+                headers = {"Authorization": f"Bearer {groq_key}"}
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        "https://api.groq.com/openai/v1/audio/transcriptions",
+                        headers=headers, data=data, files=files
+                    )
+                if resp.status_code == 200:
+                    text = resp.json().get("text", "").strip()
+                    print(f"[STT] Groq OK: {text}")
+                else:
+                    print(f"[STT] Groq {resp.status_code}: {resp.text[:200]}")
+                    if resp.status_code in (403, 401):
+                        print("[STT] Groq blocked (Vercel IP?), trying fallback...")
+            except Exception as e:
+                print(f"[STT] Groq exception: {e}")
 
-        if resp.status_code != 200:
-            print(f"[STT] Groq error: {resp.status_code} {resp.text}")
-            return {"success": False, "error": f"Groq API error: {resp.status_code}"}
+        # 后端2: SiliconFlow（国内可用，免费 2000 次/天）
+        if not text:
+            sil_key = os.environ.get("SILICONFLOW_API_KEY", "")
+            if not sil_key:
+                sil_key = "sk-default"  # 尝试默认
+            try:
+                files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
+                data = {"model": "iic/SenseVoiceSmall"}
+                headers = {"Authorization": f"Bearer {sil_key}"}
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp = await client.post(
+                        "https://api.siliconflow.cn/v1/audio/transcriptions",
+                        headers=headers, data=data, files=files
+                    )
+                if resp.status_code == 200:
+                    text = resp.json().get("text", "").strip()
+                    print(f"[STT] SiliconFlow OK: {text}")
+                else:
+                    print(f"[STT] SiliconFlow {resp.status_code}: {resp.text[:200]}")
+            except Exception as e:
+                print(f"[STT] SiliconFlow exception: {e}")
 
-        result = resp.json()
-        text = result.get("text", "").strip()
-        print(f"[STT] transcribed: {text}")
-        return {"success": True, "text": text}
+        if text:
+            return {"success": True, "text": text}
+
+        # 全部后端失败 → 引导用户用浏览器语音或文字输入
+        print("[STT] All backends failed, using browser SpeechRecognition fallback")
+        return {"success": False, "error": "speech_unavailable",
+                "hint": "请使用浏览器语音识别或文字输入"}
 
     except Exception as e:
         import traceback
@@ -1343,10 +1408,20 @@ async def intercom_speech_to_text(request: Request):
 
 @app.post("/api/intercom/poll")
 async def intercom_poll(req: IntercomPollRequest):
-    """轮询频道新消息"""
+    """轮询频道新消息（含业务员转接状态）"""
     from _lib.intercom_store import get_intercom_store
+    from _lib.agent_store import get_agent_store
     store = get_intercom_store()
-    return store.poll_messages(req.channel, req.user_id, req.last_idx)
+    result = store.poll_messages(req.channel, req.user_id, req.last_idx)
+
+    # 检查是否有业务员接听了此频道的转接
+    agent_store_instance = get_agent_store()
+    agent_call = agent_store_instance.get_user_call(req.channel)
+    if agent_call:
+        result["agent_connected"] = True
+        result["agent_name"] = agent_call["agent_name"]
+
+    return result
 
 
 # ==================== 管理后台 API ====================
@@ -1373,3 +1448,168 @@ async def intercom_admin_messages(channel: int):
     from _lib.intercom_store import get_intercom_store
     store = get_intercom_store()
     return {"messages": store.get_channel_messages(channel)}
+
+
+# ==================== 业务员转接 API ====================
+
+# 采购意图关键词
+PURCHASE_KEYWORDS = [
+    "买", "购买", "下单", "订购", "购物", "采购",
+    "送货", "上门", "配送", "外卖", "送到", "寄过来",
+    "帮我带", "帮我送", "来一份", "要一份", "点个",
+    "多少钱", "怎么卖", "有卖", "有货",
+    "维修", "修理", "安装", "疏通", "开锁", "保洁", "搬家",
+    "理发", "剪发", "按摩", "修脚", "美甲",
+    "服务", "我需要", "能不能帮", "可以帮",
+]
+
+def detect_purchase_intent(text: str):
+    """
+    检测文本中的采购/服务意图
+    返回 (is_purchase, intent_category, summary)
+    """
+    text_lower = text.lower()
+    matched = []
+    for kw in PURCHASE_KEYWORDS:
+        if kw in text_lower or kw in text:
+            matched.append(kw)
+
+    if not matched:
+        return False, None, None
+
+    # 归类意图
+    goods_kw = {"买", "购买", "下单", "订购", "购物", "采购", "多少钱", "怎么卖", "有卖", "有货", "帮我带", "点个", "来一份", "要一份"}
+    delivery_kw = {"送货", "上门", "配送", "外卖", "送到", "寄过来", "帮我送"}
+    repair_kw = {"维修", "修理", "安装", "疏通", "开锁"}
+    service_kw = {"保洁", "搬家", "理发", "剪发", "按摩", "修脚", "美甲", "服务"}
+
+    if any(k in matched for k in goods_kw):
+        intent = "商品购买"
+        summary = "客户需要购买商品：" + text[:40]
+    elif any(k in matched for k in repair_kw):
+        intent = "维修服务"
+        summary = "客户需要维修服务：" + text[:40]
+    elif any(k in matched for k in service_kw):
+        intent = "生活服务"
+        summary = "客户需要生活服务：" + text[:40]
+    elif any(k in matched for k in delivery_kw):
+        intent = "送货上门"
+        summary = "客户需要送货：" + text[:40]
+    else:
+        intent = "客户需求"
+        summary = "客户发起请求：" + text[:40]
+
+    return True, intent, summary
+
+
+@app.get("/api/agent/transfers")
+async def agent_transfers(agent_id: str, channel: int = 1001):
+    """业务员：获取待接转接列表"""
+    from _lib.agent_store import get_agent_store
+    store = get_agent_store()
+    transfers = store.get_pending(channel)
+    return {"transfers": transfers}
+
+
+@app.post("/api/agent/accept")
+async def agent_accept(req: AgentAcceptRequest):
+    """业务员：接听转接"""
+    from _lib.agent_store import get_agent_store
+    store = get_agent_store()
+    call = store.accept_transfer(req.transfer_id, req.agent_id, req.agent_channel)
+    if call:
+        return {"success": True, "transfer": call}
+    return {"success": False, "error": "Transfer not found"}
+
+
+@app.post("/api/agent/reply")
+async def agent_reply(req: AgentReplyRequest):
+    """业务员：文字回复客户"""
+    from _lib.agent_store import get_agent_store
+    from _lib.intercom_store import get_intercom_store
+    store = get_agent_store()
+    intercom = get_intercom_store()
+
+    # 保存到 agent store
+    store.add_agent_message_by_channel(req.user_channel, req.agent_name, req.text)
+
+    # 转发到对讲频道，客户端能收到
+    intercom.send_message(req.user_channel, "agent", None, f"[{req.agent_name}] {req.text}")
+
+    return {"success": True}
+
+
+@app.post("/api/agent/voice-reply")
+async def agent_voice_reply(request: Request):
+    """业务员：语音回复（PTT 录音上传 → STT → 转发）"""
+    form = await request.form()
+    audio_file = form.get("audio")
+    agent_id = form.get("agent_id", "")
+    user_channel = int(form.get("user_channel", "1"))
+    agent_name = form.get("agent_name", "业务员")
+
+    if not audio_file:
+        return {"success": False, "error": "No audio file"}
+
+    audio_bytes = await audio_file.read()
+    text = "[语音]"
+
+    # STT 尝试
+    try:
+        import httpx
+        dskey = os.environ.get("DEEPSEEK_API_KEY", "")
+        # 尝试用 Groq Whisper（如果还有额度）
+        groq_key = os.environ.get("GROQ_API_KEY", "")
+        if groq_key:
+            files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
+            data = {"model": "whisper-large-v3-turbo", "language": "zh"}
+            headers = {"Authorization": f"Bearer {groq_key}"}
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers=headers, data=data, files=files
+                )
+            if resp.status_code == 200:
+                text = resp.json().get("text", text).strip()
+    except Exception as e:
+        print(f"[Agent STT] error: {e}")
+
+    # 转发文本
+    from _lib.agent_store import get_agent_store
+    from _lib.intercom_store import get_intercom_store
+    store = get_agent_store()
+    intercom = get_intercom_store()
+    store.add_agent_message_by_channel(user_channel, agent_name, text)
+    intercom.send_message(user_channel, "agent", None, f"[{agent_name}] {text}")
+
+    return {"success": True, "text": text}
+
+
+@app.post("/api/agent/hangup")
+async def agent_hangup(req: AgentHangupRequest):
+    """业务员：挂断通话"""
+    from _lib.agent_store import get_agent_store
+    store = get_agent_store()
+    store.hangup(req.transfer_id, req.user_channel)
+    return {"success": True}
+
+
+@app.get("/api/agent/messages")
+async def agent_messages(agent_id: str, user_channel: int):
+    """业务员：获取当前通话的客户消息"""
+    from _lib.agent_store import get_agent_store
+    store = get_agent_store()
+    # 找这个 agent 和 channel 的活跃通话
+    msgs = store.get_messages_by_channel(user_channel, agent_id)
+    return {"messages": msgs}
+
+
+@app.get("/api/agent/user-call/{user_channel}")
+async def agent_user_call(user_channel: int):
+    """客户端轮询：是否有业务员接听并回复"""
+    from _lib.agent_store import get_agent_store
+    store = get_agent_store()
+    call = store.get_user_call(user_channel)
+    if call:
+        return {"success": True, "connected": True, "agent_name": call["agent_name"], "messages": call["messages"]}
+    return {"success": True, "connected": False}
