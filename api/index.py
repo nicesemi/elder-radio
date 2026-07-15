@@ -146,6 +146,18 @@ def _load_novel_tracks(year: int) -> list:
             _NOVEL_TRACKS_CACHE[year] = []
     return _NOVEL_TRACKS_CACHE[year]
 
+_MUSIC_TRACKS_CACHE: Dict[int, list] = {}
+
+def _load_music_tracks(year: int) -> list:
+    if year not in _MUSIC_TRACKS_CACHE:
+        tracks_path = _os.path.join(_os.path.dirname(__file__), '..', 'data', f'music_tracks_{year}.json')
+        if _os.path.exists(tracks_path):
+            with open(tracks_path, 'r', encoding='utf-8') as f:
+                _MUSIC_TRACKS_CACHE[year] = _json.load(f)
+        else:
+            _MUSIC_TRACKS_CACHE[year] = []
+    return _MUSIC_TRACKS_CACHE[year]
+
 def get_supabase():
     global _supabase_client
     if _supabase_client is None:
@@ -939,6 +951,16 @@ def _compute_broadcast_summary() -> Dict[str, Any]:
         print(f"[Summary] live_stations failed: {e}")
         summary["2026"]["live"] = 0
 
+    # 叠加本地音乐歌曲数据（music_tracks_{year}.json）
+    for y in range(1949, 2020):
+        mt = _load_music_tracks(y)
+        if mt:
+            yr = str(y)
+            if yr not in summary:
+                summary[yr] = {"news": 0, "music": 0, "novel": 0}
+            # music 计数叠加：本地歌曲数替换或叠加 R2 broadcasts 音乐数
+            summary[yr]["music"] = max(summary[yr].get("music", 0), len(mt))
+
     now_iso = datetime.now().isoformat()
     return {"summary": summary, "updated_at": now_iso}
 
@@ -977,6 +999,15 @@ async def broadcast_text(
 async def novel_tracks(year: int):
     """获取指定年份的小说音频轨道列表"""
     tracks = _load_novel_tracks(year)
+    if not tracks:
+        return {"success": False, "tracks": []}
+    return {"success": True, "tracks": tracks}
+
+
+@app.get("/api/broadcast/music-tracks/{year}")
+async def music_tracks(year: int):
+    """获取指定年份的音乐歌曲轨道列表"""
+    tracks = _load_music_tracks(year)
     if not tracks:
         return {"success": False, "tracks": []}
     return {"success": True, "tracks": tracks}

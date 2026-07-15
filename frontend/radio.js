@@ -1008,6 +1008,9 @@
   function playCurrent() {
     var s = stations[stationIdx];
     if (!s) return;
+    // Stop any playlist playback when manually switching stations
+    stopNovelPlayback();
+    stopMusicPlayback();
     if (s.type === 'music_kuwo') {
       playMusicStream(s);
     } else if (s.type === 'ai_archive') {
@@ -1570,6 +1573,8 @@
   // Track playlist state for sequential playback
   var novelPlaylist = [];
   var novelPlaylistIndex = -1;
+  var musicPlaylist = [];
+  var musicPlaylistIndex = -1;
 
   function speakContentForYearCategory(y, cat) {
     // If novel channel, use album track playback instead of TTS
@@ -1588,6 +1593,26 @@
             .catch(function(e) {
                 console.log('Novel tracks fetch failed:', e);
                 showNowPlaying('小说音频加载失败');
+            });
+        return;
+    }
+
+    // If music channel, use music track playlist playback
+    if (cat === 'music') {
+        fetch('/api/broadcast/music-tracks/' + y)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.success && data.tracks && data.tracks.length > 0) {
+                    musicPlaylist = data.tracks;
+                    musicPlaylistIndex = 0;
+                    playMusicTrack(0);
+                } else {
+                    showNowPlaying('暂无音乐歌曲');
+                }
+            })
+            .catch(function(e) {
+                console.log('Music tracks fetch failed:', e);
+                showNowPlaying('音乐加载失败');
             });
         return;
     }
@@ -1653,6 +1678,50 @@
     audio.onended = null;
     novelPlaylist = [];
     novelPlaylistIndex = -1;
+  }
+
+  function playMusicTrack(index) {
+    if (index < 0 || index >= musicPlaylist.length) {
+        // 循环播放
+        musicPlaylistIndex = 0;
+        playMusicTrack(0);
+        return;
+    }
+
+    musicPlaylistIndex = index;
+    var track = musicPlaylist[index];
+    var audio = document.getElementById('audioPlayer');
+    var nowPlayingEl = document.getElementById('nowPlaying');
+
+    audio.src = track.playUrl64;
+    audio.load();
+
+    nowPlayingEl.textContent = '🎵 ' + track.title + '（' + (index + 1) + '/' + musicPlaylist.length + '）';
+    nowPlayingEl.classList.remove('hidden');
+    document.getElementById('eraScroll').classList.add('hidden');
+
+    audio.onended = function() {
+        musicPlaylistIndex++;
+        playMusicTrack(musicPlaylistIndex);
+    };
+
+    audio.play().catch(function(e) {
+        console.log('Music play failed:', e);
+        nowPlayingEl.textContent = '⚠️ 播放失败，尝试下一首...';
+        setTimeout(function() {
+            musicPlaylistIndex++;
+            playMusicTrack(musicPlaylistIndex);
+        }, 2000);
+    });
+  }
+
+  function stopMusicPlayback() {
+    var audio = document.getElementById('audioPlayer');
+    audio.pause();
+    audio.src = '';
+    audio.onended = null;
+    musicPlaylist = [];
+    musicPlaylistIndex = -1;
   }
 
   init();
