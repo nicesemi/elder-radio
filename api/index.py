@@ -1394,10 +1394,34 @@ async def intercom_speech_to_text(request: Request):
         if text:
             return {"success": True, "text": text}
 
-        # 全部后端失败 → 引导用户用浏览器语音或文字输入
-        print("[STT] All backends failed, using browser SpeechRecognition fallback")
-        return {"success": False, "error": "speech_unavailable",
-                "hint": "请使用浏览器语音识别或文字输入"}
+        # 全部后端失败 → 生成 TTS 提示音（让用户通过听觉感知失败，不弹 UI）
+        print("[STT] All backends failed, generating TTS fail audio")
+        try:
+            from _lib.tts_service import get_voice_for_era
+            from _lib.intercom_store import get_intercom_store
+            voice_cfg = get_voice_for_era(2020)
+            voice_id = voice_cfg.get("voice_id", "zh-CN-XiaoxiaoNeural")
+            import edge_tts, io
+            fail_msg = "语音暂时无法识别，请稍后再试。"
+            communicate = edge_tts.Communicate(fail_msg, voice_id)
+            buf = io.BytesIO()
+            async for chunk in communicate.stream():
+                if isinstance(chunk, (list, tuple)):
+                    ctype, cdata = chunk[0], chunk[1]
+                elif isinstance(chunk, dict):
+                    ctype, cdata = chunk.get("type"), chunk.get("data")
+                else:
+                    continue
+                if ctype == "audio":
+                    buf.write(cdata)
+            fail_audio = buf.getvalue()
+            store = get_intercom_store()
+            audio_url = store.upload_tts_audio(fail_audio, "__stt_fail__")
+            return {"success": False, "error": "speech_unavailable", "stt_fail_audio": audio_url}
+        except Exception as tts_e:
+            print(f"[STT] TTS fail audio generation error: {tts_e}")
+
+        return {"success": False, "error": "speech_unavailable"}
 
     except Exception as e:
         import traceback

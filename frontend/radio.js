@@ -1460,7 +1460,7 @@
 
   // AI 客服模式：语音转文字 → AI 回复 → TTS 播放
   function startAIRecording() {
-    // 尝试使用 Web Speech API 进行语音识别
+    // 首选：浏览器 Web Speech API（低延迟，用户手势触发时可用）
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       speechRecognition = new SpeechRecognition();
@@ -1477,12 +1477,13 @@
         if (finalTranscript) {
           sendAIChat(finalTranscript);
         }
+        // 无结果也不弹UI，用户下次再按PTT即可
       };
 
       speechRecognition.onerror = function(e) {
         console.log('[Intercom] SpeechRecognition error:', e.error);
-        // 降级：切换到手动文字输入
-        showIntercomTextInput();
+        // 静默降级到录音上传 STT，不弹文字框
+        startFallbackAIRecording();
       };
 
       speechRecognition.start();
@@ -1522,6 +1523,13 @@
           sendAIChat(data.text);
         } else {
           console.log('[Intercom] STT failed:', data.error);
+          // 全部后端 STT 失败 → TTS 语音提示用户（不弹UI）
+          if (data.stt_fail_audio) {
+            _lastAIAudioUrl = data.stt_fail_audio;
+            intercomPlayer.src = data.stt_fail_audio;
+            intercomPlayer.volume = volume;
+            intercomPlayer.play().catch(function(){});
+          }
         }
       })
       .catch(function(e) { console.log('STT error:', e); });
@@ -1555,37 +1563,7 @@
     .catch(function(e) { console.log('AI chat error:', e); });
   }
 
-  // 手动文字输入（语音识别失败时的降级方案）
-  var intercomTextInput = document.getElementById('intercomTextInput');
-  var intercomTextSend = document.getElementById('intercomTextSend');
-
-  function showIntercomTextInput() {
-    intercomTextInput.style.display = 'inline-block';
-    intercomTextSend.style.display = 'inline-block';
-    intercomTextInput.focus();
-  }
-
-  function hideIntercomTextInput() {
-    intercomTextInput.style.display = 'none';
-    intercomTextSend.style.display = 'none';
-    intercomTextInput.value = '';
-  }
-
-  intercomTextSend.addEventListener('click', function() {
-    var text = intercomTextInput.value.trim();
-    if (!text) return;
-    if (!intercomJoined) joinIntercom();
-    hideIntercomTextInput();
-    sendAIChat(text);
-  });
-
-  intercomTextInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      intercomTextSend.click();
-    }
-  });
-
+  // 对讲机模式：无文字输入。语音不可用时通过 TTS 提示。
   // 页面关闭时离开频道
   window.addEventListener('beforeunload', function() { leaveIntercom(); });
 

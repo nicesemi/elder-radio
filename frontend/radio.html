@@ -281,20 +281,6 @@
     .ch-user-count {
       font-size:8px; color:#666; text-align:center; min-height:10px;
     }
-    .intercom-text-row {
-      display:flex; gap:4px; align-items:center; margin-top:4px;
-    }
-    .intercom-text-row input {
-      width:100px; padding:3px 6px; font-size:11px;
-      background:#2a2a2a; border:1px solid #555; border-radius:4px;
-      color:#D4A853; outline:none;
-    }
-    .intercom-text-row input:focus { border-color:#D4A853; }
-    .intercom-text-row button {
-      padding:3px 8px; font-size:10px; background:#444; border:1px solid #555;
-      border-radius:4px; color:#ccc; cursor:pointer;
-    }
-    .intercom-text-row button:active { background:#D4A853; color:#111; }
     .knob-era {
       width:44px; height:44px;
       background: radial-gradient(circle at 40% 35%, #8B7355, #5C3D0E 60%, #3E2608);
@@ -458,11 +444,6 @@
         </div>
         <span class="knob-label">音量</span>
       </div>
-    </div>
-    <!-- 对讲文字输入（语音识别在国内不可用，始终显示） -->
-    <div class="intercom-text-row">
-      <input type="text" id="intercomTextInput" placeholder="打字问AI..." />
-      <button id="intercomTextSend">发送</button>
     </div>
     <!-- 对讲系统：隐藏音频播放器 -->
     <audio id="intercomPlayer" style="display:none"></audio>
