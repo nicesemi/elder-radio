@@ -1261,6 +1261,7 @@
   var intercomPollTimer = null;
   var intercomPlayer = document.getElementById('intercomPlayer');
   var intercomLabel = document.getElementById('intercomLabel');
+  var _lastAIAudioUrl = null;  // 已通过 sendAIChat 回调播放过的 audio url，poll 跳过
   var intercomZone = document.querySelector('.intercom-zone');
   var chDisplay = document.getElementById('chDisplay');
 
@@ -1360,6 +1361,7 @@
         if (data.messages && data.messages.length > 0) {
           data.messages.forEach(function(msg) {
             if (msg.from !== intercomUserId && msg.r2_key) {
+              if (msg.r2_key === _lastAIAudioUrl) return;  // sendAIChat 已播放过，跳过
               intercomPlayer.src = msg.r2_key;
               intercomPlayer.volume = volume;
               intercomPlayer.play().catch(function(e) {
@@ -1527,6 +1529,7 @@
       console.log('[Intercom] AI response:', data.text, 'audio:', data.audio_url ? 'YES' : 'NONE');
       if (data.tts_error) console.log('[Intercom] TTS error:', data.tts_error);
       if (data.audio_url) {
+        _lastAIAudioUrl = data.audio_url;
         intercomPlayer.src = data.audio_url;
         intercomPlayer.volume = volume;
         // 不显式 load()，避免 AbortError；src 赋值已自动触发加载
