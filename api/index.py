@@ -1201,21 +1201,25 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
 
     store = get_intercom_store()
 
-    # 1. 调用 Agnes AI 生成回复
+    # 1. 调用 AI 生成回复（优先 DeepSeek 国内可用，降级 Agnes）
+    from _lib.config import DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
     ai_response = ""
-    try:
+
+    SYSTEM_PROMPT = "你是一个老年收音机里的智能语音助手，你的名字叫'小电'。你热情、耐心、知识渊博，回答简洁明了，适合语音播放。每次回答控制在 100 字以内。"
+
+    async def try_chat(base_url, api_key, model, provider_name):
         import httpx
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
-                f"{AGNES_BASE_URL}/chat/completions",
+                f"{base_url}/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {AGNES_API_KEY}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json"
                 },
                 json={
-                    "model": AGNES_MODEL,
+                    "model": model,
                     "messages": [
-                        {"role": "system", "content": "你是一个老年收音机里的智能语音助手，你的名字叫'小电'。你热情、耐心、知识渊博，回答简洁明了，适合语音播放。每次回答控制在 100 字以内。"},
+                        {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": req.text}
                     ],
                     "max_tokens": 200,
@@ -1224,12 +1228,35 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
             )
             if resp.status_code == 200:
                 data = resp.json()
-                ai_response = data["choices"][0]["message"]["content"].strip()
-            else:
-                ai_response = "不好意思，我暂时无法回答这个问题，请稍后再试。"
-    except Exception as e:
-        print(f"[Intercom AI] Agnes error: {e}")
-        ai_response = "网络不太好，请您再说一遍吧。"
+                return data["choices"][0]["message"]["content"].strip()
+            print(f"[Intercom AI] {provider_name} HTTP {resp.status_code}: {resp.text[:200]}")
+            return None
+
+    # 优先 DeepSeek（国内可用）
+    if DEEPSEEK_API_KEY:
+        try:
+            ai_response = await try_chat(DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL, "DeepSeek")
+            if ai_response:
+                print(f"[Intercom AI] DeepSeek OK")
+        except Exception as e:
+            print(f"[Intercom AI] DeepSeek error: {e}")
+
+    # 降级 Agnes（海外可用）
+    if not ai_response and AGNES_API_KEY:
+        try:
+            ai_response = await try_chat(AGNES_BASE_URL, AGNES_API_KEY, AGNES_MODEL, "Agnes")
+            if ai_response:
+                print(f"[Intercom AI] Agnes OK")
+        except Exception as e:
+            print(f"[Intercom AI] Agnes error: {e}")
+
+    # 全部失败，兜底（返回原因方便调试）
+    if not ai_response:
+        reasons = []
+        if not DEEPSEEK_API_KEY: reasons.append("DeepSeek key 未配置")
+        if not AGNES_API_KEY: reasons.append("Agnes key 未配置")
+        reason = "；".join(reasons) if reasons else "AI 调用失败"
+        ai_response = f"[{reason}] 请在 Vercel 环境变量中设置 API Key。"
 
     # 2. TTS 合成语音
     audio_bytes = None

@@ -15,11 +15,16 @@ try:
 except ImportError:
     pass
 
-# Agnes AI 配置（兼容 OpenAI 接口）
+# Agnes AI 配置（兼容 OpenAI 接口，海外可用，国内被墙）
 AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1"
 AGNES_API_KEY = os.environ.get("AGNES_API_KEY", "")
 AGNES_MODEL = "agnes-2.0-flash"
 AGNES_TTS_MODEL = "agnes-tts-1"  # TTS 模型（灰度中）
+
+# DeepSeek 配置（国内可用，兼容 OpenAI 接口）
+DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_MODEL = "deepseek-chat"
 
 # TTS 配置 - 播音员音色映射（按年代）
 # 使用 EmotiVoice / Edge-TTS 音色
