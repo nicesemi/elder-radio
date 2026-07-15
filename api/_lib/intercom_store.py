@@ -57,6 +57,10 @@ class IntercomStore:
 
         data = self._read_channel(channel)
 
+        # 清理超过 60 秒未活跃的僵尸用户（页面关闭/刷新未执行 leave）
+        now = time.time()
+        data["users"] = [u for u in data["users"] if u.get("last_poll", u.get("joined_at", 0)) > now - 60]
+
         existing = [u for u in data["users"] if u["user_id"] == user_id]
         if existing:
             peer_id = None
@@ -73,7 +77,8 @@ class IntercomStore:
 
         data["users"].append({
             "user_id": user_id,
-            "joined_at": time.time(),
+            "joined_at": now,
+            "last_poll": now,
             "last_msg_idx": len(data["messages"])
         })
         self._write_channel(channel, data)
@@ -144,14 +149,29 @@ class IntercomStore:
         return f"{PUBLIC_BASE}/{key}"
 
     def poll_messages(self, channel: int, user_id: str, last_idx: int) -> dict:
-        """轮询新消息"""
+        """轮询新消息，同时清理过期用户"""
         data = self._read_channel(channel)
         new_msgs = data["messages"][last_idx:]
 
+        now = time.time()
+        # 更新当前用户的活跃时间 + last_msg_idx
         for u in data["users"]:
             if u["user_id"] == user_id:
                 u["last_msg_idx"] = len(data["messages"])
+                u["last_poll"] = now
                 break
+        # 清理超过 45 秒未轮询的僵尸用户
+        cleaned = False
+        data["users"] = [u for u in data["users"] if u.get("last_poll", 0) > now - 45 or u["user_id"] == user_id]
+        if len([u for u in data["users"] if u["user_id"] == user_id]) == 0:
+            # 当前用户不在列表中，已经被清理了（不同频道的旧 session），恢复自己
+            data["users"].append({
+                "user_id": user_id,
+                "joined_at": now,
+                "last_msg_idx": len(data["messages"]),
+                "last_poll": now
+            })
+            cleaned = True
         self._write_channel(channel, data)
 
         return {

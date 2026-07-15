@@ -518,7 +518,7 @@
         fallbackToLocal();
         return;
       }
-      var apiUrl = 'https://' + MIRRORS[idx] + '/json/stations/country/China';
+      var apiUrl = 'https://' + MIRRORS[idx] + '/json/stations/bycountry/China';
 
       fetch(apiUrl).then(function(r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1293,7 +1293,20 @@
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.error) { console.log('Join error:', data.error); return; }
+      if (data.error) {
+        console.log('Join error:', data.error);
+        if (data.error.indexOf('已满') >= 0) {
+          // 频道满：强制离开清僵尸用户，1s 后重试
+          fetch('/api/intercom/leave', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({channel: intercomChannel, user_id: intercomUserId})
+          }).then(function() {
+            setTimeout(function() { joinIntercom(); }, 1000);
+          });
+        }
+        return;
+      }
       intercomJoined = true;
       intercomLastMsgIdx = data.last_msg_idx || 0;
       intercomPeerId = data.peer_id;
