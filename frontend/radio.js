@@ -1362,7 +1362,6 @@
             if (msg.from !== intercomUserId && msg.r2_key) {
               intercomPlayer.src = msg.r2_key;
               intercomPlayer.volume = volume;
-              intercomPlayer.load();
               intercomPlayer.play().catch(function(e) {
                 console.log('[Intercom] Poll audio play failed:', e.name, e.message);
               });
@@ -1530,7 +1529,7 @@
       if (data.audio_url) {
         intercomPlayer.src = data.audio_url;
         intercomPlayer.volume = volume;
-        intercomPlayer.load();
+        // 不显式 load()，避免 AbortError；src 赋值已自动触发加载
         intercomPlayer.play().catch(function(e) {
           console.log('[Intercom] AI audio play failed:', e.name, e.message);
         });
