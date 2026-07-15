@@ -1134,3 +1134,166 @@ async def broadcast_year_channels(
         "year": year,
         "channels": result_channels,
     }
+
+
+# ==================== 对讲系统 API ====================
+
+class IntercomJoinRequest(BaseModel):
+    channel: int  # 1-99
+    user_id: str
+
+class IntercomRelayRequest(BaseModel):
+    channel: int
+    user_id: str
+
+class IntercomAIChatRequest(BaseModel):
+    channel: int
+    user_id: str
+    text: str  # 用户语音转文字后的文本
+
+class IntercomPollRequest(BaseModel):
+    channel: int
+    user_id: str
+    last_idx: int = 0
+
+
+@app.post("/api/intercom/join")
+async def intercom_join(req: IntercomJoinRequest):
+    """加入对讲频道"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    result = store.join_channel(req.channel, req.user_id)
+    return result
+
+
+@app.post("/api/intercom/leave")
+async def intercom_leave(req: IntercomJoinRequest):
+    """离开对讲频道"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    return store.leave_channel(req.channel, req.user_id)
+
+
+@app.post("/api/intercom/relay")
+async def intercom_relay(
+    audio: UploadFile = File(...),
+    channel: int = Form(...),
+    user_id: str = Form(...)
+):
+    """上传音频消息（PTT 模式：录制完成后上传）"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+
+    audio_bytes = await audio.read()
+    url = store.upload_audio(audio_bytes, channel, user_id)
+    if not url:
+        raise HTTPException(status_code=500, detail="音频上传失败")
+
+    store.send_message(channel, user_id, url)
+    return {"success": True, "audio_url": url}
+
+
+@app.post("/api/intercom/ai-chat")
+async def intercom_ai_chat(req: IntercomAIChatRequest):
+    """AI 智能语音客服 - 接收文本，返回语音回复"""
+    from _lib.intercom_store import get_intercom_store
+    from _lib.ai_content import AGNES_BASE_URL, AGNES_API_KEY, AGNES_MODEL
+
+    store = get_intercom_store()
+
+    # 1. 调用 Agnes AI 生成回复
+    ai_response = ""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{AGNES_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {AGNES_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": AGNES_MODEL,
+                    "messages": [
+                        {"role": "system", "content": "你是一个老年收音机里的智能语音助手，你的名字叫'小电'。你热情、耐心、知识渊博，回答简洁明了，适合语音播放。每次回答控制在 100 字以内。"},
+                        {"role": "user", "content": req.text}
+                    ],
+                    "max_tokens": 200,
+                    "temperature": 0.7
+                }
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                ai_response = data["choices"][0]["message"]["content"].strip()
+            else:
+                ai_response = "不好意思，我暂时无法回答这个问题，请稍后再试。"
+    except Exception as e:
+        print(f"[Intercom AI] Agnes error: {e}")
+        ai_response = "网络不太好，请您再说一遍吧。"
+
+    # 2. TTS 合成语音
+    audio_bytes = None
+    try:
+        from _lib.tts_service import get_voice_for_era
+        voice_cfg = get_voice_for_era(2020)
+        voice_id = voice_cfg.get("voice_id", "zh-CN-XiaoxiaoNeural")
+
+        import edge_tts
+        import tempfile
+
+        tmp_path = os.path.join(tempfile.gettempdir(), f"intercom_bot_{int(time.time())}.mp3")
+        communicate = edge_tts.Communicate(ai_response, voice_id)
+        await communicate.save(tmp_path)
+
+        with open(tmp_path, "rb") as f:
+            audio_bytes = f.read()
+        os.remove(tmp_path)
+    except Exception as e:
+        print(f"[Intercom TTS] error: {e}")
+        # TTS 失败，返回纯文本
+        store.add_question(req.channel, req.user_id, req.text, ai_response)
+        return {"success": True, "text": ai_response, "audio_url": None}
+
+    # 3. 上传 TTS 音频到 R2
+    if audio_bytes:
+        audio_url = store.upload_tts_audio(audio_bytes, req.channel)
+        store.send_message(req.channel, "bot", audio_url, ai_response)
+        store.add_question(req.channel, req.user_id, req.text, ai_response)
+        return {"success": True, "text": ai_response, "audio_url": audio_url}
+
+    store.add_question(req.channel, req.user_id, req.text, ai_response)
+    return {"success": True, "text": ai_response, "audio_url": None}
+
+
+@app.post("/api/intercom/poll")
+async def intercom_poll(req: IntercomPollRequest):
+    """轮询频道新消息"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    return store.poll_messages(req.channel, req.user_id, req.last_idx)
+
+
+# ==================== 管理后台 API ====================
+
+@app.get("/api/intercom/admin/channels")
+async def intercom_admin_channels():
+    """管理后台：所有频道概要"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    return {"channels": store.get_all_channel_states()}
+
+
+@app.get("/api/intercom/admin/questions")
+async def intercom_admin_questions(channel: Optional[int] = None):
+    """管理后台：所有用户提问及 AI 回答"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    return {"questions": store.get_all_questions(channel)}
+
+
+@app.get("/api/intercom/admin/messages/{channel}")
+async def intercom_admin_messages(channel: int):
+    """管理后台：某频道消息记录"""
+    from _lib.intercom_store import get_intercom_store
+    store = get_intercom_store()
+    return {"messages": store.get_channel_messages(channel)}
