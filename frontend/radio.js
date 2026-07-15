@@ -1128,6 +1128,10 @@
     if (prevStreamUrl === station.stream_url && !AUDIO.paused) return;
     prevStreamUrl = station.stream_url;
     var url = station.stream_url;
+    // 页面 HTTPS 时强制升级 HTTP 流为 HTTPS，避免 Mixed Content 拦截
+    if (window.location.protocol === 'https:' && url.indexOf('http://') === 0) {
+      url = url.replace('http://', 'https://');
+    }
 
     // HLS (.m3u8) 流 — 浏览器 <audio> 原生不支持，走 HLS.js
     var isHls = /\.m3u8(\?|$)/i.test(url);
