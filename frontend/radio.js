@@ -1422,34 +1422,103 @@
     if (!isRecording) return;
     isRecording = false;
     pttBtn.classList.remove('recording');
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-      mediaRecorder.stop();
-      mediaRecorder.stream.getTracks().forEach(function(t) { t.stop(); });
-    }
+    _stopWAVRecording();
     if (speechRecognition) {
       speechRecognition.stop();
     }
   }
 
-  // Relay 模式：录制并上传音频
+  // WAV 录音器：AudioContext 直接捕获 PCM，无需后端转码（百度 ASR 原生支持）
+  var _audioContext = null;
+  var _scriptProcessor = null;
+  var _wavSamples = [];
+  var _wavSampleRate = 16000;
+
+  function _startWAVRecording(stream, onStop) {
+    _wavSamples = [];
+    if (!_audioContext) {
+      _audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: _wavSampleRate });
+    }
+    _wavSampleRate = _audioContext.sampleRate;
+    var source = _audioContext.createMediaStreamSource(stream);
+    _scriptProcessor = _audioContext.createScriptProcessor(4096, 1, 1);
+    _scriptProcessor.onaudioprocess = function(e) {
+      var input = e.inputBuffer.getChannelData(0);
+      _wavSamples.push(new Float32Array(input));
+    };
+    source.connect(_scriptProcessor);
+    _scriptProcessor.connect(_audioContext.destination);
+    // 保存 onStop 回调
+    _scriptProcessor._onStop = onStop;
+  }
+
+  function _stopWAVRecording() {
+    if (_scriptProcessor) {
+      _scriptProcessor.disconnect();
+      var cb = _scriptProcessor._onStop;
+      _scriptProcessor = null;
+      if (cb) {
+        // 合并所有采样块
+        var totalLen = 0;
+        _wavSamples.forEach(function(s) { totalLen += s.length; });
+        var merged = new Float32Array(totalLen);
+        var offset = 0;
+        _wavSamples.forEach(function(s) {
+          merged.set(s, offset);
+          offset += s.length;
+        });
+        _wavSamples = [];
+        var wavBlob = _encodeWAV(merged, _wavSampleRate);
+        cb(wavBlob);
+      }
+    }
+  }
+
+  function _encodeWAV(samples, sampleRate) {
+    var buffer = new ArrayBuffer(44 + samples.length * 2);
+    var view = new DataView(buffer);
+    // RIFF header
+    function writeString(off, s) { for (var i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); }
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);        // PCM
+    view.setUint16(20, 1, true);         // format = 1 (PCM)
+    view.setUint16(22, 1, true);         // channels = 1
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true); // byte rate
+    view.setUint16(32, 2, true);         // block align
+    view.setUint16(34, 16, true);        // bits per sample
+    writeString(36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    // PCM data
+    var off = 44;
+    for (var i = 0; i < samples.length; i++) {
+      var s = Math.max(-1, Math.min(1, samples[i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      view.setInt16(off, s, true);
+      off += 2;
+    }
+    return new Blob([view], { type: 'audio/wav' });
+  }
+
+  // Relay 模式：录制 PCM/WAV 并上传
   function startRelayRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      recordedChunks = [];
-      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
-      mediaRecorder.onstop = sendRelay;
-      mediaRecorder.start();
+      _startWAVRecording(stream, function(wavBlob) {
+        sendRelay(wavBlob);
+      });
       isRecording = true;
       pttBtn.classList.add('recording');
       AUDIO.pause();
     }).catch(function(e) { console.log('Mic denied:', e); });
   }
 
-  function sendRelay() {
-    if (recordedChunks.length === 0) return;
-    var blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  function sendRelay(wavBlob) {
+    if (!wavBlob || wavBlob.size === 0) return;
     var fd = new FormData();
-    fd.append('audio', blob, 'ptt.webm');
+    fd.append('audio', wavBlob, 'ptt.wav');
     fd.append('channel', String(intercomChannel));
     fd.append('user_id', intercomUserId);
 
@@ -1459,8 +1528,8 @@
   }
 
   // AI 客服模式：语音转文字 → AI 回复 → TTS 播放
-  // SpeechRecognition 在国内被 GFW 阻断（network 错误），首次失败后直接跳过
-  var _speechRecAvailable = true;  // 初始假设可用，失败一次后永久跳过
+  // SpeechRecognition 在国内被 GFW 阻断，默认关闭，直接走 WAV 录音 + 后端 STT
+  var _speechRecAvailable = false;
 
   function startAIRecording() {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1483,7 +1552,6 @@
 
       speechRecognition.onerror = function(e) {
         console.log('[Intercom] SpeechRecognition error:', e.error);
-        // network/not-allowed/service-not-allowed → GFW，永久跳过
         if (e.error === 'network' || e.error === 'not-allowed' || e.error === 'service-not-allowed') {
           _speechRecAvailable = false;
         }
@@ -1501,22 +1569,19 @@
 
   function startFallbackAIRecording() {
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      recordedChunks = [];
-      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
-      mediaRecorder.onstop = sendFallbackAI;
-      mediaRecorder.start();
+      _startWAVRecording(stream, function(wavBlob) {
+        sendFallbackAI(wavBlob);
+      });
       isRecording = true;
       pttBtn.classList.add('recording');
       AUDIO.pause();
     }).catch(function(e) { console.log('Mic denied:', e); });
   }
 
-  function sendFallbackAI() {
-    if (recordedChunks.length === 0) return;
-    var blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  function sendFallbackAI(wavBlob) {
+    if (!wavBlob || wavBlob.size === 0) return;
     var fd = new FormData();
-    fd.append('audio', blob, 'ptt.webm');
+    fd.append('audio', wavBlob, 'ptt.wav');
     // 语音转文字 → AI 对话
     fetch('/api/intercom/speech-to-text', { method: 'POST', body: fd })
       .then(function(r) { return r.json(); })
@@ -1526,7 +1591,6 @@
           sendAIChat(data.text);
         } else {
           console.log('[Intercom] STT failed:', data.error);
-          // 全部后端 STT 失败 → TTS 语音提示用户（不弹UI）
           if (data.stt_fail_audio) {
             _lastAIAudioUrl = data.stt_fail_audio;
             intercomPlayer.src = data.stt_fail_audio;
