@@ -220,7 +220,7 @@
     }
 
     .knob-area {
-      display:flex; justify-content:space-between; align-items:flex-end;
+      display:flex; justify-content:center; align-items:flex-end; gap:24px;
       flex:1; padding:0 4px; position:relative;
     }
     .knob-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
@@ -256,6 +256,31 @@
     }
     .knob-ptt .mic-icon { font-size:16px; color:#888; pointer-events:none; }
     .knob-ptt.recording .mic-icon { color:#fff; }
+    /* 对讲系统 */
+    .intercom-zone {
+      display:flex; flex-direction:column; align-items:center; gap:3px;
+    }
+    .intercom-zone .knob-label { font-size:9px; color:#777; letter-spacing:1px; }
+    .ch-selector {
+      display:flex; align-items:center; gap:4px;
+    }
+    .ch-btn {
+      width:20px; height:20px; border-radius:50%;
+      background:#2a2a2a; border:1px solid #444; color:#888;
+      font-size:12px; cursor:pointer; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      padding:0;
+    }
+    .ch-btn:active { background:#D4A853; color:#111; }
+    .ch-num {
+      font-family:'Courier New',monospace; font-size:14px; font-weight:bold;
+      color:#D4A853; min-width:24px; text-align:center;
+    }
+    .intercom-zone.joined .ch-num { color:#4CAF50; }
+    .intercom-zone.joined .knob-ptt { border-color:#4CAF50; }
+    .ch-user-count {
+      font-size:8px; color:#666; text-align:center; min-height:10px;
+    }
     .knob-era {
       width:44px; height:44px;
       background: radial-gradient(circle at 40% 35%, #8B7355, #5C3D0E 60%, #3E2608);
@@ -267,7 +292,6 @@
       border:2px solid #3a3a3a; box-shadow:0 2px 6px rgba(0,0,0,0.5);
     }
     .knob-volume-wrap {
-      position:absolute; bottom:0; right:10px;
       display:flex; flex-direction:column; align-items:center; gap:2px;
     }
     .knob-volume-wrap .knob-label { font-size:8px; color:#777; }
@@ -397,11 +421,16 @@
         </div>
         <span class="knob-label">年代</span>
       </div>
-      <div class="knob-group">
+      <div class="intercom-zone">
+        <div class="ch-selector">
+          <button class="ch-btn" id="chDown">-</button>
+          <span class="ch-num" id="chDisplay">01</span>
+          <button class="ch-btn" id="chUp">+</button>
+        </div>
         <div class="knob-base knob-ptt" id="knobPTT">
           <span class="mic-icon">🎤</span>
         </div>
-        <span class="knob-label">对讲</span>
+        <span class="knob-label" id="intercomLabel">对讲</span>
       </div>
       <div class="knob-group">
         <div class="knob-base knob-tuning" id="knobTuning">
@@ -416,6 +445,8 @@
         <span class="knob-label">音量</span>
       </div>
     </div>
+    <!-- 对讲系统：隐藏音频播放器 -->
+    <audio id="intercomPlayer" style="display:none"></audio>
   </div>
 </div>
 
