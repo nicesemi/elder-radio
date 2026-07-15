@@ -258,10 +258,13 @@
       var ch = tab.dataset.channel;
       if (ch && ch !== currentChannel) {
         stopNovelPlayback();
+        stopMusicPlayback();
+        AUDIO.pause();
+        AUDIO.src = '';
         currentChannel = ch;
         renderChannelTabs();
         filterStations();
-        if (stations.length > 0) {
+        if (stations.length > 0 && ch !== 'novel' && ch !== 'music') {
           stationIdx = 0;
           setStIdx(0);
           bindTuningKnob();
@@ -269,6 +272,13 @@
           renderChannelList();
           updateNowPlaying();
           playCurrent();
+        } else if (stations.length > 0) {
+          stationIdx = 0;
+          setStIdx(0);
+          bindTuningKnob();
+          renderDial();
+          renderChannelList();
+          updateNowPlaying();
         }
         updateEraScroll();
         // 切换频道后自动朗读广播稿
@@ -1237,30 +1247,146 @@
     localStorage.setItem('elderradio_recents', JSON.stringify(recents));
   }
 
-  // ============ 对讲按钮 (PTT) ============
-  var pttBtn = document.getElementById('knobPTT');
+  // ============ 对讲系统 (Intercom) ============
+  var intercomChannel = 1;
+  var intercomUserId = 'user_' + Math.random().toString(36).slice(2, 10);
+  var intercomJoined = false;
+  var intercomLastMsgIdx = 0;
+  var intercomPeerId = null;
+  var intercomUserCount = 0;
+  var intercomPollTimer = null;
+  var intercomPlayer = document.getElementById('intercomPlayer');
+  var intercomLabel = document.getElementById('intercomLabel');
+  var intercomZone = document.querySelector('.intercom-zone');
+  var chDisplay = document.getElementById('chDisplay');
 
-  pttBtn.addEventListener('mousedown', startRecording);
-  pttBtn.addEventListener('mouseup', stopRecording);
-  pttBtn.addEventListener('mouseleave', stopRecording);
-  pttBtn.addEventListener('touchstart', function(e) { e.preventDefault(); startRecording(); });
-  pttBtn.addEventListener('touchend', stopRecording);
-
-  function startRecording() {
-    if (isRecording) return;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      recordedChunks = [];
-      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
-      mediaRecorder.onstop = sendRecording;
-      mediaRecorder.start();
-      isRecording = true;
-      pttBtn.classList.add('recording');
-      AUDIO.pause();
-    }).catch(function(e) { console.log('Mic denied:', e); });
+  function updateIntercomUI() {
+    chDisplay.textContent = String(intercomChannel).padStart(2, '0');
+    if (intercomJoined) {
+      intercomZone.classList.add('joined');
+      var label = intercomUserCount >= 2 ? '对讲(' + intercomUserCount + '人)' : 'AI客服';
+      intercomLabel.textContent = label;
+    } else {
+      intercomZone.classList.remove('joined');
+      intercomLabel.textContent = '对讲';
+    }
   }
 
-  function stopRecording() {
+  // 频道选择
+  document.getElementById('chUp').addEventListener('click', function() {
+    if (intercomJoined) return;
+    intercomChannel = intercomChannel >= 99 ? 1 : intercomChannel + 1;
+    updateIntercomUI();
+  });
+  document.getElementById('chDown').addEventListener('click', function() {
+    if (intercomJoined) return;
+    intercomChannel = intercomChannel <= 1 ? 99 : intercomChannel - 1;
+    updateIntercomUI();
+  });
+
+  // 加入频道
+  function joinIntercom() {
+    fetch('/api/intercom/join', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({channel: intercomChannel, user_id: intercomUserId})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { console.log('Join error:', data.error); return; }
+      intercomJoined = true;
+      intercomLastMsgIdx = data.last_msg_idx || 0;
+      intercomPeerId = data.peer_id;
+      intercomUserCount = data.user_count;
+      updateIntercomUI();
+      startPolling();
+    });
+  }
+
+  // 离开频道
+  function leaveIntercom() {
+    if (!intercomJoined) return;
+    fetch('/api/intercom/leave', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({channel: intercomChannel, user_id: intercomUserId})
+    }).catch(function(){});
+    intercomJoined = false;
+    intercomPeerId = null;
+    intercomUserCount = 0;
+    stopPolling();
+    updateIntercomUI();
+  }
+
+  // 轮询新消息
+  function startPolling() {
+    stopPolling();
+    intercomPollTimer = setInterval(function() {
+      if (!intercomJoined) { stopPolling(); return; }
+      fetch('/api/intercom/poll', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          channel: intercomChannel,
+          user_id: intercomUserId,
+          last_idx: intercomLastMsgIdx
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        // 更新用户数
+        if (data.user_count !== intercomUserCount) {
+          intercomUserCount = data.user_count;
+          updateIntercomUI();
+        }
+        // 播放新消息
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(function(msg) {
+            if (msg.from !== intercomUserId && msg.r2_key) {
+              intercomPlayer.src = msg.r2_key;
+              intercomPlayer.volume = volume;
+              intercomPlayer.play().catch(function(){});
+            }
+          });
+          intercomLastMsgIdx = data.total;
+        }
+      })
+      .catch(function(){});
+    }, 1500);
+  }
+
+  function stopPolling() {
+    if (intercomPollTimer) { clearInterval(intercomPollTimer); intercomPollTimer = null; }
+  }
+
+  // PTT 录音
+  var pttBtn = document.getElementById('knobPTT');
+
+  pttBtn.addEventListener('mousedown', function(e) { e.preventDefault(); startPTT(); });
+  pttBtn.addEventListener('mouseup', stopPTT);
+  pttBtn.addEventListener('mouseleave', stopPTT);
+  pttBtn.addEventListener('touchstart', function(e) { e.preventDefault(); startPTT(); });
+  pttBtn.addEventListener('touchend', stopPTT);
+
+  var speechRecognition = null;
+  var finalTranscript = '';
+
+  function startPTT() {
+    if (isRecording) return;
+
+    // 自动加入频道
+    if (!intercomJoined) joinIntercom();
+
+    // 如果频道有其他人 → Relay 模式（录音传音频）
+    // 如果频道只有自己 → AI 客服模式（语音转文字）
+    if (intercomUserCount >= 2) {
+      startRelayRecording();
+    } else {
+      startAIRecording();
+    }
+  }
+
+  function stopPTT() {
     if (!isRecording) return;
     isRecording = false;
     pttBtn.classList.remove('recording');
@@ -1268,34 +1394,123 @@
       mediaRecorder.stop();
       mediaRecorder.stream.getTracks().forEach(function(t) { t.stop(); });
     }
+    if (speechRecognition) {
+      speechRecognition.stop();
+    }
   }
 
-  function sendRecording() {
+  // Relay 模式：录制并上传音频
+  function startRelayRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = sendRelay;
+      mediaRecorder.start();
+      isRecording = true;
+      pttBtn.classList.add('recording');
+      AUDIO.pause();
+    }).catch(function(e) { console.log('Mic denied:', e); });
+  }
+
+  function sendRelay() {
     if (recordedChunks.length === 0) return;
     var blob = new Blob(recordedChunks, { type: 'audio/webm' });
     var fd = new FormData();
     fd.append('audio', blob, 'ptt.webm');
-    fd.append('station', stations[stationIdx] ? stations[stationIdx].name : '');
-    fd.append('year', String(year));
-    fd.append('voice', TONE_NAMES[toneIdx]);
+    fd.append('channel', String(intercomChannel));
+    fd.append('user_id', intercomUserId);
 
-    fetch('/api/ai-chat', { method: 'POST', body: fd })
+    fetch('/api/intercom/relay', { method: 'POST', body: fd })
       .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.audio_url) {
-          var reply = new Audio(data.audio_url);
-          reply.volume = volume;
-          reply.play();
-          reply.onended = function() {
-            if (!isRecording && stations[stationIdx]) playCurrent();
-          };
-        }
-      })
-      .catch(function(e) {
-        console.log('PTT error:', e);
-        if (!isRecording && stations[stationIdx]) playCurrent();
-      });
+      .catch(function(e) { console.log('Relay error:', e); });
   }
+
+  // AI 客服模式：语音转文字 → AI 回复 → TTS 播放
+  function startAIRecording() {
+    // 尝试使用 Web Speech API 进行语音识别
+    var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.lang = 'zh-CN';
+      speechRecognition.interimResults = false;
+      speechRecognition.continuous = false;
+      finalTranscript = '';
+
+      speechRecognition.onresult = function(event) {
+        finalTranscript = event.results[0][0].transcript.trim();
+      };
+
+      speechRecognition.onend = function() {
+        if (finalTranscript) {
+          sendAIChat(finalTranscript);
+        }
+      };
+
+      speechRecognition.onerror = function() {
+        // 降级：直接录音上传
+      };
+
+      speechRecognition.start();
+      isRecording = true;
+      pttBtn.classList.add('recording');
+      AUDIO.pause();
+    } else {
+      // 不支持语音识别，降级为直接录音上传
+      startFallbackAIRecording();
+    }
+  }
+
+  function startFallbackAIRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      recordedChunks = [];
+      mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = sendFallbackAI;
+      mediaRecorder.start();
+      isRecording = true;
+      pttBtn.classList.add('recording');
+      AUDIO.pause();
+    }).catch(function(e) { console.log('Mic denied:', e); });
+  }
+
+  function sendFallbackAI() {
+    if (recordedChunks.length === 0) return;
+    var blob = new Blob(recordedChunks, { type: 'audio/webm' });
+    // 降级模式：先用 relay 上传，提示用户使用文字
+    var fd = new FormData();
+    fd.append('audio', blob, 'ptt.webm');
+    fd.append('channel', String(intercomChannel));
+    fd.append('user_id', intercomUserId);
+    fetch('/api/intercom/relay', { method: 'POST', body: fd })
+      .catch(function(e) { console.log('Fallback error:', e); });
+  }
+
+  function sendAIChat(text) {
+    fetch('/api/intercom/ai-chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        channel: intercomChannel,
+        user_id: intercomUserId,
+        text: text
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.audio_url) {
+        intercomPlayer.src = data.audio_url;
+        intercomPlayer.volume = volume;
+        intercomPlayer.play().catch(function(){});
+      }
+    })
+    .catch(function(e) { console.log('AI chat error:', e); });
+  }
+
+  // 页面关闭时离开频道
+  window.addEventListener('beforeunload', function() { leaveIntercom(); });
+
+  updateIntercomUI();
 
   // ============ URL 参数加载（v4.0 支持 channel/mode/station + 自动播放） ============
   function loadFromURL() {
@@ -1577,6 +1792,13 @@
   var musicPlaylistIndex = -1;
 
   function speakContentForYearCategory(y, cat) {
+    // Stop any current audio before starting new playback
+    AUDIO.pause();
+    AUDIO.src = '';
+    stopNovelPlayback();
+    stopMusicPlayback();
+    window.speechSynthesis && window.speechSynthesis.cancel();
+
     // If novel channel, use album track playback instead of TTS
     if (cat === 'novel') {
         fetch('/api/broadcast/novel-tracks/' + y)
