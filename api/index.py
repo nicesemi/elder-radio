@@ -1573,11 +1573,12 @@ def detect_purchase_intent(text: str):
 
 @app.get("/api/agent/transfers")
 async def agent_transfers(agent_id: str, channel: int = 1001):
-    """业务员：获取待接转接列表"""
+    """业务员：获取待接转接列表 + 当前活跃通话"""
     from _lib.agent_store import get_agent_store
     store = get_agent_store()
     transfers = store.get_pending(channel)
-    return {"transfers": transfers}
+    active = store.get_active_call_for_agent(agent_id)
+    return {"transfers": transfers, "active_call": active}
 
 
 @app.post("/api/agent/accept")

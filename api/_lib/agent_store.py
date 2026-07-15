@@ -151,6 +151,22 @@ class AgentStore:
                 }
         return None
 
+    def get_active_call_for_agent(self, agent_id):
+        """根据 agent_id 查找其活跃通话（用于页面刷新后恢复）"""
+        calls = self._read_json(CALLS_KEY)
+        for tid, call in calls.items():
+            if call.get("agent_id") == agent_id:
+                return {
+                    "transfer_id": tid,
+                    "user_channel": call.get("user_channel"),
+                    "intent": call.get("intent"),
+                    "summary": call.get("summary"),
+                    "text": call.get("text"),
+                    "time": call.get("time"),
+                    "agent_name": call.get("agent_name", "业务员"),
+                }
+        return None
+
     def add_agent_message_by_channel(self, user_channel, agent_name, text):
         calls = self._read_json(CALLS_KEY)
         for tid, call in calls.items():

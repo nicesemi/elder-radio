@@ -50,11 +50,34 @@ function pollTransfers() {
   fetch('/api/agent/transfers?agent_id=' + AGENT_ID + '&channel=' + AGENT_CHANNEL)
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      // 恢复已接听但页面刷新丢失的通话
+      if (data.active_call && !activeTransfer) {
+        restoreActiveCall(data.active_call);
+      }
       if (data.transfers && data.transfers.length > 0) {
         updateTransfers(data.transfers);
       }
     })
     .catch(function(e) { console.log('Poll error:', e); });
+}
+
+function restoreActiveCall(call) {
+  activeTransfer = {
+    id: call.transfer_id,
+    user_channel: call.user_channel,
+    intent: call.intent,
+    summary: call.summary,
+    text: call.text,
+    time: call.time
+  };
+  USER_CHANNEL = call.user_channel;
+  updateStatus('busy', '通话中 · 频道 ' + USER_CHANNEL);
+  document.getElementById('btnPTT').classList.remove('disabled');
+  document.getElementById('chatArea').classList.add('active');
+  document.getElementById('transferList').style.display = 'none';
+  addChatMsg('system', '已恢复通话（频道 ' + USER_CHANNEL + '），可以继续对话');
+  switchTab('active');
+  showToast('已恢复频道 ' + USER_CHANNEL + ' 的通话');
 }
 
 function updateTransfers(transfers) {

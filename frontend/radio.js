@@ -914,13 +914,17 @@
   }
 
   // ============ Archive 广播兜底 ============
+  var _archiveFetching = null;
   function fetchArchiveBroadcasts(y) {
+    if (_archiveFetching === y) return; // 防止重复调用同一年的搜索
+    _archiveFetching = y;
     document.getElementById('nowPlaying').textContent = '搜索档案中... ' + y;
     console.log('[Archive] 搜索 Internet Archive:', y);
 
     fetch('/api/broadcast/archive/search?year=' + y)
       .then(function(r) { return r.json(); })
       .then(function(data) {
+        _archiveFetching = null;
         if (data.results && data.results.length > 0) {
           var archiveStations = data.results.map(function(item, i) {
             return {
@@ -956,6 +960,7 @@
         }
       })
       .catch(function(err) {
+        _archiveFetching = null;
         console.error('[Archive] 搜索失败:', err);
         document.getElementById('nowPlaying').textContent =
           y + '年 — 档案搜索失败';
@@ -1914,6 +1919,10 @@
   var novelPlaylistIndex = -1;
   var musicPlaylist = [];
   var musicPlaylistIndex = -1;
+
+  function showNowPlaying(msg) {
+    document.getElementById('nowPlaying').textContent = msg;
+  }
 
   function speakContentForYearCategory(y, cat) {
     // Stop any current audio before starting new playback
