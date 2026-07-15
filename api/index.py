@@ -1391,6 +1391,49 @@ async def intercom_speech_to_text(request: Request):
             except Exception as e:
                 print(f"[STT] SiliconFlow exception: {e}")
 
+        # 后端3: 百度短语音识别（国内可用，免费 5万次/天）
+        if not text:
+            baidu_app_id = os.environ.get("BAIDU_ASR_APP_ID", "")
+            baidu_api_key = os.environ.get("BAIDU_ASR_API_KEY", "") 
+            baidu_secret = os.environ.get("BAIDU_ASR_SECRET_KEY", "")
+            if baidu_api_key and baidu_secret:
+                try:
+                    # 先获取 access_token
+                    async with httpx.AsyncClient(timeout=10.0) as client:
+                        token_resp = await client.get(
+                            "https://aip.baidubce.com/oauth/2.0/token",
+                            params={
+                                "grant_type": "client_credentials",
+                                "client_id": baidu_api_key,
+                                "client_secret": baidu_secret
+                            }
+                        )
+                    if token_resp.status_code == 200:
+                        access_token = token_resp.json().get("access_token", "")
+                        if access_token:
+                            # 转换 webm→pcm（百度要求 pcm 16k 16bit mono），直接用原始数据传 wav/pcm 格式
+                            import base64
+                            audio_b64 = base64.b64encode(audio_bytes).decode()
+                            async with httpx.AsyncClient(timeout=15.0) as client:
+                                asr_resp = await client.post(
+                                    f"https://vop.baidu.com/server_api?dev_pid=1537&cuid={baidu_app_id}&token={access_token}",
+                                    json={
+                                        "format": "webm",
+                                        "rate": 16000,
+                                        "channel": 1,
+                                        "speech": audio_b64,
+                                        "len": len(audio_bytes)
+                                    }
+                                )
+                            asr_data = asr_resp.json()
+                            if asr_data.get("err_no") == 0:
+                                text = "".join(asr_data.get("result", []))
+                                print(f"[STT] Baidu OK: {text}")
+                            else:
+                                print(f"[STT] Baidu error: {asr_data.get('err_msg', '')}")
+                except Exception as e:
+                    print(f"[STT] Baidu exception: {e}")
+
         if text:
             return {"success": True, "text": text}
 

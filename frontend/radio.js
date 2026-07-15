@@ -1459,10 +1459,12 @@
   }
 
   // AI 客服模式：语音转文字 → AI 回复 → TTS 播放
+  // SpeechRecognition 在国内被 GFW 阻断（network 错误），首次失败后直接跳过
+  var _speechRecAvailable = true;  // 初始假设可用，失败一次后永久跳过
+
   function startAIRecording() {
-    // 首选：浏览器 Web Speech API（低延迟，用户手势触发时可用）
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition) {
+    if (SpeechRecognition && _speechRecAvailable) {
       speechRecognition = new SpeechRecognition();
       speechRecognition.lang = 'zh-CN';
       speechRecognition.interimResults = false;
@@ -1477,12 +1479,14 @@
         if (finalTranscript) {
           sendAIChat(finalTranscript);
         }
-        // 无结果也不弹UI，用户下次再按PTT即可
       };
 
       speechRecognition.onerror = function(e) {
         console.log('[Intercom] SpeechRecognition error:', e.error);
-        // 静默降级到录音上传 STT，不弹文字框
+        // network/not-allowed/service-not-allowed → GFW，永久跳过
+        if (e.error === 'network' || e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          _speechRecAvailable = false;
+        }
         startFallbackAIRecording();
       };
 
@@ -1491,7 +1495,6 @@
       pttBtn.classList.add('recording');
       AUDIO.pause();
     } else {
-      // 不支持语音识别，降级为直接录音上传
       startFallbackAIRecording();
     }
   }
