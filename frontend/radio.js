@@ -1345,7 +1345,10 @@
             if (msg.from !== intercomUserId && msg.r2_key) {
               intercomPlayer.src = msg.r2_key;
               intercomPlayer.volume = volume;
-              intercomPlayer.play().catch(function(){});
+              intercomPlayer.load();
+              intercomPlayer.play().catch(function(e) {
+                console.log('[Intercom] Poll audio play failed:', e.name, e.message);
+              });
             }
           });
           intercomLastMsgIdx = data.total;
@@ -1373,6 +1376,10 @@
 
   function startPTT() {
     if (isRecording) return;
+
+    // 解锁 Audio 元素（浏览器自动播放策略要求先有用户手势）
+    intercomPlayer.load();
+    intercomPlayer.play().then(function() { intercomPlayer.pause(); }).catch(function(){});
 
     // 自动加入频道
     if (!intercomJoined) joinIntercom();
@@ -1501,7 +1508,10 @@
       if (data.audio_url) {
         intercomPlayer.src = data.audio_url;
         intercomPlayer.volume = volume;
-        intercomPlayer.play().catch(function(){});
+        intercomPlayer.load();
+        intercomPlayer.play().catch(function(e) {
+          console.log('[Intercom] AI audio play failed:', e.name, e.message);
+        });
       }
     })
     .catch(function(e) { console.log('AI chat error:', e); });
