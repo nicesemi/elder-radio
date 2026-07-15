@@ -1298,6 +1298,49 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
     return {"success": True, "text": ai_response, "audio_url": None, "tts_error": tts_error}
 
 
+@app.post("/api/intercom/speech-to-text")
+async def intercom_speech_to_text(request: Request):
+    """语音转文字：接收 webm/wav 音频，返回识别文本"""
+    try:
+        form = await request.form()
+        audio_file = form.get("audio")
+        if not audio_file:
+            return {"success": False, "error": "No audio file"}
+
+        audio_bytes = await audio_file.read()
+
+        # 使用 Groq Whisper API（免费额度 100 次/天，Vercel 可访问）
+        groq_key = os.environ.get("GROQ_API_KEY", "")
+        if not groq_key:
+            return {"success": False, "error": "GROQ_API_KEY not configured"}
+
+        import httpx
+        files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
+        data = {"model": "whisper-large-v3-turbo", "language": "zh"}
+        headers = {"Authorization": f"Bearer {groq_key}"}
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers=headers, data=data, files=files
+            )
+
+        if resp.status_code != 200:
+            print(f"[STT] Groq error: {resp.status_code} {resp.text}")
+            return {"success": False, "error": f"Groq API error: {resp.status_code}"}
+
+        result = resp.json()
+        text = result.get("text", "").strip()
+        print(f"[STT] transcribed: {text}")
+        return {"success": True, "text": text}
+
+    except Exception as e:
+        import traceback
+        print(f"[STT] error: {e}")
+        traceback.print_exc()
+        return {"success": False, "error": str(e)}
+
+
 @app.post("/api/intercom/poll")
 async def intercom_poll(req: IntercomPollRequest):
     """轮询频道新消息"""

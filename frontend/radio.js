@@ -1504,13 +1504,20 @@
   function sendFallbackAI() {
     if (recordedChunks.length === 0) return;
     var blob = new Blob(recordedChunks, { type: 'audio/webm' });
-    // 降级模式：先用 relay 上传，提示用户使用文字
     var fd = new FormData();
     fd.append('audio', blob, 'ptt.webm');
-    fd.append('channel', String(intercomChannel));
-    fd.append('user_id', intercomUserId);
-    fetch('/api/intercom/relay', { method: 'POST', body: fd })
-      .catch(function(e) { console.log('Fallback error:', e); });
+    // 语音转文字 → AI 对话
+    fetch('/api/intercom/speech-to-text', { method: 'POST', body: fd })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.success && data.text) {
+          console.log('[Intercom] STT result:', data.text);
+          sendAIChat(data.text);
+        } else {
+          console.log('[Intercom] STT failed:', data.error);
+        }
+      })
+      .catch(function(e) { console.log('STT error:', e); });
   }
 
   function sendAIChat(text) {
