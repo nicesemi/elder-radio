@@ -1394,6 +1394,7 @@
 
   // PTT 录音
   var pttBtn = document.getElementById('knobPTT');
+  var _playAudioCtx = null;  // 独立 AudioContext 用于 AI 语音播放（不受录制/autoplay 限制）
 
   pttBtn.addEventListener('mousedown', function(e) { e.preventDefault(); startPTT(); });
   pttBtn.addEventListener('mouseup', stopPTT);
@@ -1407,16 +1408,21 @@
   function startPTT() {
     if (isRecording) return;
 
-    // 解锁 Audio 元素（浏览器自动播放策略要求先有用户手势）
+    // 激活播放 AudioContext（用户手势内 resume 可绕过 autoplay 限制）
+    if (!_playAudioCtx) {
+      _playAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    _playAudioCtx.resume();
+
+    // 解锁 intercomPlayer（用于 relay 模式的 poll 播放）
     intercomPlayer.load();
     intercomPlayer.play().then(function() { intercomPlayer.pause(); }).catch(function(){});
 
-    // 自动加入频道
+    // 自动加入频道（异步），但当前 PTT 绑定到本次手势上下文决定模式
     if (!intercomJoined) joinIntercom();
 
-    // 如果频道有其他人 → Relay 模式（录音传音频）
-    // 如果频道只有自己 → AI 客服模式（语音转文字）
-    if (intercomUserCount >= 2) {
+    // 模式判断：以 peer_id 为准，而非 user_count（避免竞态/R2不一致导致误判）
+    if (intercomPeerId && intercomUserCount >= 2) {
       startRelayRecording();
     } else {
       startAIRecording();
@@ -1624,15 +1630,43 @@
       if (data.tts_error) console.log('[Intercom] TTS error:', data.tts_error);
       if (data.audio_url) {
         _lastAIAudioUrl = data.audio_url;
-        intercomPlayer.src = data.audio_url;
-        intercomPlayer.volume = volume;
-        // 不显式 load()，避免 AbortError；src 赋值已自动触发加载
-        intercomPlayer.play().catch(function(e) {
-          console.log('[Intercom] AI audio play failed:', e.name, e.message);
-        });
+        _playAIAudio(data.audio_url);
       }
     })
     .catch(function(e) { console.log('AI chat error:', e); });
+  }
+
+  // AudioContext 播放 AI 语音（绕过浏览器 autoplay 限制）
+  function _playAIAudio(url) {
+    if (!_playAudioCtx) {
+      // 降级：如果没有 AudioContext，用 intercomPlayer
+      intercomPlayer.src = url;
+      intercomPlayer.volume = volume;
+      intercomPlayer.play().catch(function(e) {
+        console.log('[Intercom] Fallback play failed:', e.name, e.message);
+      });
+      return;
+    }
+    fetch(url)
+      .then(function(r) { return r.arrayBuffer(); })
+      .then(function(buf) { return _playAudioCtx.decodeAudioData(buf); })
+      .then(function(audioBuffer) {
+        var source = _playAudioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        var gain = _playAudioCtx.createGain();
+        gain.gain.value = volume;
+        source.connect(gain);
+        gain.connect(_playAudioCtx.destination);
+        source.start(0);
+        console.log('[Intercom] AudioContext playing, duration:', audioBuffer.duration.toFixed(1) + 's');
+      })
+      .catch(function(e) {
+        console.log('[Intercom] AudioContext play failed:', e.message);
+        // 降级
+        intercomPlayer.src = url;
+        intercomPlayer.volume = volume;
+        intercomPlayer.play().catch(function() {});
+      });
   }
 
   // 对讲机模式：无文字输入。语音不可用时通过 TTS 提示。
