@@ -50,11 +50,21 @@ function startPoll() {
 }
 
 function pollTransfers() {
-  fetch('/api/agent/transfers?agent_id=' + AGENT_ID + '&channel=' + AGENT_CHANNEL)
-    .then(function(r) { return r.json(); })
+  var url = '/api/agent/transfers?agent_id=' + AGENT_ID + '&channel=' + AGENT_CHANNEL;
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 5000);
+
+  fetch(url, { signal: controller.signal })
+    .then(function(r) {
+      clearTimeout(timeoutId);
+      console.log('[Agent] Poll HTTP:', r.status);
+      if (!r.ok) {
+        return r.text().then(function(t) { throw new Error('HTTP ' + r.status + ': ' + t.slice(0, 200)); });
+      }
+      return r.json();
+    })
     .then(function(data) {
       console.log('[Agent] Poll response:', data);
-      // 恢复已接听但页面刷新丢失的通话
       if (data.active_call && !activeTransfer) {
         restoreActiveCall(data.active_call);
       }
@@ -62,7 +72,10 @@ function pollTransfers() {
         updateTransfers(data.transfers);
       }
     })
-    .catch(function(e) { console.log('Poll error:', e); });
+    .catch(function(e) {
+      clearTimeout(timeoutId);
+      console.log('[Agent] Poll error:', e.message || e);
+    });
 }
 
 function restoreActiveCall(call) {
