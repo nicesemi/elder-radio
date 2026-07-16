@@ -1444,9 +1444,17 @@
 
   // WAV 录音器：AudioContext 直接捕获 PCM，无需后端转码（百度 ASR 原生支持）
   var _audioContext = null;
-  var _scriptProcessor = null;
+  var _workletNode = null;
+  var _workletUrl = null;
   var _wavSamples = [];
   var _wavSampleRate = 16000;
+
+  function _ensureWorkletModule(ac) {
+    if (_workletUrl) return Promise.resolve();
+    var code = 'class WavRecorderProcessor extends AudioWorkletProcessor { process(inputs) { var input = inputs[0]; if (input && input.length > 0 && input[0].length > 0) { this.port.postMessage(input[0].buffer, [input[0].buffer]); } return true; } } registerProcessor("wav-recorder", WavRecorderProcessor);';
+    _workletUrl = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
+    return ac.audioWorklet.addModule(_workletUrl);
+  }
 
   function _startWAVRecording(stream, onStop) {
     _wavSamples = [];
@@ -1455,37 +1463,45 @@
     }
     _wavSampleRate = _audioContext.sampleRate;
     var source = _audioContext.createMediaStreamSource(stream);
-    _scriptProcessor = _audioContext.createScriptProcessor(4096, 1, 1);
-    _scriptProcessor.onaudioprocess = function(e) {
-      var input = e.inputBuffer.getChannelData(0);
-      _wavSamples.push(new Float32Array(input));
-    };
-    source.connect(_scriptProcessor);
-    _scriptProcessor.connect(_audioContext.destination);
-    // 保存 onStop 回调
-    _scriptProcessor._onStop = onStop;
+    _ensureWorkletModule(_audioContext).then(function() {
+      _workletNode = new AudioWorkletNode(_audioContext, 'wav-recorder');
+      _workletNode.port.onmessage = function(e) {
+        _wavSamples.push(new Float32Array(e.data));
+      };
+      _workletNode._onStop = onStop;
+      source.connect(_workletNode);
+      _workletNode.connect(_audioContext.destination);
+    });
   }
 
   function _stopWAVRecording() {
-    if (_scriptProcessor) {
-      _scriptProcessor.disconnect();
-      var cb = _scriptProcessor._onStop;
-      _scriptProcessor = null;
+    if (_workletNode) {
+      _workletNode.disconnect();
+      var cb = _workletNode._onStop;
+      _workletNode = null;
       if (cb) {
-        // 合并所有采样块
-        var totalLen = 0;
-        _wavSamples.forEach(function(s) { totalLen += s.length; });
-        var merged = new Float32Array(totalLen);
-        var offset = 0;
-        _wavSamples.forEach(function(s) {
-          merged.set(s, offset);
-          offset += s.length;
-        });
-        _wavSamples = [];
+        _flushAndCallback(cb);
+      }
+    }
+  }
+
+  function _flushAndCallback(cb) {
+    // 给 worklet 一点时间把最后的消息发过来
+    setTimeout(function() {
+      var totalLen = 0;
+      _wavSamples.forEach(function(s) { totalLen += s.length; });
+      var merged = new Float32Array(totalLen);
+      var offset = 0;
+      _wavSamples.forEach(function(s) {
+        merged.set(s, offset);
+        offset += s.length;
+      });
+      _wavSamples = [];
+      if (totalLen > 0) {
         var wavBlob = _encodeWAV(merged, _wavSampleRate);
         cb(wavBlob);
       }
-    }
+    }, 50);
   }
 
   function _encodeWAV(samples, sampleRate) {

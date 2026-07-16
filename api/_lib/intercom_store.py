@@ -148,6 +148,22 @@ class IntercomStore:
             return ""
         return f"{PUBLIC_BASE}/{key}"
 
+    def upload_agent_audio(self, audio_bytes: bytes, channel: int, agent_id: str) -> str:
+        """上传业务员 PTT 录音到 R2"""
+        ts = int(time.time() * 1000)
+        key = f"intercom/audio/ch{channel}/agent_{agent_id}_{ts}.webm"
+        try:
+            self.s3.put_object(
+                Bucket=R2_BUCKET,
+                Key=key,
+                Body=audio_bytes,
+                ContentType='audio/webm'
+            )
+        except Exception as e:
+            print(f"[IntercomStore] agent audio upload failed: {e}")
+            return ""
+        return f"{PUBLIC_BASE}/{key}"
+
     def poll_messages(self, channel: int, user_id: str, last_idx: int) -> dict:
         """轮询新消息，同时清理过期用户"""
         data = self._read_channel(channel)

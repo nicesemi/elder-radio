@@ -1644,15 +1644,19 @@ async def agent_voice_reply(request: Request):
     except Exception as e:
         print(f"[Agent STT] error: {e}")
 
-    # 转发文本
+    # 上传语音到 R2，转发音频 URL 给对讲机
     from _lib.agent_store import get_agent_store
     from _lib.intercom_store import get_intercom_store
     store = get_agent_store()
     intercom = get_intercom_store()
-    store.add_agent_message_by_channel(user_channel, agent_name, text)
-    intercom.send_message(user_channel, "agent", None, f"[{agent_name}] {text}")
 
-    return {"success": True, "text": text}
+    # 上传业务员语音
+    audio_url = intercom.upload_agent_audio(audio_bytes, user_channel, agent_id)
+
+    store.add_agent_message_by_channel(user_channel, agent_name, text)
+    intercom.send_message(user_channel, "agent", audio_url, f"[{agent_name}] {text}")
+
+    return {"success": True, "text": text, "audio_url": audio_url}
 
 
 @app.post("/api/agent/hangup")
