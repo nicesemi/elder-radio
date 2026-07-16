@@ -1365,10 +1365,16 @@
         }
         // 播放新消息
         if (data.messages && data.messages.length > 0) {
+          console.log('[Intercom] Poll got', data.messages.length, 'new msgs, total:', data.total);
           data.messages.forEach(function(msg) {
+            console.log('[Intercom] Poll msg from:', msg.from, 'r2_key:', msg.r2_key ? 'YES' : 'NONE', 'lastAIAudio:', _lastAIAudioUrl ? _lastAIAudioUrl.slice(-30) : 'NONE');
             if (msg.from !== intercomUserId && msg.r2_key) {
               _peerActive = true;  // 真正收到对方消息，标记为 Relay 模式可用
-              if (msg.r2_key === _lastAIAudioUrl) return;  // sendAIChat 已播放过，跳过
+              if (msg.r2_key === _lastAIAudioUrl) {
+                console.log('[Intercom] Poll skipped: same as _lastAIAudioUrl');
+                return;
+              }
+              console.log('[Intercom] Poll playing:', msg.r2_key.slice(-40));
               intercomPlayer.src = msg.r2_key;
               intercomPlayer.volume = volume;
               intercomPlayer.play().catch(function(e) {
@@ -1456,6 +1462,7 @@
     if (!_audioContext) {
       _audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: _wavSampleRate });
     }
+    _audioContext.resume();
     _wavSampleRate = _audioContext.sampleRate;
     var source = _audioContext.createMediaStreamSource(stream);
     _scriptProcessor = _audioContext.createScriptProcessor(4096, 1, 1);
@@ -1639,12 +1646,9 @@
 
   // AudioContext 播放 AI 语音（绕过浏览器 autoplay 限制）
   function _playAIAudio(url) {
-    // 静音播放绕过 autoplay 限制，start 后立即取消静音
-    intercomPlayer.muted = true;
     intercomPlayer.src = url;
     intercomPlayer.volume = volume;
     intercomPlayer.play().then(function() {
-      intercomPlayer.muted = false;
       console.log('[Intercom] AI audio playing');
     }).catch(function(e) {
       console.log('[Intercom] AI audio play failed:', e.name, e.message);
