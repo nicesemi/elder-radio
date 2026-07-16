@@ -1337,6 +1337,7 @@
     intercomJoined = false;
     intercomPeerId = null;
     intercomUserCount = 0;
+    _peerActive = false;
     stopPolling();
     updateIntercomUI();
   }
@@ -1366,6 +1367,7 @@
         if (data.messages && data.messages.length > 0) {
           data.messages.forEach(function(msg) {
             if (msg.from !== intercomUserId && msg.r2_key) {
+              _peerActive = true;  // 真正收到对方消息，标记为 Relay 模式可用
               if (msg.r2_key === _lastAIAudioUrl) return;  // sendAIChat 已播放过，跳过
               intercomPlayer.src = msg.r2_key;
               intercomPlayer.volume = volume;
@@ -1395,6 +1397,7 @@
   // PTT 录音
   var pttBtn = document.getElementById('knobPTT');
   var _playAudioCtx = null;  // 独立 AudioContext 用于 AI 语音播放（不受录制/autoplay 限制）
+  var _peerActive = false;   // 是否真正收到过对方消息（而非僵尸用户残留）
 
   pttBtn.addEventListener('mousedown', function(e) { e.preventDefault(); startPTT(); });
   pttBtn.addEventListener('mouseup', stopPTT);
@@ -1421,8 +1424,8 @@
     // 自动加入频道（异步），但当前 PTT 绑定到本次手势上下文决定模式
     if (!intercomJoined) joinIntercom();
 
-    // 模式判断：以 peer_id 为准，而非 user_count（避免竞态/R2不一致导致误判）
-    if (intercomPeerId && intercomUserCount >= 2) {
+    // 模式判断：只有真正收到过对方消息才算 Relay
+    if (_peerActive && intercomUserCount >= 2) {
       startRelayRecording();
     } else {
       startAIRecording();
@@ -1638,11 +1641,14 @@
 
   // AudioContext 播放 AI 语音（绕过浏览器 autoplay 限制）
   function _playAIAudio(url) {
-    // intercomPlayer 已在 startPTT 中通过 play()+pause() 解锁
-    // 直接设 src + play，不调 load()（load 会重置解锁状态）
+    // 静音播放绕过 autoplay 限制，start 后立即取消静音
+    intercomPlayer.muted = true;
     intercomPlayer.src = url;
     intercomPlayer.volume = volume;
-    intercomPlayer.play().catch(function(e) {
+    intercomPlayer.play().then(function() {
+      intercomPlayer.muted = false;
+      console.log('[Intercom] AI audio playing');
+    }).catch(function(e) {
       console.log('[Intercom] AI audio play failed:', e.name, e.message);
     });
   }
