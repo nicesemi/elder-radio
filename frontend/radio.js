@@ -1476,7 +1476,8 @@
       _wavSamples.push(new Float32Array(input));
     };
     source.connect(_scriptProcessor);
-    _scriptProcessor.connect(_audioContext.destination);
+    // 不连 destination，避免麦克风输入直通扬声器造成回声
+    // ScriptProcessorNode 即使不连 destination 也会正常触发 onaudioprocess
   }
 
   function _stopWAVRecording() {
