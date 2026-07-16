@@ -3,7 +3,7 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Content-Security-Policy", "value": "default-src 'self' https://*.r2.dev https://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.r2.dev; style-src 'self' 'unsafe-inline'; media-src 'self' https://*.r2.dev blob: data:; connect-src 'self' https://*.r2.dev https://*.supabase.co https://*.deepseek.com https://*.openai.com https://*.aliyuncs.com https://*.baidu.com https://vip.hello-ai.tech wss://*.r2.dev; img-src 'self' data: https://*.r2.dev;" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self' https://*.r2.dev https://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.r2.dev https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src 'self' https://*.r2.dev https://*.ifeng.com blob: data:; connect-src 'self' https://*.r2.dev https://*.supabase.co https://*.deepseek.com https://*.openai.com https://*.aliyuncs.com https://*.baidu.com https://vip.hello-ai.tech wss://*.r2.dev; img-src 'self' data: https://*.r2.dev;" }
       ]
     }
   ],

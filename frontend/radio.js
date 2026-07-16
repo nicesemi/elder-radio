@@ -1369,7 +1369,11 @@
           data.messages.forEach(function(msg) {
             console.log('[Intercom] Poll msg from:', msg.from, 'r2_key:', msg.r2_key ? 'YES' : 'NONE', 'lastAIAudio:', _lastAIAudioUrl ? _lastAIAudioUrl.slice(-30) : 'NONE');
             if (msg.from !== intercomUserId && msg.r2_key) {
-              _peerActive = true;  // 真正收到对方消息，标记为 Relay 模式可用
+              // 只有 agent 消息才标记 Relay 模式可用；bot 消息是 AI 回复，不应触发 Relay
+              // user_ 来源忽略（可能是僵尸 session 的 relay 回声）
+              if (String(msg.from).startsWith('agent')) {
+                _peerActive = true;
+              }
               if (msg.r2_key === _lastAIAudioUrl) {
                 console.log('[Intercom] Poll skipped: same as _lastAIAudioUrl');
                 return;
