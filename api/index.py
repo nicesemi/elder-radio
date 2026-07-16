@@ -1223,6 +1223,13 @@ async def intercom_ai_chat(req: IntercomAIChatRequest):
     from _lib.config import DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL
     ai_response = ""
 
+    # 调试：检查环境变量是否注入
+    import os as _os_debug
+    print(f"[Intercom AI] DEBUG AGNES_API_KEY={'SET(' + AGNES_API_KEY[:8] + '...)' if AGNES_API_KEY else 'MISSING'}", flush=True)
+    print(f"[Intercom AI] DEBUG DEEPSEEK_API_KEY={'SET(' + DEEPSEEK_API_KEY[:8] + '...)' if DEEPSEEK_API_KEY else 'MISSING'}", flush=True)
+    print(f"[Intercom AI] DEBUG os.environ AGNES={'SET' if _os_debug.environ.get('AGNES_API_KEY') else 'MISSING'}", flush=True)
+    print(f"[Intercom AI] DEBUG os.environ DEEPSEEK={'SET' if _os_debug.environ.get('DEEPSEEK_API_KEY') else 'MISSING'}", flush=True)
+
     SYSTEM_PROMPT = "你是一个老年收音机里的智能语音助手，你的名字叫'小电'。你热情、耐心、知识渊博，回答简洁明了，适合语音播放。每次回答控制在 100 字以内。"
 
     async def try_chat(base_url, api_key, model, provider_name):
