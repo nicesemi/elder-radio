@@ -19,8 +19,11 @@ var mediaRecorder = null;
 var recordedChunks = [];
 var currentTab = 'pending';
 
+console.log('[Agent] Script loaded, AGENT_ID:', AGENT_ID, 'AGENT_CHANNEL:', AGENT_CHANNEL);
+
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('[Agent] DOM ready, starting poll...');
   document.getElementById('shopInfo').textContent = AGENT_SHOP;
   loadAgentInfo();
   startPoll();
@@ -50,6 +53,7 @@ function pollTransfers() {
   fetch('/api/agent/transfers?agent_id=' + AGENT_ID + '&channel=' + AGENT_CHANNEL)
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      console.log('[Agent] Poll response:', data);
       // 恢复已接听但页面刷新丢失的通话
       if (data.active_call && !activeTransfer) {
         restoreActiveCall(data.active_call);
@@ -220,37 +224,73 @@ function addChatMsg(type, text) {
 
 // ==================== PTT 录音 ====================
 function startPTT() {
-  if (!activeTransfer) return;
-  if (isRecording) return;
+  console.log('[Agent] PTT start, activeTransfer:', !!activeTransfer, 'isRecording:', isRecording);
+  if (!activeTransfer) {
+    console.log('[Agent] PTT blocked: no active transfer');
+    return;
+  }
+  if (isRecording) {
+    console.log('[Agent] PTT blocked: already recording');
+    return;
+  }
+  // Fix race condition: set isRecording BEFORE any async call
+  isRecording = true;
+  document.getElementById('btnPTT').classList.add('recording');
   startFallbackRecording();
 }
 
 function stopPTT() {
+  console.log('[Agent] PTT stop, isRecording:', isRecording);
   if (!isRecording) return;
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
+  } else {
+    // MediaRecorder not yet started (getUserMedia still pending), clean up state
+    console.log('[Agent] PTT stop: MediaRecorder not recording, resetting');
+    isRecording = false;
+    document.getElementById('btnPTT').classList.remove('recording');
   }
-  isRecording = false;
-  document.getElementById('btnPTT').classList.remove('recording');
 }
 
 function startFallbackRecording() {
+  console.log('[Agent] Requesting microphone...');
   navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+    console.log('[Agent] Microphone granted, starting MediaRecorder');
+    // If user already released PTT while waiting for permission, abort
+    if (!isRecording) {
+      console.log('[Agent] Recording aborted: PTT released during permission wait');
+      stream.getTracks().forEach(function(t) { t.stop(); });
+      return;
+    }
     mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
     recordedChunks = [];
     mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = sendAgentVoice;
+    mediaRecorder.onstop = function() {
+      console.log('[Agent] MediaRecorder stopped, chunks:', recordedChunks.length);
+      sendAgentVoice();
+      // Release mic
+      stream.getTracks().forEach(function(t) { t.stop(); });
+    };
     mediaRecorder.start();
-    isRecording = true;
-    document.getElementById('btnPTT').classList.add('recording');
+    console.log('[Agent] MediaRecorder started');
   }).catch(function(e) {
-    console.log('Mic denied:', e);
+    console.log('[Agent] Mic denied:', e);
+    isRecording = false;
+    document.getElementById('btnPTT').classList.remove('recording');
     showToast('麦克风权限未开启');
   });
 }
 
 function sendAgentVoice() {
-  if (recordedChunks.length === 0) return;
+  console.log('[Agent] sendAgentVoice, chunks:', recordedChunks.length);
+  // Clean up recording state
+  isRecording = false;
+  document.getElementById('btnPTT').classList.remove('recording');
+
+  if (recordedChunks.length === 0) {
+    console.log('[Agent] No audio data, skipping upload');
+    return;
+  }
   var blob = new Blob(recordedChunks, { type: 'audio/webm' });
   var fd = new FormData();
   fd.append('audio', blob, 'ptt.webm');
@@ -258,14 +298,16 @@ function sendAgentVoice() {
   fd.append('user_channel', String(USER_CHANNEL));
   fd.append('agent_name', AGENT_NAME);
 
+  console.log('[Agent] Uploading voice, size:', blob.size);
   fetch('/api/agent/voice-reply', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      console.log('[Agent] Voice reply response:', data);
       if (data.success) {
         addChatMsg('agent', '[语音消息]');
       }
     })
-    .catch(function(e) { console.log('Voice reply error:', e); });
+    .catch(function(e) { console.log('[Agent] Voice reply error:', e); });
 }
 
 // ==================== 挂断 ====================
