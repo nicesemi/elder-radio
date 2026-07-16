@@ -18,6 +18,8 @@ var isRecording = false;
 var mediaRecorder = null;
 var recordedChunks = [];
 var currentTab = 'pending';
+var _playedAudioUrls = {};   // 已播放过的客户语音 URL，避免重复播放
+var _ringAudio = null;       // 来电铃声 Audio 对象
 
 console.log('[Agent] Script loaded, AGENT_ID:', AGENT_ID, 'AGENT_CHANNEL:', AGENT_CHANNEL);
 
@@ -115,6 +117,7 @@ function updateTransfers(transfers) {
   // 新转接通知
   newOnes.forEach(function(t) {
     showToast('新转接: ' + (t.summary || t.text || '客户请求'));
+    playRingtone();
   });
 
   updateBadge();
@@ -409,9 +412,53 @@ setInterval(function() {
           });
           if (!exists) {
             addChatMsg('customer', msg.text);
+            // 如果有语音，自动播放
+            if (msg.audio_url && !_playedAudioUrls[msg.audio_url]) {
+              _playedAudioUrls[msg.audio_url] = true;
+              playCustomerVoice(msg.audio_url);
+            }
           }
         });
       }
     })
     .catch(function(e) {});
-}, 3000);
+}, 1500);
+
+// ==================== 音频播放 ====================
+
+function playCustomerVoice(url) {
+  console.log('[Agent] Playing customer voice:', url);
+  var audio = new Audio(url);
+  audio.volume = 1.0;
+  audio.play().catch(function(e) { console.log('[Agent] Voice play failed:', e); });
+}
+
+function playRingtone() {
+  // 用 Web Audio API 生成对讲机呼叫音（beep-beep）
+  if (_ringAudio) return; // 上一次铃声还在播就不重复
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    gain.gain.value = 0.15;
+
+    var now = ctx.currentTime;
+    // beep-beep-beep 三声
+    [0, 0.3, 0.6].forEach(function(start) {
+      osc.frequency.setValueAtTime(800, now + start);
+      osc.frequency.setValueAtTime(1000, now + start + 0.05);
+      gain.gain.setValueAtTime(0.15, now + start);
+      gain.gain.setValueAtTime(0, now + start + 0.15);
+    });
+
+    osc.start(now);
+    osc.stop(now + 0.9);
+    _ringAudio = { ctx: ctx, osc: osc, gain: gain };
+    osc.onended = function() { _ringAudio = null; ctx.close(); };
+  } catch(e) {
+    console.log('[Agent] Ringtone failed:', e);
+  }
+}

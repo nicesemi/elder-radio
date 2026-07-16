@@ -1198,9 +1198,11 @@ async def intercom_relay(
     channel: int = Form(...),
     user_id: str = Form(...)
 ):
-    """上传音频消息（PTT 模式：录制完成后上传）"""
+    """上传音频消息（PTT 模式：录制完成后上传）+ 转发给业务员"""
     from _lib.intercom_store import get_intercom_store
+    from _lib.agent_store import get_agent_store
     store = get_intercom_store()
+    agent_store = get_agent_store()
 
     audio_bytes = await audio.read()
     url = store.upload_audio(audio_bytes, channel, user_id)
@@ -1208,6 +1210,12 @@ async def intercom_relay(
         raise HTTPException(status_code=500, detail="音频上传失败")
 
     store.send_message(channel, user_id, url)
+
+    # 如果有业务员在此频道通话，转发给 agent store
+    agent_call = agent_store.get_user_call(channel)
+    if agent_call:
+        agent_store.add_customer_voice(agent_call["transfer_id"], url)
+
     return {"success": True, "audio_url": url}
 
 
@@ -1677,11 +1685,25 @@ async def agent_hangup(req: AgentHangupRequest):
 
 @app.get("/api/agent/messages")
 async def agent_messages(agent_id: str, user_channel: int):
-    """业务员：获取当前通话的客户消息"""
+    """业务员：获取当前通话的客户消息（文本+语音）"""
     from _lib.agent_store import get_agent_store
     store = get_agent_store()
     # 找这个 agent 和 channel 的活跃通话
     msgs = store.get_messages_by_channel(user_channel, agent_id)
+    # 同时查 intercom store 获取 relay 语音
+    from _lib.intercom_store import get_intercom_store
+    intercom = get_intercom_store()
+    data = intercom._read_channel(user_channel)
+    for msg in data.get("messages", []):
+        if msg.get("from") != "agent" and msg.get("r2_key"):
+            exists = any(m.get("audio_url") == msg["r2_key"] for m in msgs)
+            if not exists:
+                msgs.append({
+                    "from": "customer",
+                    "text": "[语音]",
+                    "audio_url": msg["r2_key"],
+                    "time": time.strftime("%H:%M:%S", time.localtime(msg.get("timestamp", 0)))
+                })
     return {"messages": msgs}
 
 

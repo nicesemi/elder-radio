@@ -109,6 +109,16 @@ class AgentStore:
         self._write_messages(msgs)
         return msg
 
+    def add_customer_voice(self, transfer_id, audio_url):
+        msgs = self._read_messages()
+        if transfer_id not in msgs:
+            msgs[transfer_id] = []
+        msg = {"from": "customer", "text": "[语音]", "audio_url": audio_url,
+               "time": time.strftime("%H:%M:%S")}
+        msgs[transfer_id].append(msg)
+        self._write_messages(msgs)
+        return msg
+
     def add_agent_message(self, transfer_id, agent_name, text):
         msgs = self._read_messages()
         if transfer_id not in msgs:
