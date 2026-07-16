@@ -1414,8 +1414,8 @@
     }
     _playAudioCtx.resume();
 
-    // 解锁 intercomPlayer（用于 relay 模式的 poll 播放）
-    intercomPlayer.load();
+    // 解锁 intercomPlayer（用于 relay 模式的 poll 播放 + AI 语音）
+    // 注意：不调 load()，否则会重置浏览器 autoplay 解锁状态
     intercomPlayer.play().then(function() { intercomPlayer.pause(); }).catch(function(){});
 
     // 自动加入频道（异步），但当前 PTT 绑定到本次手势上下文决定模式
@@ -1638,35 +1638,13 @@
 
   // AudioContext 播放 AI 语音（绕过浏览器 autoplay 限制）
   function _playAIAudio(url) {
-    if (!_playAudioCtx) {
-      // 降级：如果没有 AudioContext，用 intercomPlayer
-      intercomPlayer.src = url;
-      intercomPlayer.volume = volume;
-      intercomPlayer.play().catch(function(e) {
-        console.log('[Intercom] Fallback play failed:', e.name, e.message);
-      });
-      return;
-    }
-    fetch(url)
-      .then(function(r) { return r.arrayBuffer(); })
-      .then(function(buf) { return _playAudioCtx.decodeAudioData(buf); })
-      .then(function(audioBuffer) {
-        var source = _playAudioCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        var gain = _playAudioCtx.createGain();
-        gain.gain.value = volume;
-        source.connect(gain);
-        gain.connect(_playAudioCtx.destination);
-        source.start(0);
-        console.log('[Intercom] AudioContext playing, duration:', audioBuffer.duration.toFixed(1) + 's');
-      })
-      .catch(function(e) {
-        console.log('[Intercom] AudioContext play failed:', e.message);
-        // 降级
-        intercomPlayer.src = url;
-        intercomPlayer.volume = volume;
-        intercomPlayer.play().catch(function() {});
-      });
+    // intercomPlayer 已在 startPTT 中通过 play()+pause() 解锁
+    // 直接设 src + play，不调 load()（load 会重置解锁状态）
+    intercomPlayer.src = url;
+    intercomPlayer.volume = volume;
+    intercomPlayer.play().catch(function(e) {
+      console.log('[Intercom] AI audio play failed:', e.name, e.message);
+    });
   }
 
   // 对讲机模式：无文字输入。语音不可用时通过 TTS 提示。
