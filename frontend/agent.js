@@ -50,7 +50,9 @@ function startPoll() {
 }
 
 function pollTransfers() {
+  try {
   var url = '/api/agent/transfers?agent_id=' + AGENT_ID + '&channel=' + AGENT_CHANNEL;
+  console.log('[Agent] Poll sending:', url);
   var controller = new AbortController();
   var timeoutId = setTimeout(function() { controller.abort(); }, 5000);
 
@@ -76,6 +78,9 @@ function pollTransfers() {
       clearTimeout(timeoutId);
       console.log('[Agent] Poll error:', e.message || e);
     });
+  } catch(e) {
+    console.log('[Agent] Poll exception:', e.message || e);
+  }
 }
 
 function restoreActiveCall(call) {
