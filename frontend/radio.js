@@ -1294,6 +1294,9 @@
     updateIntercomUI();
   });
 
+  var _joinRetries = 0;
+  var _joinMaxRetries = 3;
+
   // 加入频道
   function joinIntercom() {
     fetch('/api/intercom/join', {
@@ -1305,8 +1308,9 @@
     .then(function(data) {
       if (data.error) {
         console.log('Join error:', data.error);
-        if (data.error.indexOf('已满') >= 0) {
-          // 频道满：强制离开清僵尸用户，1s 后重试
+        if (data.error.indexOf('已满') >= 0 && _joinRetries < _joinMaxRetries) {
+          _joinRetries++;
+          // 尝试 leave 清理自己可能的僵尸 session，然后重试
           fetch('/api/intercom/leave', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -1314,9 +1318,13 @@
           }).then(function() {
             setTimeout(function() { joinIntercom(); }, 1000);
           });
+        } else {
+          intercomLabel.textContent = '已满';
+          setTimeout(function() { updateIntercomUI(); }, 3000);
         }
         return;
       }
+      _joinRetries = 0;
       intercomJoined = true;
       intercomLastMsgIdx = data.last_msg_idx || 0;
       intercomPeerId = data.peer_id;
